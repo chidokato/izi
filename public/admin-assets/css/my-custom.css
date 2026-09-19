@@ -1,0 +1,13 @@
+/* Custom CSS for IZI Admin */
+.flatpickr-months .flatpickr-month{
+	color: #fff !important;
+}
+.flatpickr-current-month{
+	padding: 3px !important;
+}
+.flatpickr-months .flatpickr-prev-month svg path, .flatpickr-months .flatpickr-next-month svg path {
+    fill: #fff !important;
+}
+.flatpickr-months .flatpickr-prev-month.flatpickr-next-month, .flatpickr-months .flatpickr-next-month.flatpickr-next-month , .flatpickr-months .flatpickr-prev-month.flatpickr-prev-month, .flatpickr-months .flatpickr-next-month.flatpickr-prev-month{
+    padding: 5px;
+}

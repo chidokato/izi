@@ -1,0 +1,65 @@
+.backend-content-form .select2-container .select2-selection--single {
+    height: 38px;
+    border: 1px solid var(--vz-input-border, #ced4da);
+    border-radius: 0.25rem;
+    background-color: var(--vz-input-bg, #fff);
+}
+
+.backend-content-form .select2-container .select2-selection--single .select2-selection__rendered {
+    padding-left: 14px;
+    padding-right: 36px;
+    line-height: 36px;
+    color: var(--vz-body-color, #212529);
+}
+
+.backend-content-form .select2-container .select2-selection__placeholder {
+    color: var(--vz-body-color, #212529);
+}
+
+.backend-content-form .select2-container .select2-selection__arrow {
+    height: 36px;
+    right: 10px;
+}
+
+.backend-content-form .select2-container--focus .select2-selection--single,
+.backend-content-form .select2-container--open .select2-selection--single {
+    border-color: #a0a8c4;
+    box-shadow: 0 0 0 0.2rem rgba(64, 81, 137, 0.25);
+}
+
+.backend-content-form .is-invalid + .select2-container .select2-selection--single {
+    border-color: var(--vz-danger, #f06548);
+}
+
+.backend-content-form .content-image-dropzone--cover {
+    height: 205px;
+}
+
+.backend-content-form .content-image-dropzone--location {
+    height: 176px;
+}
+
+.backend-content-form .content-image-dropzone--floor-plan {
+    height: 180px;
+}
+
+.backend-content-form .gallery-picker-button {
+    width: 42px;
+    height: 42px;
+}
+
+.backend-content-form .gallery-picker-icon {
+    font-size: 24px;
+    color: #7b7b7b;
+}
+
+.backend-content-form .gallery-item-thumb {
+    width: 72px;
+    height: 72px;
+}
+
+.backend-content-form .gallery-remove-button {
+    width: 20px;
+    height: 20px;
+    line-height: 1;
+}
