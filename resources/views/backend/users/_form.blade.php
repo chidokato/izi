@@ -21,16 +21,6 @@
 
                     <div class="col-lg-6">
                         <div class="mb-3">
-                            <label for="job_title" class="form-label">Chuc danh</label>
-                            <input type="text" class="form-control @error('job_title') is-invalid @enderror" id="job_title" name="job_title" value="{{ old('job_title', $user->job_title ?? '') }}">
-                            @error('job_title')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-                    </div>
-
-                    <div class="col-lg-6">
-                        <div class="mb-3">
                             <label for="permission" class="form-label">Quyen (Permission)</label>
                             <select class="form-select @error('permission') is-invalid @enderror" id="permission" name="permission">
                                 <option value="1" {{ old('permission', $user->permission ?? 6) == 1 ? 'selected' : '' }}>Quan tri vien cap cao (Super Admin)</option>
@@ -41,46 +31,6 @@
                                 <option value="6" {{ old('permission', $user->permission ?? 6) == 6 ? 'selected' : '' }}>Khach (Guest)</option>
                             </select>
                             @error('permission')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-                    </div>
-
-                    <div class="col-12">
-                        <div class="mb-3">
-                            <label for="bio" class="form-label">Mo ta seller</label>
-                            <textarea class="form-control @error('bio') is-invalid @enderror" id="bio" name="bio" rows="3">{{ old('bio', $user->bio ?? '') }}</textarea>
-                            @error('bio')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-                    </div>
-
-                    <div class="col-12">
-                        <div class="mb-3">
-                            <label for="address" class="form-label">Dia chi</label>
-                            <input type="text" class="form-control @error('address') is-invalid @enderror" id="address" name="address" value="{{ old('address', $user->address ?? '') }}">
-                            @error('address')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-                    </div>
-
-                    <div class="col-lg-4">
-                        <div class="mb-3">
-                            <label for="secondary_phone" class="form-label">So dien thoai phu</label>
-                            <input type="text" class="form-control @error('secondary_phone') is-invalid @enderror" id="secondary_phone" name="secondary_phone" value="{{ old('secondary_phone', $user->secondary_phone ?? '') }}">
-                            @error('secondary_phone')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-                    </div>
-
-                    <div class="col-lg-4">
-                        <div class="mb-3">
-                            <label for="whatsapp_phone" class="form-label">So WhatsApp</label>
-                            <input type="text" class="form-control @error('whatsapp_phone') is-invalid @enderror" id="whatsapp_phone" name="whatsapp_phone" value="{{ old('whatsapp_phone', $user->whatsapp_phone ?? '') }}">
-                            @error('whatsapp_phone')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
@@ -189,18 +139,7 @@
             </div>
         </div>
 
-        <div class="card border">
-            <div class="card-header">
-                <h5 class="card-title mb-0">Huong dan</h5>
-            </div>
-            <div class="card-body">
-                <p class="text-muted mb-2">Email dung de dang nhap he thong.</p>
-                <p class="text-muted mb-2">Thong tin seller se hien thi trong box Contact Sellers o trang chi tiet du an.</p>
-                <p class="text-muted mb-2">Avatar co the upload truc tiep; anh se duoc luu trong `public/uploads/users`.</p>
-                <p class="text-muted mb-2">Mat khau toi thieu 6 ky tu.</p>
-                <p class="text-muted mb-0">Khi sua user, co the de trong mat khau neu khong muon thay doi.</p>
-            </div>
-        </div>
+
     </div>
 </div>
 

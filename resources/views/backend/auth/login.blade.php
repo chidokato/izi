@@ -61,34 +61,34 @@
                                             </div>
 
                                             <div class="mt-auto text-white">
-                                                <span class="badge bg-light-subtle text-success text-uppercase mb-3">Velzon inspired</span>
-                                                <h1 class="display-6 fw-semibold text-white mb-3">Quan ly he thong bat dong san tap trung</h1>
+                                                <span class="badge bg-light-subtle text-success text-uppercase mb-3">HỆ THỐNG NỘI BỘ</span>
+                                                <h1 class="display-6 fw-semibold text-white mb-3">Hệ thống quản lý chấm công & đánh giá nhân sự</h1>
                                                 <p class="fs-15 text-white text-opacity-75 mb-4">
-                                                    Khu vuc nay danh cho quan tri vien theo doi bai dang, duyet noi dung, quan ly khach hang va van hanh du an.
+                                                    Khu vực này dành riêng cho nhân viên để quản lý chấm công, làm phiếu yêu cầu, đánh giá công việc và các nghiệp vụ vận hành khác.
                                                 </p>
 
                                                 <div class="feature-note mb-4">
                                                     <div class="d-flex align-items-start gap-3">
                                                         <i class="ri-shield-check-line fs-3"></i>
                                                         <div>
-                                                            <h5 class="text-white mb-2">Bao mat va ro rang</h5>
-                                                            <p class="mb-0">Giao dien dang nhap duoc tach rieng cho backend, san sang noi voi `auth` va phan quyen o buoc tiep theo.</p>
+                                                            <h5 class="text-white mb-2">Bảo mật và an toàn</h5>
+                                                            <p class="mb-0">Hệ thống chỉ cho phép các tài khoản nội bộ có phân quyền được phép truy cập và xử lý dữ liệu.</p>
                                                         </div>
                                                     </div>
                                                 </div>
 
                                                 <div class="row text-center g-3">
                                                     <div class="col-4">
-                                                        <h4 class="text-white mb-1">128+</h4>
-                                                        <p class="mb-0 text-white text-opacity-75 small">Bat dong san</p>
+                                                        <h4 class="text-white mb-1"><i class="ri-calendar-check-line"></i></h4>
+                                                        <p class="mb-0 text-white text-opacity-75 small">Chấm công</p>
                                                     </div>
                                                     <div class="col-4">
-                                                        <h4 class="text-white mb-1">24</h4>
-                                                        <p class="mb-0 text-white text-opacity-75 small">Nhan su</p>
+                                                        <h4 class="text-white mb-1"><i class="ri-file-list-3-line"></i></h4>
+                                                        <p class="mb-0 text-white text-opacity-75 small">Làm phiếu</p>
                                                     </div>
                                                     <div class="col-4">
-                                                        <h4 class="text-white mb-1">486</h4>
-                                                        <p class="mb-0 text-white text-opacity-75 small">Khach hang</p>
+                                                        <h4 class="text-white mb-1"><i class="ri-star-smile-line"></i></h4>
+                                                        <p class="mb-0 text-white text-opacity-75 small">Đánh giá</p>
                                                     </div>
                                                 </div>
                                             </div>
@@ -100,7 +100,7 @@
                                     <div class="p-lg-5 p-4">
                                         <div>
                                             <h5 class="text-primary">Đăng nhập quản trị</h5>
-                                            <p class="text-muted">Nhap thong tin de vao trang admin cua IZI.</p>
+                                            <p class="text-muted">Nhập thông tin để vào hệ thống nội bộ IZI.</p>
                                         </div>
 
                                         <div class="mt-4">
@@ -119,11 +119,11 @@
 
                                                 <div class="mb-3">
                                                     <div class="float-end">
-                                                        <a href="#" class="text-muted">Quen mat khau?</a>
+                                                        <a href="#" class="text-muted">Quên mật khẩu?</a>
                                                     </div>
-                                                    <label class="form-label" for="password-input">Mat khau</label>
+                                                    <label class="form-label" for="password-input">Mật khẩu</label>
                                                     <div class="position-relative auth-pass-inputgroup mb-3">
-                                                        <input type="password" class="form-control pe-5 password-input @error('password') is-invalid @enderror" id="password-input" name="password" autocomplete="current-password" placeholder="Nhap mat khau">
+                                                        <input type="password" class="form-control pe-5 password-input @error('password') is-invalid @enderror" id="password-input" name="password" autocomplete="current-password" placeholder="Nhập mật khẩu">
                                                         <button class="btn btn-link position-absolute end-0 top-0 text-decoration-none text-muted password-addon shadow-none" type="button" id="password-addon">
                                                             <i class="ri-eye-fill align-middle"></i>
                                                         </button>
@@ -135,11 +135,11 @@
 
                                                 <div class="form-check">
                                                     <input class="form-check-input" type="checkbox" value="1" id="auth-remember-check" name="remember">
-                                                    <label class="form-check-label" for="auth-remember-check">Ghi nho dang nhap</label>
+                                                    <label class="form-check-label" for="auth-remember-check">Ghi nhớ đăng nhập</label>
                                                 </div>
 
                                                 <div class="mt-4">
-                                                    <button class="btn btn-success w-100" type="submit">Dang nhap vao admin</button>
+                                                    <button class="btn btn-success w-100" type="submit">Đăng nhập vào hệ thống</button>
                                                 </div>
                                             </form>
                                             <div class="d-flex align-items-center mt-3">
