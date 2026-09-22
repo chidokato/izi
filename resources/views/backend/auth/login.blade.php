@@ -158,13 +158,7 @@
                                             
                                         </div>
 
-                                        <div class="mt-4">
-                                            @if ($errors->has('auth_error'))
-                                                <div class="alert alert-danger mb-0" role="alert">
-                                                    {{ $errors->first('auth_error') }}
-                                                </div>
-                                            @endif
-                                        </div>
+                                        <div class="mt-4"></div>
                                         
                                     </div>
                                 </div>
@@ -197,5 +191,18 @@
     <script src="{{ asset('admin-assets/js/pages/plugins/lord-icon-2.1.0.js') }}"></script>
     <script src="{{ asset('admin-assets/js/plugins.js') }}"></script>
     <script src="{{ asset('admin-assets/js/pages/password-addon.init.js') }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    @if ($errors->has('auth_error'))
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            Swal.fire({
+                icon: 'error',
+                title: 'Từ chối truy cập',
+                text: '{{ $errors->first("auth_error") }}',
+                confirmButtonText: 'Đóng'
+            });
+        });
+    </script>
+    @endif
 </body>
 </html>

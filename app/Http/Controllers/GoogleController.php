@@ -33,7 +33,7 @@ class GoogleController extends Controller
         $user = User::where('email', $googleUser->getEmail())->first();
 
         if (!$user) {
-            return redirect()->route('login')->withErrors(['auth_error' => 'Truy cập bị từ chối: Email (' . $googleUser->getEmail() . ') chưa được đăng ký tài khoản trên hệ thống IZI.']);
+            return redirect()->route('login')->withErrors(['auth_error' => 'Hệ thống lưu hành nội bộ. Vui lòng liên hệ bộ phận nhân sự hoặc liên hệ trực tiếp kỹ thuật (zalo: 0977572947) để được hỗ trợ.']);
         }
 
         // Cập nhật avatar nếu đã có tài khoản nhưng chưa có avatar
