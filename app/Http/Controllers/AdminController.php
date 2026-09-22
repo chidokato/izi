@@ -21,22 +21,30 @@ class AdminController extends Controller
 
     public function authenticate(Request $request): RedirectResponse
     {
-        $credentials = $request->validate([
-            'email' => ['required', 'email'],
+        $request->validate([
+            'login_identifier' => ['required', 'string'],
             'password' => ['required', 'string'],
         ]);
 
-        $credentials['permission'] = [1, 2, 3];
+        $login_identifier = $request->input('login_identifier');
+        $password = $request->input('password');
 
-        if (! Auth::attempt($credentials, $request->boolean('remember'))) {
-            return back()
-                ->withErrors(['email' => 'Thông tin đăng nhập không chính xác hoặc tài khoản không có quyền quản trị.'])
-                ->onlyInput('email');
+        $user = \App\Models\User::where('email', $login_identifier)
+            ->orWhere('phone', $login_identifier)
+            ->orWhereHas('employee', function($q) use ($login_identifier) {
+                $q->where('employee_code', $login_identifier);
+            })->first();
+
+        if ($user && in_array($user->permission, [1, 2, 3])) {
+            if (Auth::attempt(['email' => $user->email, 'password' => $password], $request->boolean('remember'))) {
+                $request->session()->regenerate();
+                return redirect()->route('backend.admin.dashboard');
+            }
         }
 
-        $request->session()->regenerate();
-
-        return redirect()->route('backend.admin.dashboard');
+        return back()
+            ->withErrors(['login_identifier' => 'Thông tin đăng nhập không chính xác hoặc tài khoản không có quyền quản trị.'])
+            ->onlyInput('login_identifier');
     }
 
     public function logout(Request $request): RedirectResponse

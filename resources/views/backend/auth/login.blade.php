@@ -104,12 +104,15 @@
                                         </div>
 
                                         <div class="mt-4">
+                                            
+                                            
+
                                             <form action="{{ route('backend.admin.authenticate') }}" method="POST">
                                                 @csrf
                                                 <div class="mb-3">
-                                                    <label for="email" class="form-label">Email hoac ten dang nhap</label>
-                                                    <input type="email" class="form-control @error('email') is-invalid @enderror" id="email" name="email" value="{{ old('email') }}" placeholder="Email quản trị" autocomplete="username">
-                                                    @error('email')
+                                                    <label for="login_identifier" class="form-label">Mã nhân viên, Email hoặc Số điện thoại</label>
+                                                    <input type="text" class="form-control @error('login_identifier') is-invalid @enderror" id="login_identifier" name="login_identifier" value="{{ old('login_identifier') }}" placeholder="Nhập mã nhân viên, email hoặc số điện thoại..." autocomplete="username">
+                                                    @error('login_identifier')
                                                         <div class="invalid-feedback">{{ $message }}</div>
                                                     @enderror
                                                 </div>
@@ -139,23 +142,30 @@
                                                     <button class="btn btn-success w-100" type="submit">Dang nhap vao admin</button>
                                                 </div>
                                             </form>
+                                            <div class="d-flex align-items-center mt-3">
+                                                <hr class="flex-grow-1">
+                                                <span class="px-3 text-muted small text-uppercase">Hoặc đăng nhập bằng</span>
+                                                <hr class="flex-grow-1">
+                                            </div>
+                                            <div class="mt-3 text-center">
+                                                <a href="{{ route('google.redirect') }}" class="text-decoration-none">
+                                                    <button type="button" class="btn btn-light w-100 d-flex justify-content-center align-items-center shadow-sm border rounded-pill" style="height: 48px;">
+                                                        <img src="https://img.icons8.com/color/48/000000/google-logo.png" alt="Google Logo" class="me-2" width="24" height="24">
+                                                        <span class="fw-semibold text-dark">Đăng nhập bằng GOOGLE</span>
+                                                    </button>
+                                                </a>
+                                            </div>
+                                            
                                         </div>
 
                                         <div class="mt-4">
-                                            @if ($errors->any())
+                                            @if ($errors->has('auth_error'))
                                                 <div class="alert alert-danger mb-0" role="alert">
-                                                    Dang nhap that bai. Vui long kiem tra email va mat khau.
-                                                </div>
-                                            @else
-                                                <div class="alert alert-info mb-0" role="alert">
-                                                    Sử dụng tài khoản quản trị đã được cấp.
+                                                    {{ $errors->first('auth_error') }}
                                                 </div>
                                             @endif
                                         </div>
-
-                                        <div class="mt-5 text-center">
-                                            <p class="mb-0"> <a href="{{ route('login') }}" class="fw-semibold text-primary text-decoration-underline">Trang đăng nhập</a></p>
-                                        </div>
+                                        
                                     </div>
                                 </div>
                             </div>

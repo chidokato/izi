@@ -11,6 +11,9 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', [AdminController::class, 'login'])->name('login');
 Route::redirect('/login', '/');
+Route::get('/sso/izi', [\App\Http\Controllers\IziSsoController::class, 'login'])
+    ->middleware('throttle:20,1')
+    ->name('sso.izi.login');
 Route::get('/admin/login', [AdminController::class, 'login'])->name('backend.admin.login');
 Route::post('/admin/login', [AdminController::class, 'authenticate'])
     ->middleware('throttle:5,1')->name('backend.admin.authenticate');
@@ -101,6 +104,10 @@ Route::prefix('admin/attendance')->name('backend.attendance.')->middleware(['aut
 });
 Route::get('admin/employees', [\App\Http\Controllers\EmployeeController::class, 'index'])
     ->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->name('backend.employees.index');
+Route::patch('admin/employees/{id}/status', [\App\Http\Controllers\EmployeeController::class, 'changeStatus'])
+    ->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->name('backend.employees.change-status');
+Route::patch('admin/employees/{id}/position', [\App\Http\Controllers\EmployeeController::class, 'changePosition'])
+    ->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->name('backend.employees.change-position');
 Route::get('admin/departments', [\App\Http\Controllers\DepartmentController::class, 'index'])
     ->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->name('backend.departments.index');
 Route::get('admin/attendance-calendar', [\App\Http\Controllers\AttendanceCalendarController::class, 'index'])
@@ -128,3 +135,6 @@ Route::prefix('admin/attendance-requests')->name('backend.attendance-requests.')
     Route::put('/{attendanceRequest}', [\App\Http\Controllers\AttendanceRequestController::class, 'update'])->name('update');
     Route::delete('/{attendanceRequest}', [\App\Http\Controllers\AttendanceRequestController::class, 'destroy'])->name('destroy');
 });
+
+Route::get('auth/google', [\App\Http\Controllers\GoogleController::class, 'redirectToGoogle'])->name('google.redirect');
+Route::get('auth/google/callback', [\App\Http\Controllers\GoogleController::class, 'handleGoogleCallback'])->name('google.callback');

@@ -21,16 +21,6 @@
 
                     <div class="col-lg-6">
                         <div class="mb-3">
-                            <label for="email" class="form-label">Email</label>
-                            <input type="email" class="form-control @error('email') is-invalid @enderror" id="email" name="email" value="{{ old('email', $user->email ?? '') }}" readonly>
-                            @error('email')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-                    </div>
-
-                    <div class="col-lg-6">
-                        <div class="mb-3">
                             <label for="job_title" class="form-label">Chuc danh</label>
                             <input type="text" class="form-control @error('job_title') is-invalid @enderror" id="job_title" name="job_title" value="{{ old('job_title', $user->job_title ?? '') }}">
                             @error('job_title')
@@ -56,33 +46,6 @@
                         </div>
                     </div>
 
-                    <div class="col-lg-6">
-                        <div class="mb-3">
-                            <label class="form-label d-block">Avatar</label>
-                            <input type="hidden" name="remove_avatar" id="remove_avatar" value="0">
-                            <input type="hidden" name="existing_avatar" value="{{ $avatarImage }}">
-                            <input type="file" id="avatar_file" name="avatar_file" class="d-none" accept="image/*">
-                            <div class="border rounded p-3">
-                                <div class="d-flex flex-column gap-2">
-                                    <button type="button" class="border rounded bg-light d-flex align-items-center justify-content-center overflow-hidden p-0 image-upload-trigger" data-input="avatar_file" style="height: 220px;">
-                                        @if ($avatarImage)
-                                            <img src="{{ asset($avatarImage) }}" alt="Avatar" class="w-100 h-100 object-fit-contain">
-                                        @else
-                                            <div class="text-center text-muted">
-                                                <div class="display-6 mb-2"><i class="ri-image-line"></i></div>
-                                                <div>No image</div>
-                                            </div>
-                                        @endif
-                                    </button>
-                                    <button type="button" class="btn btn-soft-danger btn-sm image-remove-trigger {{ $avatarImage ? '' : 'd-none' }}" data-input="avatar_file" data-remove="remove_avatar">Bo anh</button>
-                                </div>
-                                @error('avatar_file')
-                                    <div class="text-danger small mt-2">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        </div>
-                    </div>
-
                     <div class="col-12">
                         <div class="mb-3">
                             <label for="bio" class="form-label">Mo ta seller</label>
@@ -98,16 +61,6 @@
                             <label for="address" class="form-label">Dia chi</label>
                             <input type="text" class="form-control @error('address') is-invalid @enderror" id="address" name="address" value="{{ old('address', $user->address ?? '') }}">
                             @error('address')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-                    </div>
-
-                    <div class="col-lg-4">
-                        <div class="mb-3">
-                            <label for="phone" class="form-label">So dien thoai</label>
-                            <input type="text" class="form-control @error('phone') is-invalid @enderror" id="phone" name="phone" value="{{ old('phone', $user->phone ?? '') }}">
-                            @error('phone')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
@@ -133,11 +86,54 @@
                         </div>
                     </div>
 
+                    <div class="col-12 mt-3 mb-2">
+                        <hr>
+                        <h5 class="mb-0 text-primary">Cấu hình đăng nhập</h5>
+                        <p class="text-muted small">Có thể dùng 1 trong 3 thông tin dưới đây để đăng nhập</p>
+                    </div>
+
+                    <div class="col-lg-4">
+                        <div class="mb-3">
+                            <label for="employee_id" class="form-label">Mã nhân viên (Liên kết nhân sự)</label>
+                            <select class="form-select employee-select @error('employee_id') is-invalid @enderror" id="employee_id" name="employee_id">
+                                <option value="">-- Chọn nhân viên --</option>
+                                @foreach($employees as $employee)
+                                    <option value="{{ $employee->id }}" {{ old('employee_id', $user->employee_id ?? '') == $employee->id ? 'selected' : '' }}>
+                                        {{ $employee->employee_code }} - {{ $employee->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('employee_id')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </div>
+
+                    <div class="col-lg-4">
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control @error('email') is-invalid @enderror" id="email" name="email" value="{{ old('email', $user->email ?? '') }}">
+                            @error('email')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </div>
+
+                    <div class="col-lg-4">
+                        <div class="mb-3">
+                            <label for="phone" class="form-label">Số điện thoại</label>
+                            <input type="text" class="form-control @error('phone') is-invalid @enderror" id="phone" name="phone" value="{{ old('phone', $user->phone ?? '') }}">
+                            @error('phone')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </div>
+
                     @if(isset($user))
                         <div class="col-12 mb-3">
                             <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" role="switch" id="toggle-password-change">
-                                <label class="form-check-label" for="toggle-password-change">Sửa mật khẩu</label>
+                                <label class="form-check-label" for="toggle-password-change">Thay đổi mật khẩu</label>
                             </div>
                         </div>
                     @endif
@@ -164,6 +160,35 @@
     </div>
 
     <div class="col-xl-3">
+        <div class="card border mb-3">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Avatar</h5>
+            </div>
+            <div class="card-body">
+                <input type="hidden" name="remove_avatar" id="remove_avatar" value="0">
+                <input type="hidden" name="existing_avatar" value="{{ $avatarImage }}">
+                <input type="file" id="avatar_file" name="avatar_file" class="d-none" accept="image/*">
+                <div class="border rounded p-3">
+                    <div class="d-flex flex-column gap-2">
+                        <button type="button" class="border rounded bg-light d-flex align-items-center justify-content-center overflow-hidden p-0 image-upload-trigger" data-input="avatar_file" style="height: 220px;">
+                            @if ($avatarImage)
+                                <img src="{{ asset($avatarImage) }}" alt="Avatar" class="w-100 h-100 object-fit-contain">
+                            @else
+                                <div class="text-center text-muted">
+                                    <div class="display-6 mb-2"><i class="ri-image-line"></i></div>
+                                    <div>No image</div>
+                                </div>
+                            @endif
+                        </button>
+                        <button type="button" class="btn btn-soft-danger btn-sm image-remove-trigger {{ $avatarImage ? '' : 'd-none' }}" data-input="avatar_file" data-remove="remove_avatar">Bo anh</button>
+                    </div>
+                    @error('avatar_file')
+                        <div class="text-danger small mt-2">{{ $message }}</div>
+                    @enderror
+                </div>
+            </div>
+        </div>
+
         <div class="card border">
             <div class="card-header">
                 <h5 class="card-title mb-0">Huong dan</h5>
@@ -262,3 +287,32 @@
         });
     });
 </script>
+@once
+    @push('styles')
+        <link href="{{ asset('admin-assets/libs/select2/select2.min.css') }}" rel="stylesheet" type="text/css">
+        <style>
+            .select2-container { width: 100% !important; }
+            .select2-container .select2-selection--single {
+                height: 38px;
+                border: 1px solid #ced4da;
+                border-radius: .25rem;
+            }
+            .select2-container--default .select2-selection--single .select2-selection__rendered { line-height: 36px; }
+            .select2-container--default .select2-selection--single .select2-selection__arrow { height: 36px; }
+        </style>
+    @endpush
+
+    @push('scripts')
+        <script src="{{ asset('admin-assets/libs/jquery/jquery.js') }}"></script>
+        <script src="{{ asset('admin-assets/libs/select2/select2.min.js') }}"></script>
+        <script>
+            $(function () {
+                $('#employee_id').select2({
+                    placeholder: 'Chọn nhân viên...',
+                    allowClear: true,
+                    width: '100%'
+                });
+            });
+        </script>
+    @endpush
+@endonce

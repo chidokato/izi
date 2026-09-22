@@ -16,7 +16,9 @@
                     <thead class="table-light">
                         <tr>
                             <th>ID</th>
-                            <th>Ten</th>
+                            <th>Mã NV</th>
+                            <th>Tên NV</th>
+                            <th>Ten User</th>
                             <th>Chuc danh</th>
                             <th>So dien thoai</th>
                             <th>Email</th>
@@ -29,6 +31,8 @@
                         @forelse ($users as $user)
                             <tr>
                                 <td>{{ $user->id }}</td>
+                                <td>{{ $user->employee ? $user->employee->employee_code : '' }}</td>
+                                <td>{{ $user->employee ? $user->employee->name : '' }}</td>
                                 <td>{{ $user->name }}</td>
                                 <td>{{ $user->job_title }}</td>
                                 <td>{{ $user->phone }}</td>
@@ -46,7 +50,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="text-center text-muted py-4">Chua co user nao.</td>
+                                <td colspan="10" class="text-center text-muted py-4">Chua co user nao.</td>
                             </tr>
                         @endforelse
                     </tbody>

@@ -16,7 +16,7 @@ class EmployeeController extends Controller
         ]);
         $query = DB::table('employees as e')
             ->leftJoin('departments as d', 'd.id', '=', 'e.department_id')
-            ->select('e.id', 'e.employee_code', 'e.name', 'e.status', 'd.name as department_name');
+            ->select('e.id', 'e.employee_code', 'e.name', 'e.status', 'e.position', 'd.name as department_name');
         if ($request->filled('q')) {
             $term = trim($request->input('q'));
             $query->where(function ($q) use ($term) {
@@ -34,6 +34,38 @@ class EmployeeController extends Controller
         return view('backend.employees.index', [
             'employees' => $query->orderBy('e.employee_code')->paginate(50)->withQueryString(),
             'departments' => DB::table('departments')->orderBy('name')->get(['id', 'name']),
+        ]);
+    }
+
+    public function changeStatus(Request $request, $id)
+    {
+        $request->validate([
+            'status' => 'required|in:active,inactive,resigned'
+        ]);
+
+        $employee = \App\Models\Employee::findOrFail($id);
+        $employee->status = $request->status;
+        $employee->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Cập nhật trạng thái thành công!'
+        ]);
+    }
+
+    public function changePosition(Request $request, $id)
+    {
+        $request->validate([
+            'position' => 'required|in:employee,team_leader,manager,director'
+        ]);
+
+        $employee = \App\Models\Employee::findOrFail($id);
+        $employee->position = $request->position;
+        $employee->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Cập nhật chức vụ thành công!'
         ]);
     }
 }

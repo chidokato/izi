@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Employee;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
@@ -16,6 +17,7 @@ class UserController extends Controller
     public function index(): View
     {
         $users = User::query()
+            ->with('employee')
             ->latest()
             ->paginate(10);
 
@@ -24,7 +26,8 @@ class UserController extends Controller
 
     public function create(): View
     {
-        return view('backend.users.create');
+        $employees = Employee::all();
+        return view('backend.users.create', compact('employees'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -41,6 +44,7 @@ class UserController extends Controller
             'avatar_file' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:2048'],
             'remove_avatar' => ['nullable'],
             'permission' => ['required', 'integer', 'in:1,2,3,4,5,6'],
+            'employee_id' => ['nullable', 'exists:employees,id'],
             'password' => ['required', 'string', 'min:6', 'confirmed'],
         ]);
 
@@ -60,6 +64,7 @@ class UserController extends Controller
             'whatsapp_phone' => $validated['whatsapp_phone'] ?? null,
             'avatar' => $avatarPath,
             'permission' => $validated['permission'],
+            'employee_id' => $validated['employee_id'] ?? null,
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
         ]);
@@ -71,7 +76,8 @@ class UserController extends Controller
 
     public function edit(User $user): View
     {
-        return view('backend.users.edit', compact('user'));
+        $employees = Employee::all();
+        return view('backend.users.edit', compact('user', 'employees'));
     }
 
     public function update(Request $request, User $user): RedirectResponse
@@ -93,6 +99,7 @@ class UserController extends Controller
             'avatar_file' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:2048'],
             'remove_avatar' => ['nullable'],
             'permission' => ['required', 'integer', 'in:1,2,3,4,5,6'],
+            'employee_id' => ['nullable', 'exists:employees,id'],
             'password' => ['nullable', 'string', 'min:6', 'confirmed'],
         ]);
 
@@ -118,6 +125,7 @@ class UserController extends Controller
             'whatsapp_phone' => $validated['whatsapp_phone'] ?? null,
             'avatar' => $avatarPath,
             'permission' => $validated['permission'],
+            'employee_id' => $validated['employee_id'] ?? null,
             'email' => $validated['email'],
         ];
 

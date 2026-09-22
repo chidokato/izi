@@ -30,7 +30,7 @@
                 <label for="employee-status" class="form-label">Trạng thái</label>
                 <select id="employee-status" name="status" class="form-select">
                     <option value="">Tất cả trạng thái</option>
-                    @foreach(['active'=>'Đang làm việc','inactive'=>'Ngừng hoạt động','resigned'=>'Đã nghỉ việc'] as $value=>$label)
+                    @foreach(['active'=>'Đang làm việc','inactive'=>'Công tác viên','resigned'=>'Nghỉ việc'] as $value=>$label)
                         <option value="{{ $value }}" @selected(request('status') === $value)>{{ $label }}</option>
                     @endforeach
                 </select>
@@ -42,7 +42,7 @@
         </form>
         <div class="table-responsive">
             <table class="table table-striped table-nowrap align-middle">
-                <thead class="table-light"><tr><th>STT</th><th>Mã nhân viên</th><th>Họ tên</th><th>Phòng ban</th><th>Trạng thái</th><th>Chấm công</th></tr></thead>
+                <thead class="table-light"><tr><th>STT</th><th>Mã nhân viên</th><th>Họ tên</th><th>Phòng ban</th><th>Chức vụ</th><th>Trạng thái</th><th>Chấm công</th></tr></thead>
                 <tbody>
                     @forelse($employees as $employee)
                     <tr>
@@ -50,7 +50,20 @@
                         <td>{{ $employee->employee_code }}</td>
                         <td>{{ $employee->name }}</td>
                         <td>{{ $employee->department_name ?? 'Chưa có phòng ban' }}</td>
-                        <td><span class="badge {{ $employee->status === 'active' ? 'bg-success' : 'bg-secondary' }}">{{ ['active'=>'Đang làm việc','inactive'=>'Ngừng hoạt động','resigned'=>'Đã nghỉ việc'][$employee->status] ?? $employee->status }}</span></td>
+                        <td>
+                            <select class="form-select form-select-sm position-select fw-bold {{ $employee->position === 'director' ? 'text-danger' : ($employee->position === 'manager' ? 'text-primary' : ($employee->position === 'team_leader' ? 'text-info' : 'text-secondary')) }}" data-id="{{ $employee->id }}">
+                                @foreach(['employee'=>'Nhân viên','team_leader'=>'Trưởng nhóm','manager'=>'Trưởng phòng','director'=>'Giám đốc'] as $value=>$label)
+                                    <option value="{{ $value }}" class="text-body" @selected($employee->position === $value)>{{ $label }}</option>
+                                @endforeach
+                            </select>
+                        </td>
+                        <td>
+                            <select class="form-select form-select-sm status-select fw-bold {{ $employee->status === 'active' ? 'text-success' : ($employee->status === 'inactive' ? 'text-warning' : 'text-danger') }}" data-id="{{ $employee->id }}">
+                                @foreach(['active'=>'Đang làm việc','inactive'=>'Công tác viên','resigned'=>'Nghỉ việc'] as $value=>$label)
+                                    <option value="{{ $value }}" class="text-body" @selected($employee->status === $value)>{{ $label }}</option>
+                                @endforeach
+                            </select>
+                        </td>
                         <td><a class="btn btn-sm btn-soft-primary" href="{{ route('backend.calendar.index', ['employee_id' => $employee->id]) }}">Xem lịch</a></td>
                     </tr>
                     @empty
@@ -63,3 +76,112 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const toastMixin = Swal.mixin({
+            toast: true,
+            position: 'bottom-start',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true,
+            didOpen: (toast) => {
+                toast.addEventListener('mouseenter', Swal.stopTimer)
+                toast.addEventListener('mouseleave', Swal.resumeTimer)
+            }
+        });
+
+        document.querySelectorAll('.status-select').forEach(select => {
+            select.addEventListener('change', function () {
+                const employeeId = this.dataset.id;
+                const status = this.value;
+                const url = `{{ route('backend.employees.change-status', ':id') }}`.replace(':id', employeeId);
+                const selectElement = this;
+
+                // Update text color
+                selectElement.classList.remove('text-success', 'text-warning', 'text-danger');
+                if (status === 'active') selectElement.classList.add('text-success');
+                else if (status === 'inactive') selectElement.classList.add('text-warning');
+                else if (status === 'resigned') selectElement.classList.add('text-danger');
+
+                fetch(url, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ status: status })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        toastMixin.fire({
+                            icon: 'success',
+                            title: data.message
+                        });
+                    } else {
+                        toastMixin.fire({
+                            icon: 'error',
+                            title: data.message || 'Có lỗi xảy ra!'
+                        });
+                    }
+                })
+                .catch(error => {
+                    toastMixin.fire({
+                        icon: 'error',
+                        title: 'Lỗi máy chủ!'
+                    });
+                });
+            });
+        });
+
+        document.querySelectorAll('.position-select').forEach(select => {
+            select.addEventListener('change', function () {
+                const employeeId = this.dataset.id;
+                const position = this.value;
+                const url = `{{ route('backend.employees.change-position', ':id') }}`.replace(':id', employeeId);
+                const selectElement = this;
+
+                // Update text color
+                selectElement.classList.remove('text-secondary', 'text-info', 'text-primary', 'text-danger');
+                if (position === 'employee') selectElement.classList.add('text-secondary');
+                else if (position === 'team_leader') selectElement.classList.add('text-info');
+                else if (position === 'manager') selectElement.classList.add('text-primary');
+                else if (position === 'director') selectElement.classList.add('text-danger');
+
+                fetch(url, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ position: position })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        toastMixin.fire({
+                            icon: 'success',
+                            title: data.message
+                        });
+                    } else {
+                        toastMixin.fire({
+                            icon: 'error',
+                            title: data.message || 'Có lỗi xảy ra!'
+                        });
+                    }
+                })
+                .catch(error => {
+                    toastMixin.fire({
+                        icon: 'error',
+                        title: 'Lỗi máy chủ!'
+                    });
+                });
+            });
+        });
+    });
+</script>
+@endpush
