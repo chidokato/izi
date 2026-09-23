@@ -4,13 +4,20 @@ namespace App\Http\Controllers;
 
 use App\Models\AttendanceRequest;
 use App\Models\Employee;
+use App\Models\User;
+use App\Models\RequestApproval;
 use Illuminate\Http\Request;
 
 class AttendanceRequestController extends Controller
 {
     public function index(Request $request)
     {
-        $query = AttendanceRequest::with('employee')->latest();
+        $query = AttendanceRequest::with(['employee', 'requestApprovals'])->latest();
+
+        $user = auth()->user();
+        if ($user && !$user->isAdmin()) {
+            $query->where('employee_id', $user->employee_id);
+        }
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
@@ -156,13 +163,40 @@ class AttendanceRequestController extends Controller
             }
         }
 
-        AttendanceRequest::create($request->all());
+        $attendanceRequest = AttendanceRequest::create($request->all());
+
+        $employee = Employee::find($request->employee_id);
+        $managerUser = null;
+        if ($employee && $employee->manager_id) {
+            $managerUser = User::where('employee_id', $employee->manager_id)->first();
+        }
+        
+        $adminUser = User::whereIn('permission', [1,2])->first();
+
+        if ($managerUser) {
+            $attendanceRequest->update(['current_approval_step' => 1]);
+            RequestApproval::create([
+                'request_id' => $attendanceRequest->id,
+                'approver_id' => $managerUser->id,
+                'step' => 1,
+                'status' => 'pending',
+            ]);
+        } else {
+            $attendanceRequest->update(['current_approval_step' => 2]);
+            RequestApproval::create([
+                'request_id' => $attendanceRequest->id,
+                'approver_id' => $adminUser->id ?? 1,
+                'step' => 2,
+                'status' => 'pending',
+            ]);
+        }
 
         return redirect()->route('backend.attendance-requests.index')->with('success', 'Đã tạo phiếu thành công.');
     }
 
-    public function edit(AttendanceRequest $attendanceRequest)
+    public function edit($id)
     {
+        $attendanceRequest = AttendanceRequest::with(['requestApprovals.approver', 'employee'])->findOrFail($id);
         $employees = Employee::orderBy('name')->get();
         return view('backend.attendance_requests.edit', compact('attendanceRequest', 'employees'));
     }
@@ -173,21 +207,68 @@ class AttendanceRequestController extends Controller
             'status' => 'required|in:pending,approved,rejected,cancelled',
         ]);
 
-        $attendanceRequest->update([
-            'status' => $request->status,
-            'approved_at' => $request->status === 'approved' ? now() : null,
-            'rejected_at' => $request->status === 'rejected' ? now() : null,
-        ]);
+        $user = auth()->user();
+        $status = $request->status;
+
+        if ($status === 'approved') {
+            if ($attendanceRequest->current_approval_step == 1) {
+                // Manager approved
+                RequestApproval::where('request_id', $attendanceRequest->id)
+                    ->where('step', 1)
+                    ->update(['status' => 'approved', 'acted_at' => now(), 'approver_id' => $user->id]);
+                
+                // Move to step 2 (HR)
+                $adminUser = User::whereIn('permission', [1,2])->first();
+                $attendanceRequest->update(['current_approval_step' => 2]);
+                RequestApproval::create([
+                    'request_id' => $attendanceRequest->id,
+                    'approver_id' => $adminUser->id ?? 1,
+                    'step' => 2,
+                    'status' => 'pending',
+                ]);
+
+                $message = 'Đã duyệt bước 1, chuyển cho Nhân sự.';
+                
+            } else if ($attendanceRequest->current_approval_step == 2) {
+                // HR approved
+                RequestApproval::where('request_id', $attendanceRequest->id)
+                    ->where('step', 2)
+                    ->update(['status' => 'approved', 'acted_at' => now(), 'approver_id' => $user->id]);
+                
+                $attendanceRequest->update([
+                    'status' => 'approved',
+                    'approved_at' => now(),
+                ]);
+
+                $message = 'Đã duyệt hoàn tất.';
+            } else {
+                $message = 'Trạng thái đã được cập nhật.';
+            }
+        } else if ($status === 'rejected') {
+            RequestApproval::where('request_id', $attendanceRequest->id)
+                ->where('step', $attendanceRequest->current_approval_step)
+                ->update(['status' => 'rejected', 'acted_at' => now(), 'approver_id' => $user->id]);
+            
+            $attendanceRequest->update([
+                'status' => 'rejected',
+                'rejected_at' => now(),
+            ]);
+            $message = 'Đã từ chối phiếu.';
+        } else if ($status === 'cancelled') {
+            $attendanceRequest->update(['status' => 'cancelled']);
+            $message = 'Đã hủy phiếu.';
+        }
 
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
                 'success' => true,
-                'message' => 'Đã cập nhật trạng thái phiếu.',
-                'status' => $attendanceRequest->status
+                'message' => $message ?? 'Đã cập nhật trạng thái phiếu.',
+                'status' => $attendanceRequest->status,
+                'step' => $attendanceRequest->current_approval_step
             ]);
         }
 
-        return redirect()->route('backend.attendance-requests.index')->with('success', 'Đã cập nhật trạng thái phiếu.');
+        return redirect()->route('backend.attendance-requests.index')->with('success', $message ?? 'Đã cập nhật trạng thái phiếu.');
     }
 
     public function destroy(AttendanceRequest $attendanceRequest)

@@ -41,6 +41,11 @@ class AttendanceRequest extends Model
         return $this->belongsTo(Employee::class);
     }
 
+    public function requestApprovals()
+    {
+        return $this->hasMany(RequestApproval::class, 'request_id');
+    }
+
     protected static function boot()
     {
         parent::boot();

@@ -104,14 +104,28 @@
                                     <td>{{ Str::limit($req->reason, 30) }}</td>
                                     <td>{{ $req->created_at->format('H:i d/m/Y') }}</td>
                                     <td id="status-badge-{{ $req->id }}">
-                                        @if($req->status == 'pending') <span class="badge bg-warning">Chờ duyệt</span>
+                                        @if($req->status == 'pending') 
+                                            @if($req->current_approval_step == 1)
+                                                <span class="badge bg-warning">Chờ Lãnh đạo duyệt</span>
+                                            @else
+                                                <span class="badge bg-warning">Chờ Nhân sự duyệt</span>
+                                            @endif
                                         @elseif($req->status == 'approved') <span class="badge bg-success">Đã duyệt</span>
                                         @elseif($req->status == 'rejected') <span class="badge bg-danger">Từ chối</span>
                                         @else <span class="badge bg-secondary">{{ $req->status }}</span> @endif
                                     </td>
                                     <td>
                                         <div class="d-flex gap-1 align-items-center" id="action-buttons-{{ $req->id }}">
-                                            @if($req->status == 'pending')
+                                            @php
+                                                $canApprove = false;
+                                                if ($req->status == 'pending') {
+                                                    $currentApproval = $req->requestApprovals->where('step', $req->current_approval_step)->first();
+                                                    if ($currentApproval && $currentApproval->approver_id == auth()->id()) {
+                                                        $canApprove = true;
+                                                    }
+                                                }
+                                            @endphp
+                                            @if($canApprove)
                                                 <button class="btn btn-sm btn-success btn-quick-approve" data-id="{{ $req->id }}" data-status="approved">Duyệt</button>
                                                 <button class="btn btn-sm btn-danger btn-quick-approve" data-id="{{ $req->id }}" data-status="rejected">Từ chối</button>
                                             @endif

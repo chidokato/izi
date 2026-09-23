@@ -56,18 +56,46 @@
                     </div>
 
                     <hr>
+                    <h5>Tiến trình duyệt</h5>
+                    <ul>
+                    @forelse($attendanceRequest->requestApprovals as $approval)
+                        <li>Bước {{ $approval->step }} ({{ $approval->step == 1 ? 'Lãnh đạo' : 'Nhân sự' }}): 
+                            @if($approval->status == 'pending')
+                                Đang chờ <strong>{{ optional($approval->approver)->name }}</strong> duyệt.
+                            @elseif($approval->status == 'approved')
+                                <span class="text-success"><strong>{{ optional($approval->approver)->name }}</strong> đã duyệt</span> lúc {{ $approval->acted_at ? $approval->acted_at->format('d/m/Y H:i') : '' }}.
+                            @elseif($approval->status == 'rejected')
+                                <span class="text-danger"><strong>{{ optional($approval->approver)->name }}</strong> đã từ chối</span> lúc {{ $approval->acted_at ? $approval->acted_at->format('d/m/Y H:i') : '' }}.
+                            @endif
+                        </li>
+                    @empty
+                        <li>Chưa có thông tin duyệt.</li>
+                    @endforelse
+                    </ul>
+
+                    @php
+                        $canApprove = false;
+                        if ($attendanceRequest->status == 'pending') {
+                            $currentApproval = $attendanceRequest->requestApprovals->where('step', $attendanceRequest->current_approval_step)->first();
+                            if ($currentApproval && $currentApproval->approver_id == auth()->id()) {
+                                $canApprove = true;
+                            }
+                        }
+                    @endphp
+
+                    <hr>
                     
+                    @if($canApprove)
                     <div class="mb-3">
-                        <label class="form-label text-primary">Phê duyệt / Xử lý trạng thái</label>
+                        <label class="form-label text-primary">Xử lý yêu cầu</label>
                         <select name="status" class="form-control">
-                            <option value="pending" {{ $attendanceRequest->status == 'pending' ? 'selected' : '' }}>Chờ duyệt</option>
-                            <option value="approved" {{ $attendanceRequest->status == 'approved' ? 'selected' : '' }}>Đồng ý duyệt</option>
-                            <option value="rejected" {{ $attendanceRequest->status == 'rejected' ? 'selected' : '' }}>Từ chối</option>
-                            <option value="cancelled" {{ $attendanceRequest->status == 'cancelled' ? 'selected' : '' }}>Hủy bỏ</option>
+                            <option value="pending" selected>--- Chọn thao tác ---</option>
+                            <option value="approved">Đồng ý duyệt</option>
+                            <option value="rejected">Từ chối</option>
                         </select>
                     </div>
-
-                    <button type="submit" class="btn btn-success">Cập nhật phiếu</button>
+                    <button type="submit" class="btn btn-success">Xác nhận</button>
+                    @endif
                     <a href="{{ route('backend.attendance-requests.index') }}" class="btn btn-light">Quay lại</a>
                 </form>
             </div>
