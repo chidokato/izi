@@ -61,6 +61,7 @@
                                 <th>Loại</th>
                                 <th>Thời gian</th>
                                 <th>Lý do</th>
+                                <th>Ngày tạo</th>
                                 <th>Trạng thái</th>
                                 <th>Thao tác</th>
                             </tr>
@@ -95,6 +96,7 @@
                                         @endif
                                     </td>
                                     <td>{{ Str::limit($req->reason, 30) }}</td>
+                                    <td>{{ $req->created_at->format('H:i d/m/Y') }}</td>
                                     <td id="status-badge-{{ $req->id }}">
                                         @if($req->status == 'pending') <span class="badge bg-warning">Chờ duyệt</span>
                                         @elseif($req->status == 'approved') <span class="badge bg-success">Đã duyệt</span>
@@ -112,7 +114,7 @@
                                     </td>
                                 </tr>
                             @empty
-                                <tr><td colspan="7" class="text-center">Chưa có dữ liệu</td></tr>
+                                <tr><td colspan="8" class="text-center">Chưa có dữ liệu</td></tr>
                             @endforelse
                         </tbody>
                     </table>
