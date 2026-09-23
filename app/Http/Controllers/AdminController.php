@@ -35,8 +35,27 @@ class AdminController extends Controller
                 $q->where('employee_code', $login_identifier);
             })->first();
 
+        if (!$user) {
+            $employee = \App\Models\Employee::where('employee_code', $login_identifier)->first();
+            if ($employee) {
+                $user = \App\Models\User::create([
+                    'name' => $employee->name,
+                    'email' => strtolower($employee->employee_code) . '@izi.local',
+                    'password' => \Illuminate\Support\Facades\Hash::make('123456'),
+                    'permission' => 3,
+                    'employee_id' => $employee->id,
+                ]);
+            }
+        }
+
         if ($user && in_array($user->permission, [1, 2, 3])) {
             if (Auth::attempt(['email' => $user->email, 'password' => $password], $request->boolean('remember'))) {
+                if (\Illuminate\Support\Facades\Hash::check('123456', $user->password)) {
+                    Auth::logout();
+                    session(['setup_user_id' => $user->id]);
+                    return redirect()->route('login');
+                }
+                
                 $request->session()->regenerate();
                 return redirect()->route('backend.admin.dashboard');
             }
@@ -45,6 +64,34 @@ class AdminController extends Controller
         return back()
             ->withErrors(['login_identifier' => 'Thông tin đăng nhập không chính xác hoặc tài khoản không có quyền quản trị.'])
             ->onlyInput('login_identifier');
+    }
+
+    public function firstTimeSetup(Request $request): RedirectResponse
+    {
+        $setupUserId = session('setup_user_id');
+        if (!$setupUserId) {
+            return redirect()->route('login');
+        }
+
+        $request->validate([
+            'email' => 'required|email|unique:users,email,' . $setupUserId,
+            'phone' => 'required|string',
+            'new_password' => 'required|string|min:6|confirmed',
+        ]);
+
+        $user = \App\Models\User::find($setupUserId);
+        if ($user) {
+            $user->email = $request->email;
+            $user->phone = $request->phone;
+            $user->password = \Illuminate\Support\Facades\Hash::make($request->new_password);
+            $user->save();
+            
+            session()->forget('setup_user_id');
+            Auth::login($user, true);
+            return redirect()->route('backend.admin.dashboard');
+        }
+
+        return redirect()->route('login');
     }
 
     public function logout(Request $request): RedirectResponse

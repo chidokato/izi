@@ -11,12 +11,31 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', [AdminController::class, 'login'])->name('login');
 Route::redirect('/login', '/');
+Route::get('/run-sync-employees', function () {
+    $employees = \App\Models\Employee::doesntHave('user')->get();
+    $count = 0;
+    foreach ($employees as $employee) {
+        if (!$employee->employee_code) continue;
+        \App\Models\User::create([
+            'name' => $employee->name,
+            'email' => strtolower($employee->employee_code) . '@izi.local',
+            'password' => \Illuminate\Support\Facades\Hash::make('123456'),
+            'permission' => 3,
+            'employee_id' => $employee->id,
+        ]);
+        $count++;
+    }
+    return "Synced $count employees";
+});
+
 Route::get('/sso/izi', [\App\Http\Controllers\IziSsoController::class, 'login'])
     ->middleware('throttle:20,1')
     ->name('sso.izi.login');
 Route::get('/admin/login', [AdminController::class, 'login'])->name('backend.admin.login');
 Route::post('/admin/login', [AdminController::class, 'authenticate'])
     ->middleware('throttle:5,1')->name('backend.admin.authenticate');
+Route::post('/admin/first-time-setup', [AdminController::class, 'firstTimeSetup'])
+    ->name('backend.admin.first_time_setup');
 
 Route::prefix('admin')->name('backend.')->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->group(function () {
     Route::controller(AdminController::class)->name('admin.')->group(function () {

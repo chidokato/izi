@@ -98,6 +98,57 @@
 
                                 <div class="col-lg-6">
                                     <div class="p-lg-5 p-4">
+                                        @if(session('setup_user_id'))
+                                        <div class="mt-4">
+                                            @php
+                                                $setupUser = \App\Models\User::with('employee')->find(session('setup_user_id'));
+                                            @endphp
+                                            <form action="{{ route('backend.admin.first_time_setup') }}" method="POST">
+                                                @csrf
+                                                <div class="mb-2">
+                                                    <h5 class="mb-1 text-primary">Thông tin đăng nhập</h5>
+                                                    <p class="text-muted mb-3">Từ lần sau, bạn có thể dùng 1 trong 3 thông tin dưới đây kết hợp với mật khẩu để đăng nhập vào hệ thống.</p>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label">Mã nhân viên</label>
+                                                    <input type="text" class="form-control" value="{{ $setupUser->employee->employee_code ?? 'N/A' }}" disabled readonly>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label">Email</label>
+                                                    <input type="email" class="form-control @error('email') is-invalid @enderror" name="email" value="{{ old('email') }}" required placeholder="Nhập email của bạn...">
+                                                    @error('email') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label">Số điện thoại</label>
+                                                    <input type="text" class="form-control @error('phone') is-invalid @enderror" name="phone" value="{{ old('phone') }}" required placeholder="Nhập số điện thoại...">
+                                                    @error('phone') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                                                </div>
+                                                <hr class="my-3">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Mật khẩu mới</label>
+                                                    <div class="position-relative auth-pass-inputgroup mb-3">
+                                                        <input type="password" class="form-control pe-5 password-input @error('new_password') is-invalid @enderror" id="new-password-input" name="new_password" required minlength="6" placeholder="Nhập mật khẩu mới">
+                                                        <button class="btn btn-link position-absolute end-0 top-0 text-decoration-none text-muted password-addon shadow-none" type="button" id="new-password-addon">
+                                                            <i class="ri-eye-fill align-middle"></i>
+                                                        </button>
+                                                    </div>
+                                                    @error('new_password') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label">Xác nhận mật khẩu</label>
+                                                    <div class="position-relative auth-pass-inputgroup mb-3">
+                                                        <input type="password" class="form-control pe-5 password-input" id="new-password-confirmation-input" name="new_password_confirmation" required minlength="6" placeholder="Nhập lại mật khẩu mới">
+                                                        <button class="btn btn-link position-absolute end-0 top-0 text-decoration-none text-muted password-addon shadow-none" type="button" id="new-password-confirmation-addon">
+                                                            <i class="ri-eye-fill align-middle"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <div class="mt-4">
+                                                    <button class="btn btn-primary w-100" type="submit">Hoàn tất cấu hình</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                        @else
                                         <div>
                                             <h5 class="text-primary">Đăng nhập quản trị</h5>
                                             <p class="text-muted">Nhập thông tin để vào hệ thống nội bộ IZI.</p>
@@ -157,6 +208,7 @@
                                             </div>
                                             
                                         </div>
+                                        @endif
 
                                         <div class="mt-4"></div>
                                         
