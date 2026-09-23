@@ -11,7 +11,8 @@ class GoogleController extends Controller
 {
     public function redirectToGoogle(Request $request)
     {
-        $google = Socialite::driver('google');
+        $redirectUrl = $request->url() . '/callback';
+        $google = Socialite::driver('google')->redirectUrl($redirectUrl);
 
         if ($request->boolean('select_account')) {
             $google = $google->with([
@@ -22,10 +23,11 @@ class GoogleController extends Controller
         return $google->redirect();
     }
 
-    public function handleGoogleCallback()
+    public function handleGoogleCallback(Request $request)
     {
         try {
-            $googleUser = Socialite::driver('google')->user();
+            $redirectUrl = str_replace('/callback', '', $request->url()) . '/callback';
+            $googleUser = Socialite::driver('google')->redirectUrl($redirectUrl)->user();
         } catch (\Exception $e) {
             return redirect()->route('login')->withErrors(['auth_error' => 'Đăng nhập Google thất bại: ' . $e->getMessage()]);
         }
