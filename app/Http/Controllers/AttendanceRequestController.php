@@ -20,6 +20,14 @@ class AttendanceRequestController extends Controller
             $query->where('type', $request->type);
         }
 
+        if ($request->filled('search_employee')) {
+            $keyword = $request->search_employee;
+            $query->whereHas('employee', function($q) use ($keyword) {
+                $q->where('name', 'like', "%{$keyword}%")
+                  ->orWhere('employee_code', 'like', "%{$keyword}%");
+            });
+        }
+
         $requests = $query->paginate(20);
 
         return view('backend.attendance_requests.index', compact('requests'));

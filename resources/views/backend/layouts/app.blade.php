@@ -132,16 +132,23 @@
                         <li class="menu-title"><span>Menu</span></li>
                         @php
 
-                            $menuItems = [
-                                ['label' => 'Chấm công', 'icon' => 'ri-calendar-check-line', 'route' => 'backend.attendance.index', 'active' => 'backend.attendance.*'],
-                                ['label' => 'Lịch chấm công', 'icon' => 'ri-calendar-2-line', 'route' => 'backend.calendar.index', 'active' => 'backend.calendar.*'],
-                                ['label' => 'Phiếu yêu cầu', 'icon' => 'ri-file-text-line', 'route' => 'backend.attendance-requests.index', 'active' => 'backend.attendance-requests.*'],
-                                ['label' => 'Nhân viên', 'icon' => 'ri-team-line', 'route' => 'backend.employees.index', 'active' => 'backend.employees.*'],
-                                ['label' => 'Phòng ban', 'icon' => 'ri-building-line', 'route' => 'backend.departments.index', 'active' => 'backend.departments.*'],
-                                ['label' => 'Cấu hình tháng', 'icon' => 'ri-settings-4-line', 'route' => 'backend.monthly-settings.index', 'active' => 'backend.monthly-settings.*'],
-                                ['label' => 'Giờ làm việc', 'icon' => 'ri-time-line', 'route' => 'backend.schedules.index', 'active' => 'backend.schedules.*'],
-                                ['label' => 'Tài khoản', 'icon' => 'ri-user-3-line', 'route' => 'backend.users.index', 'active' => 'backend.users.*'],
-                            ];
+                            $isAdmin = auth()->check() && auth()->user()->isAdmin();
+                            $menuItems = [];
+                            
+                            if ($isAdmin) {
+                                $menuItems[] = ['label' => 'Chấm công', 'icon' => 'ri-calendar-check-line', 'route' => 'backend.attendance.index', 'active' => 'backend.attendance.*'];
+                            }
+                            
+                            $menuItems[] = ['label' => 'Lịch chấm công', 'icon' => 'ri-calendar-2-line', 'route' => 'backend.calendar.index', 'active' => 'backend.calendar.*'];
+                            $menuItems[] = ['label' => 'Phiếu yêu cầu', 'icon' => 'ri-file-text-line', 'route' => 'backend.attendance-requests.index', 'active' => 'backend.attendance-requests.*'];
+
+                            if ($isAdmin) {
+                                $menuItems[] = ['label' => 'Nhân viên', 'icon' => 'ri-team-line', 'route' => 'backend.employees.index', 'active' => 'backend.employees.*'];
+                                $menuItems[] = ['label' => 'Phòng ban', 'icon' => 'ri-building-line', 'route' => 'backend.departments.index', 'active' => 'backend.departments.*'];
+                                $menuItems[] = ['label' => 'Cấu hình tháng', 'icon' => 'ri-settings-4-line', 'route' => 'backend.monthly-settings.index', 'active' => 'backend.monthly-settings.*'];
+                                $menuItems[] = ['label' => 'Giờ làm việc', 'icon' => 'ri-time-line', 'route' => 'backend.schedules.index', 'active' => 'backend.schedules.*'];
+                                $menuItems[] = ['label' => 'Tài khoản', 'icon' => 'ri-user-3-line', 'route' => 'backend.users.index', 'active' => 'backend.users.*'];
+                            }
                         @endphp
                         @foreach ($menuItems as $item)
                             <li class="nav-item">

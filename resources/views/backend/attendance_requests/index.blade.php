@@ -24,6 +24,9 @@
                 <form>
                     <div class="row g-3">
                         <div class="col-xxl-3 col-sm-4">
+                            <input type="text" class="form-control" name="search_employee" placeholder="Nhập mã hoặc tên NV" value="{{ request('search_employee') }}">
+                        </div>
+                        <div class="col-xxl-3 col-sm-4">
                             <select class="form-control" name="type">
                                 <option value="">Tất cả loại phiếu</option>
                                 <option value="paid_leave" {{ request('type') == 'paid_leave' ? 'selected' : '' }}>Nghỉ phép có lương</option>
@@ -70,7 +73,10 @@
                             @forelse ($requests as $req)
                                 <tr>
                                     <td>{{ $req->code }}</td>
-                                    <td>{{ optional($req->employee)->name }}</td>
+                                    <td>
+                                        <div class="fw-medium">{{ optional($req->employee)->name }}</div>
+                                        <small class="text-muted">{{ optional($req->employee)->employee_code }}</small>
+                                    </td>
                                     <td>
                                         @if($req->type == 'paid_leave') Nghỉ phép
                                         @elseif($req->type == 'unpaid_leave') Không lương

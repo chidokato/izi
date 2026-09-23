@@ -15,7 +15,11 @@ class AttendanceCalendarController extends Controller
             'month' => ['nullable', 'date_format:Y-m', 'regex:/^(19|20|21)\d{2}-(0[1-9]|1[0-2])$/'],
         ]);
         $employees = DB::table('employees')->orderBy('name')->orderBy('employee_code')->get(['id', 'name', 'employee_code']);
-        $employeeId = $request->input('employee_id') ?: (auth()->check() && auth()->user()->employee_id ? auth()->user()->employee_id : optional($employees->first())->id);
+        if (auth()->check() && !auth()->user()->isAdmin()) {
+            $employeeId = auth()->user()->employee_id;
+        } else {
+            $employeeId = $request->input('employee_id') ?: (auth()->check() && auth()->user()->employee_id ? auth()->user()->employee_id : optional($employees->first())->id);
+        }
         $employee = $employeeId ? DB::table('employees as e')->leftJoin('departments as d', 'd.id', '=', 'e.department_id')
             ->where('e.id', $employeeId)->select('e.*', 'd.name as department_name')->first() : null;
         $latest = $employee ? DB::table('attendance_entries')->where('employee_id', $employee->id)->max('work_date') : null;

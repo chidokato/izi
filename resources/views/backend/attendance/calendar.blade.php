@@ -33,6 +33,7 @@
 @endpush
 @section('content')
 @if($errors->any())<div class="alert alert-danger">@foreach($errors->all() as $error)<div>{{ $error }}</div>@endforeach</div>@endif
+@if(auth()->check() && auth()->user()->isAdmin())
 <div class="card"><div class="card-body">
     <form action="{{ route('backend.calendar.index') }}" method="get" class="row g-3 align-items-end">
         <div class="col-md-6">
@@ -47,6 +48,7 @@
         <div class="col-md-3"><button class="btn btn-primary" @disabled(!$employee)>Xem lịch</button> <a class="btn btn-light" href="{{ route('backend.employees.index') }}">Nhân viên</a></div>
     </form>
 </div></div>
+@endif
 @if(!$employee)
 <div class="alert alert-info">Chưa có nhân viên. <a href="{{ route('backend.attendance.index') }}">Nhập file chấm công</a> để bắt đầu theo dõi.</div>
 @else
