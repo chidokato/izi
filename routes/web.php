@@ -22,6 +22,7 @@ Route::get('/run-sync-employees', function () {
             'password' => \Illuminate\Support\Facades\Hash::make('123456'),
             'permission' => 3,
             'employee_id' => $employee->id,
+            'is_active' => false,
         ]);
         $count++;
     }
@@ -112,6 +113,7 @@ Route::prefix('admin')->name('backend.')->middleware(['auth', \App\Http\Middlewa
         Route::get('users/{user}/edit', 'edit')->name('users.edit');
         Route::put('users/{user}', 'update')->name('users.update');
         Route::delete('users/{user}', 'destroy')->name('users.destroy');
+        Route::patch('users/{user}/toggle-active', 'toggleActive')->name('users.toggle-active');
     });
 });
 

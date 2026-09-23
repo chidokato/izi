@@ -12,7 +12,7 @@ class AdminController extends Controller
 {
     public function login(): View|RedirectResponse
     {
-        if (Auth::user()?->isAdmin()) {
+        if (Auth::check() && in_array(Auth::user()->permission, [1, 2, 3])) {
             return redirect()->route('backend.admin.dashboard');
         }
 
@@ -44,6 +44,7 @@ class AdminController extends Controller
                     'password' => \Illuminate\Support\Facades\Hash::make('123456'),
                     'permission' => 3,
                     'employee_id' => $employee->id,
+                    'is_active' => true,
                 ]);
             }
         }
@@ -56,6 +57,13 @@ class AdminController extends Controller
                     return redirect()->route('login');
                 }
                 
+                if (!$user->is_active) {
+                    Auth::logout();
+                    return back()
+                        ->withErrors(['login_identifier' => 'Tài khoản của bạn đã bị vô hiệu hóa. Vui lòng liên hệ quản trị viên.'])
+                        ->onlyInput('login_identifier');
+                }
+
                 $request->session()->regenerate();
                 return redirect()->route('backend.admin.dashboard');
             }
@@ -84,6 +92,7 @@ class AdminController extends Controller
             $user->email = $request->email;
             $user->phone = $request->phone;
             $user->password = \Illuminate\Support\Facades\Hash::make($request->new_password);
+            $user->is_active = true;
             $user->save();
             
             session()->forget('setup_user_id');

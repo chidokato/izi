@@ -66,8 +66,9 @@ class IziSsoController extends Controller
                 'email' => !empty($data['email']) ? strtolower($data['email']) : ($employeeCode . '@sso.local'),
                 'phone' => $data['phone'] ?? null,
                 'password' => Hash::make(Str::random(16)),
-                'permission' => 3, // Cấp quyền Moderator để vào được hệ thống
+                'permission' => 3, // Cấp quyền User để vào được hệ thống
                 'employee_id' => $employee->id,
+                'is_active' => true,
             ]);
         } else {
             // Cập nhật lại thông tin
@@ -83,6 +84,10 @@ class IziSsoController extends Controller
         if (!in_array($user->permission, [1, 2, 3])) {
             $user->permission = 3;
             $user->save();
+        }
+
+        if (!$user->is_active) {
+            abort(403, 'Tài khoản của bạn đã bị vô hiệu hóa. Vui lòng liên hệ quản trị viên.');
         }
 
         Auth::login($user);

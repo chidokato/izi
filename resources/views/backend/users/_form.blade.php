@@ -23,12 +23,9 @@
                         <div class="mb-3">
                             <label for="permission" class="form-label">Quyen (Permission)</label>
                             <select class="form-select @error('permission') is-invalid @enderror" id="permission" name="permission">
-                                <option value="1" {{ old('permission', $user->permission ?? 6) == 1 ? 'selected' : '' }}>Quan tri vien cap cao (Super Admin)</option>
-                                <option value="2" {{ old('permission', $user->permission ?? 6) == 2 ? 'selected' : '' }}>Quan tri vien (Admin)</option>
-                                <option value="3" {{ old('permission', $user->permission ?? 6) == 3 ? 'selected' : '' }}>Quan ly (Moderator)</option>
-                                <option value="4" {{ old('permission', $user->permission ?? 6) == 4 ? 'selected' : '' }}>Giang vien (Instructor)</option>
-                                <option value="5" {{ old('permission', $user->permission ?? 6) == 5 ? 'selected' : '' }}>Hoc vien (Student)</option>
-                                <option value="6" {{ old('permission', $user->permission ?? 6) == 6 ? 'selected' : '' }}>Khach (Guest)</option>
+                                <option value="1" {{ old('permission', $user->permission ?? 3) == 1 ? 'selected' : '' }}>Quan tri vien cap cao (Super Admin)</option>
+                                <option value="2" {{ old('permission', $user->permission ?? 3) == 2 ? 'selected' : '' }}>Quan tri vien (Admin)</option>
+                                <option value="3" {{ old('permission', $user->permission ?? 3) == 3 ? 'selected' : '' }}>Nguoi dung (User)</option>
                             </select>
                             @error('permission')
                                 <div class="invalid-feedback">{{ $message }}</div>

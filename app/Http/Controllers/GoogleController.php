@@ -42,6 +42,10 @@ class GoogleController extends Controller
             $user->save();
         }
 
+        if (!$user->is_active) {
+            return redirect()->route('login')->withErrors(['auth_error' => 'Tài khoản của bạn đã bị vô hiệu hóa. Vui lòng liên hệ quản trị viên.']);
+        }
+
         if (in_array($user->permission, [1, 2, 3])) {
             Auth::login($user, true);
             return redirect()->route('backend.admin.dashboard');

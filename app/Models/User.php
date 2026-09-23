@@ -29,6 +29,7 @@ class User extends Authenticatable
         'whatsapp_phone',
         'avatar',
         'permission',
+        'is_active',
         'employee_id',
     ];
 
@@ -58,12 +59,12 @@ class User extends Authenticatable
 
     public function isAdmin(): bool
     {
-        return in_array($this->permission, [1, 2, 3]);
+        return in_array($this->permission, [1, 2]);
     }
 
     public function isExternalUser(): bool
     {
-        return in_array($this->permission, [4, 5, 6]);
+        return $this->permission == 3;
     }
 
     public function getPermissionLabelAttribute(): string
@@ -71,11 +72,8 @@ class User extends Authenticatable
         $permissions = [
             1 => 'Super Admin',
             2 => 'Admin',
-            3 => 'Moderator',
-            4 => 'Instructor',
-            5 => 'Student',
-            6 => 'Guest',
+            3 => 'User',
         ];
-        return $permissions[$this->permission] ?? 'Guest';
+        return $permissions[$this->permission] ?? 'User';
     }
 }

@@ -24,6 +24,7 @@
                             <th>Email</th>
                             <th>Quyen</th>
                             <th>Ngay tao</th>
+                            <th>Trang thai</th>
                             <th class="text-end">Thao tac</th>
                         </tr>
                     </thead>
@@ -39,6 +40,15 @@
                                 <td>{{ $user->email }}</td>
                                 <td><span class="badge bg-secondary">{{ $user->permission_label }}</span></td>
                                 <td>{{ $user->created_at ? $user->created_at->format('d/m/Y H:i') : '' }}</td>
+                                <td>
+                                    <form action="{{ route('backend.users.toggle-active', $user) }}" method="POST" class="d-inline">
+                                        @csrf
+                                        @method('PATCH')
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" role="switch" onchange="this.form.submit()" {{ $user->is_active ? 'checked' : '' }} {{ auth()->id() === $user->id ? 'disabled' : '' }}>
+                                        </div>
+                                    </form>
+                                </td>
                                 <td class="text-end">
                                     <a href="{{ route('backend.users.edit', $user) }}" class="btn btn-sm btn-soft-warning">Sua</a>
                                     <form action="{{ route('backend.users.destroy', $user) }}" method="POST" class="d-inline" data-confirm-delete data-confirm-message="Ban co chac muon xoa user nay?">
@@ -50,7 +60,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="10" class="text-center text-muted py-4">Chua co user nao.</td>
+                                <td colspan="11" class="text-center text-muted py-4">Chua co user nao.</td>
                             </tr>
                         @endforelse
                     </tbody>

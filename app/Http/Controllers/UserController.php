@@ -43,7 +43,7 @@ class UserController extends Controller
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'avatar_file' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:2048'],
             'remove_avatar' => ['nullable'],
-            'permission' => ['required', 'integer', 'in:1,2,3,4,5,6'],
+            'permission' => ['required', 'integer', 'in:1,2,3'],
             'employee_id' => ['nullable', 'exists:employees,id'],
             'password' => ['required', 'string', 'min:6', 'confirmed'],
         ]);
@@ -98,7 +98,7 @@ class UserController extends Controller
             ],
             'avatar_file' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:2048'],
             'remove_avatar' => ['nullable'],
-            'permission' => ['required', 'integer', 'in:1,2,3,4,5,6'],
+            'permission' => ['required', 'integer', 'in:1,2,3'],
             'employee_id' => ['nullable', 'exists:employees,id'],
             'password' => ['nullable', 'string', 'min:6', 'confirmed'],
         ]);
@@ -154,6 +154,21 @@ class UserController extends Controller
         return redirect()
             ->route('backend.users.index')
             ->with('success', 'Xoa user thanh cong.');
+    }
+
+    public function toggleActive(User $user): RedirectResponse
+    {
+        if (auth()->id() === $user->id) {
+            return redirect()
+                ->back()
+                ->with('error', 'Không thể thay đổi trạng thái tài khoản đang đăng nhập.');
+        }
+
+        $user->update(['is_active' => !$user->is_active]);
+
+        return redirect()
+            ->back()
+            ->with('success', 'Đã cập nhật trạng thái hoạt động.');
     }
 
     protected function storeAvatar($file): string
