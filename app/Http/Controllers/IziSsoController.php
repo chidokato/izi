@@ -65,7 +65,7 @@ class IziSsoController extends Controller
                 'name' => $data['name'],
                 'email' => !empty($data['email']) ? strtolower($data['email']) : ($employeeCode . '@sso.local'),
                 'phone' => $data['phone'] ?? null,
-                'password' => Hash::make(Str::random(16)),
+                'password' => Hash::make('123456'),
                 'permission' => 3, // Cấp quyền User để vào được hệ thống
                 'employee_id' => $employee->id,
                 'is_active' => true,
@@ -88,6 +88,14 @@ class IziSsoController extends Controller
 
         if (!$user->is_active) {
             abort(403, 'Tài khoản của bạn đã bị vô hiệu hóa. Vui lòng liên hệ quản trị viên.');
+        }
+
+        if (\Illuminate\Support\Facades\Hash::check('123456', $user->password)) {
+            session([
+                'setup_user_id' => $user->id,
+                'setup_from_sso' => true
+            ]);
+            return redirect()->route('login');
         }
 
         Auth::login($user);
