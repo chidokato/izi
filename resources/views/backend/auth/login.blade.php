@@ -55,7 +55,7 @@
                                         <div class="bg-overlay opacity-50"></div>
                                         <div class="position-relative h-100 d-flex flex-column">
                                             <div class="mb-4">
-                                                <a href="{{ route('login') }}" class="d-inline-block text-white text-decoration-none">
+                                                <a href="{{ route('login', [], false) }}" class="d-inline-block text-white text-decoration-none">
                                                     <h2 class="nhadat-brand mb-0 text-white fw-bold">I<span>ZI</span></h2>
                                                 </a>
                                             </div>
@@ -103,7 +103,7 @@
                                             @php
                                                 $setupUser = \App\Models\User::with('employee')->find(session('setup_user_id'));
                                             @endphp
-                                            <form action="{{ route('backend.admin.first_time_setup') }}" method="POST">
+                                            <form action="{{ route('backend.admin.first_time_setup', [], false) }}" method="POST">
                                                 @csrf
                                                 <div class="mb-2">
                                                     <h5 class="mb-1 text-primary">Thông tin đăng nhập</h5>
@@ -158,7 +158,7 @@
                                             
                                             
 
-                                            <form action="{{ route('backend.admin.authenticate') }}" method="POST">
+                                            <form action="{{ route('backend.admin.authenticate', [], false) }}" method="POST">
                                                 @csrf
                                                 <div class="mb-3">
                                                     <label for="login_identifier" class="form-label">Mã nhân viên, Email hoặc Số điện thoại</label>
@@ -199,7 +199,7 @@
                                                 <hr class="flex-grow-1">
                                             </div>
                                             <div class="mt-3 text-center">
-                                                <a href="{{ route('google.redirect') }}" class="text-decoration-none">
+                                                <a href="{{ route('google.redirect', [], false) }}" class="text-decoration-none">
                                                     <button type="button" class="btn btn-light w-100 d-flex justify-content-center align-items-center shadow-sm border rounded-pill" style="height: 48px;">
                                                         <img src="https://img.icons8.com/color/48/000000/google-logo.png" alt="Google Logo" class="me-2" width="24" height="24">
                                                         <span class="fw-semibold text-dark">Đăng nhập bằng GOOGLE</span>
