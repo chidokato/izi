@@ -50,7 +50,13 @@
 </div></div>
 @endif
 @if(!$employee)
-<div class="alert alert-info">Chưa có nhân viên. <a href="{{ route('backend.attendance.index') }}">Nhập file chấm công</a> để bắt đầu theo dõi.</div>
+<div class="alert alert-info">
+    @if(auth()->check() && auth()->user()->isAdmin())
+        Chưa có nhân viên. <a href="{{ route('backend.attendance.index') }}">Nhập file chấm công</a> để bắt đầu theo dõi.
+    @else
+        Tài khoản của bạn chưa được liên kết với hồ sơ nhân viên. Vui lòng liên hệ quản trị viên để được hỗ trợ.
+    @endif
+</div>
 @else
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
     <div><h5 class="mb-1">{{ $employee->name }} <span class="text-muted">· {{ $employee->employee_code }}</span></h5><span class="text-muted">{{ $employee->department_name ?? 'Chưa có phòng ban' }}</span></div>
@@ -65,8 +71,16 @@
     <div class="col-auto">
         <div class="card h-100 shadow-sm border-0 bg-primary text-white mb-0">
             <div class="card-body p-2 px-3 text-center">
-                <h4 class="mb-0 fw-bold text-white">{{ $totalCongThucTe }}</h4>
-                <div class="text-white-50" style="font-size: 11px; font-weight: 500;">Ngày công đi làm</div>
+                <h4 class="mb-0 fw-bold text-white">{{ $totalCongTinhLuong }}</h4>
+                <div class="text-white-50" style="font-size: 11px; font-weight: 500;">Tổng số công hợp lệ</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-auto">
+        <div class="card h-100 shadow-sm border-0 bg-success text-white mb-0" style="min-width: 120px;">
+            <div class="card-body p-2 px-3 text-center">
+                <h4 class="mb-0 fw-bold text-white">{{ floatval($employee->annual_leave_balance ?? 0) }}</h4>
+                <div class="text-white-50" style="font-size: 11px; font-weight: 500;">Tồn phép năm</div>
             </div>
         </div>
     </div>

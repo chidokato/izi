@@ -14,10 +14,16 @@ class Employee extends Model
         'name',
         'department_id',
         'status',
+        'annual_leave_balance',
     ];
 
     public function requests()
     {
         return $this->hasMany(AttendanceRequest::class);
+    }
+
+    public function manager()
+    {
+        return $this->belongsTo(Employee::class, 'manager_id');
     }
 }

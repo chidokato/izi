@@ -42,8 +42,12 @@ class AttendanceRequestController extends Controller
 
     public function create()
     {
-        $employees = Employee::orderBy('name')->get();
-        return view('backend.attendance_requests.create', compact('employees'));
+        $employees = Employee::with('manager')->orderBy('name')->get();
+        $currentUserEmployee = null;
+        if (auth()->check() && auth()->user()->employee_id) {
+            $currentUserEmployee = Employee::with('manager')->find(auth()->user()->employee_id);
+        }
+        return view('backend.attendance_requests.create', compact('employees', 'currentUserEmployee'));
     }
 
     public function store(Request $request)
@@ -54,6 +58,21 @@ class AttendanceRequestController extends Controller
             'employee_id' => 'required|exists:employees,id',
             'type' => 'required|in:paid_leave,unpaid_leave,business_trip,attendance_adjustment,work_from_home,other,overtime',
             'reason' => 'required|string|max:1000',
+        ];
+
+        $messages = [
+            'employee_id.required' => 'Vui lòng chọn nhân viên.',
+            'employee_id.exists' => 'Nhân viên không tồn tại trong hệ thống.',
+            'type.required' => 'Vui lòng chọn loại phiếu.',
+            'reason.required' => 'Vui lòng nhập lý do/diễn giải.',
+            'start_date_leave.required' => 'Vui lòng chọn ngày xin nghỉ.',
+            'start_session_leave.required' => 'Vui lòng chọn buổi bắt đầu nghỉ.',
+            'leave_days.required' => 'Vui lòng nhập số ngày nghỉ.',
+            'leave_days.min' => 'Số ngày nghỉ tối thiểu là 0.5 ngày.',
+            'start_date.required' => 'Vui lòng chọn ngày tháng hợp lệ.',
+            'end_date.required' => 'Vui lòng chọn ngày kết thúc.',
+            'end_date.after_or_equal' => 'Ngày kết thúc không được nhỏ hơn ngày bắt đầu.',
+            'start_session.required' => 'Vui lòng chọn xác nhận công ra/vào.'
         ];
 
         if ($type === 'business_trip') {
@@ -147,7 +166,38 @@ class AttendanceRequestController extends Controller
             }
         }
 
-        $request->validate($rules);
+        $request->validate($rules, $messages);
+
+        // Kiểm tra trùng thời gian (Overlap)
+        $newStart = \Carbon\Carbon::parse($request->start_date);
+        $newEnd = \Carbon\Carbon::parse($request->end_date);
+        
+        if ($newStart->format('H:i:s') === '00:00:00') {
+            $newStart->setTime($request->start_session === 'afternoon' ? 13 : 0, 0, 0);
+        }
+        if ($newEnd->format('H:i:s') === '00:00:00') {
+            $newEnd->setTime($request->end_session === 'morning' ? 12 : 23, 59, 59);
+        }
+
+        $existingRequests = AttendanceRequest::where('employee_id', $request->employee_id)
+            ->whereIn('status', ['pending', 'approved'])
+            ->get();
+
+        foreach ($existingRequests as $existing) {
+            $existingStart = \Carbon\Carbon::parse($existing->start_date);
+            $existingEnd = \Carbon\Carbon::parse($existing->end_date);
+            
+            if ($existingStart->format('H:i:s') === '00:00:00') {
+                $existingStart->setTime($existing->start_session === 'afternoon' ? 13 : 0, 0, 0);
+            }
+            if ($existingEnd->format('H:i:s') === '00:00:00') {
+                $existingEnd->setTime($existing->end_session === 'morning' ? 12 : 23, 59, 59);
+            }
+
+            if ($newStart <= $existingEnd && $newEnd >= $existingStart) {
+                return back()->withInput()->withErrors(['time' => 'Thời gian này đã bị trùng với một phiếu khác đã tạo. Vui lòng chọn khoảng thời gian khác.']);
+            }
+        }
 
         if ($type === 'attendance_adjustment') {
             $startDate = \Carbon\Carbon::parse($request->start_date);
@@ -166,18 +216,16 @@ class AttendanceRequestController extends Controller
         $attendanceRequest = AttendanceRequest::create($request->all());
 
         $employee = Employee::find($request->employee_id);
-        $managerUser = null;
-        if ($employee && $employee->manager_id) {
-            $managerUser = User::where('employee_id', $employee->manager_id)->first();
-        }
         
         $adminUser = User::whereIn('permission', [1,2])->first();
 
-        if ($managerUser) {
+        if ($employee && $employee->manager_id) {
+            $managerUser = User::where('employee_id', $employee->manager_id)->first();
+            
             $attendanceRequest->update(['current_approval_step' => 1]);
             RequestApproval::create([
                 'request_id' => $attendanceRequest->id,
-                'approver_id' => $managerUser->id,
+                'approver_id' => $managerUser ? $managerUser->id : ($adminUser->id ?? 1),
                 'step' => 1,
                 'status' => 'pending',
             ]);
@@ -210,6 +258,8 @@ class AttendanceRequestController extends Controller
         $user = auth()->user();
         $status = $request->status;
 
+        $originalStatus = $attendanceRequest->status;
+
         if ($status === 'approved') {
             if ($attendanceRequest->current_approval_step == 1) {
                 // Manager approved
@@ -240,6 +290,11 @@ class AttendanceRequestController extends Controller
                     'approved_at' => now(),
                 ]);
 
+                if ($originalStatus !== 'approved' && $attendanceRequest->type === 'paid_leave') {
+                    $days = $this->calculateLeaveDays($attendanceRequest);
+                    $attendanceRequest->employee()->decrement('annual_leave_balance', $days);
+                }
+
                 $message = 'Đã duyệt hoàn tất.';
             } else {
                 $message = 'Trạng thái đã được cập nhật.';
@@ -253,9 +308,21 @@ class AttendanceRequestController extends Controller
                 'status' => 'rejected',
                 'rejected_at' => now(),
             ]);
+
+            if ($originalStatus === 'approved' && $attendanceRequest->type === 'paid_leave') {
+                $days = $this->calculateLeaveDays($attendanceRequest);
+                $attendanceRequest->employee()->increment('annual_leave_balance', $days);
+            }
+
             $message = 'Đã từ chối phiếu.';
         } else if ($status === 'cancelled') {
             $attendanceRequest->update(['status' => 'cancelled']);
+            
+            if ($originalStatus === 'approved' && $attendanceRequest->type === 'paid_leave') {
+                $days = $this->calculateLeaveDays($attendanceRequest);
+                $attendanceRequest->employee()->increment('annual_leave_balance', $days);
+            }
+
             $message = 'Đã hủy phiếu.';
         }
 
@@ -273,6 +340,16 @@ class AttendanceRequestController extends Controller
 
     public function destroy(AttendanceRequest $attendanceRequest)
     {
+        if (!auth()->user()->isAdmin()) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        if ($attendanceRequest->status === 'approved' && $attendanceRequest->type === 'paid_leave') {
+            $days = $this->calculateLeaveDays($attendanceRequest);
+            $attendanceRequest->employee()->increment('annual_leave_balance', $days);
+        }
+
+        $attendanceRequest->requestApprovals()->delete();
         $attendanceRequest->delete();
         return redirect()->route('backend.attendance-requests.index')->with('success', 'Đã xóa phiếu.');
     }
@@ -301,5 +378,36 @@ class AttendanceRequestController extends Controller
             'total' => 3,
             'month' => $date->month
         ]);
+    }
+
+    private function calculateLeaveDays(AttendanceRequest $req)
+    {
+        $start = \Carbon\Carbon::parse($req->start_date)->startOfDay();
+        $end = \Carbon\Carbon::parse($req->end_date)->startOfDay();
+        $days = 0;
+        
+        $current = $start->copy();
+        while ($current->lte($end)) {
+            $dayOfWeek = $current->dayOfWeek;
+            if ($dayOfWeek >= 1 && $dayOfWeek <= 5) {
+                $val = 1;
+            } elseif ($dayOfWeek == 6) {
+                $val = 0.5;
+            } else {
+                $val = 0;
+            }
+            
+            if ($current->isSameDay($start) && $req->start_session == 'afternoon') {
+                $val -= 0.5;
+            }
+            if ($current->isSameDay($end) && $req->end_session == 'morning') {
+                $val -= 0.5;
+            }
+            if ($val < 0) $val = 0;
+            
+            $days += $val;
+            $current->addDay();
+        }
+        return $days;
     }
 }

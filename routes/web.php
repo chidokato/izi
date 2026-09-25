@@ -129,6 +129,10 @@ Route::patch('admin/employees/{id}/status', [\App\Http\Controllers\EmployeeContr
     ->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->name('backend.employees.change-status');
 Route::patch('admin/employees/{id}/position', [\App\Http\Controllers\EmployeeController::class, 'changePosition'])
     ->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->name('backend.employees.change-position');
+Route::patch('admin/employees/{id}/manager', [\App\Http\Controllers\EmployeeController::class, 'changeManager'])
+    ->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->name('backend.employees.change-manager');
+Route::patch('admin/employees/bulk-manager', [\App\Http\Controllers\EmployeeController::class, 'bulkManager'])
+    ->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->name('backend.employees.bulk-manager');
 Route::get('admin/departments', [\App\Http\Controllers\DepartmentController::class, 'index'])
     ->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->name('backend.departments.index');
 Route::get('admin/attendance-calendar', [\App\Http\Controllers\AttendanceCalendarController::class, 'index'])

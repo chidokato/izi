@@ -13,39 +13,65 @@
     </div>
     <div class="card-body">
         <form method="get" action="{{ route('backend.employees.index') }}" class="row g-3 mb-4">
-            <div class="col-md-4">
-                <label for="employee-q" class="form-label">Mã hoặc tên nhân viên</label>
+            <div class="col-md-3">
+                <label for="employee-q" class="form-label">Mã/tên nhân viên</label>
                 <input id="employee-q" class="form-control" name="q" value="{{ request('q') }}" placeholder="Nhập mã hoặc họ tên">
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <label for="employee-department" class="form-label">Phòng ban</label>
                 <select id="employee-department" name="department_id" class="form-select">
-                    <option value="">Tất cả phòng ban</option>
+                    <option value="">Tất cả</option>
                     @foreach($departments as $department)
                         <option value="{{ $department->id }}" @selected((string)request('department_id') === (string)$department->id)>{{ $department->name }}</option>
                     @endforeach
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
+                <label for="employee-position" class="form-label">Chức vụ</label>
+                <select id="employee-position" name="position" class="form-select">
+                    <option value="">Tất cả</option>
+                    @foreach(['employee'=>'Nhân viên','team_leader'=>'Trưởng nhóm','manager'=>'Trưởng phòng','director'=>'Giám đốc'] as $value=>$label)
+                        <option value="{{ $value }}" @selected(request('position') === $value)>{{ $label }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="col-md-2">
                 <label for="employee-status" class="form-label">Trạng thái</label>
                 <select id="employee-status" name="status" class="form-select">
-                    <option value="">Tất cả trạng thái</option>
+                    <option value="">Tất cả</option>
                     @foreach(['active'=>'Đang làm việc','inactive'=>'Công tác viên','resigned'=>'Nghỉ việc'] as $value=>$label)
                         <option value="{{ $value }}" @selected(request('status') === $value)>{{ $label }}</option>
                     @endforeach
                 </select>
             </div>
-            <div class="col-md-2 d-flex align-items-end gap-2">
+            <div class="col-md-3 d-flex align-items-end gap-2">
                 <button class="btn btn-primary">Lọc</button>
                 <a class="btn btn-light" href="{{ route('backend.employees.index') }}">Bỏ lọc</a>
             </div>
         </form>
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <div>
+                <button type="button" class="btn btn-sm btn-primary d-none" id="btn-bulk-edit-manager">Sửa người duyệt hàng loạt</button>
+            </div>
+        </div>
         <div class="table-responsive">
             <table class="table table-striped table-nowrap align-middle">
-                <thead class="table-light"><tr><th>STT</th><th>Mã nhân viên</th><th>Họ tên</th><th>Phòng ban</th><th>Chức vụ</th><th>Trạng thái</th><th>Chấm công</th></tr></thead>
+                <thead class="table-light"><tr>
+                    <th style="width: 40px;">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="checkAll">
+                        </div>
+                    </th>
+                    <th>STT</th><th>Mã nhân viên</th><th>Họ tên</th><th>Phòng ban</th><th>Chức vụ</th><th>Người duyệt phiếu</th><th>Trạng thái</th><th>Chấm công</th>
+                </tr></thead>
                 <tbody>
                     @forelse($employees as $employee)
                     <tr>
+                        <td>
+                            <div class="form-check">
+                                <input class="form-check-input employee-checkbox" type="checkbox" value="{{ $employee->id }}">
+                            </div>
+                        </td>
                         <td>{{ $employees->firstItem() + $loop->index }}</td>
                         <td>{{ $employee->employee_code }}</td>
                         <td>{{ $employee->name }}</td>
@@ -54,6 +80,16 @@
                             <select class="form-select form-select-sm position-select fw-bold {{ $employee->position === 'director' ? 'text-danger' : ($employee->position === 'manager' ? 'text-primary' : ($employee->position === 'team_leader' ? 'text-info' : 'text-secondary')) }}" data-id="{{ $employee->id }}">
                                 @foreach(['employee'=>'Nhân viên','team_leader'=>'Trưởng nhóm','manager'=>'Trưởng phòng','director'=>'Giám đốc'] as $value=>$label)
                                     <option value="{{ $value }}" class="text-body" @selected($employee->position === $value)>{{ $label }}</option>
+                                @endforeach
+                            </select>
+                        </td>
+                        <td>
+                            <select class="form-select form-select-sm manager-select" data-id="{{ $employee->id }}">
+                                <option value="">-- Trực tiếp Ban giám đốc --</option>
+                                @foreach($managers as $manager)
+                                    @if($manager->id != $employee->id)
+                                        <option value="{{ $manager->id }}" @selected($employee->manager_id == $manager->id)>{{ $manager->name }} ({{ $manager->employee_code }})</option>
+                                    @endif
                                 @endforeach
                             </select>
                         </td>
@@ -67,7 +103,7 @@
                         <td><a class="btn btn-sm btn-soft-primary" href="{{ route('backend.calendar.index', ['employee_id' => $employee->id]) }}">Xem lịch</a></td>
                     </tr>
                     @empty
-                    <tr><td colspan="6" class="text-center text-muted py-4">Không có nhân viên phù hợp. Bạn có thể tạo nhân viên khi nhập file chấm công.</td></tr>
+                    <tr><td colspan="9" class="text-center text-muted py-4">Không có nhân viên phù hợp. Bạn có thể tạo nhân viên khi nhập file chấm công.</td></tr>
                     @endforelse
                 </tbody>
             </table>
@@ -75,6 +111,15 @@
         {{ $employees->links() }}
     </div>
 </div>
+
+<template id="bulk-manager-template">
+    <select id="swal-bulk-manager" class="form-select">
+        <option value="">-- Trực tiếp Ban giám đốc --</option>
+        @foreach($managers as $manager)
+            <option value="{{ $manager->id }}">{{ $manager->name }} ({{ $manager->employee_code }})</option>
+        @endforeach
+    </select>
+</template>
 @endsection
 
 @push('scripts')
@@ -182,6 +227,122 @@
                 });
             });
         });
+
+        document.querySelectorAll('.manager-select').forEach(select => {
+            select.addEventListener('change', function () {
+                const employeeId = this.dataset.id;
+                const managerId = this.value;
+                const url = `{{ route('backend.employees.change-manager', ':id') }}`.replace(':id', employeeId);
+                const selectElement = this;
+
+                fetch(url, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ manager_id: managerId })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        toastMixin.fire({
+                            icon: 'success',
+                            title: data.message
+                        });
+                    } else {
+                        // Revert if self-selected
+                        if (!managerId) selectElement.value = "";
+                        toastMixin.fire({
+                            icon: 'error',
+                            title: data.message || 'Có lỗi xảy ra!'
+                        });
+                    }
+                })
+                .catch(error => {
+                    toastMixin.fire({
+                        icon: 'error',
+                        title: 'Lỗi máy chủ!'
+                    });
+                });
+            });
+        });
+
+        // Bulk edit manager logic
+        const checkAll = document.getElementById('checkAll');
+        const checkboxes = document.querySelectorAll('.employee-checkbox');
+        const btnBulk = document.getElementById('btn-bulk-edit-manager');
+
+        function toggleBulkBtn() {
+            const checkedCount = document.querySelectorAll('.employee-checkbox:checked').length;
+            if (checkedCount > 0) {
+                btnBulk.classList.remove('d-none');
+            } else {
+                btnBulk.classList.add('d-none');
+            }
+        }
+
+        if (checkAll) {
+            checkAll.addEventListener('change', function() {
+                checkboxes.forEach(cb => cb.checked = this.checked);
+                toggleBulkBtn();
+            });
+        }
+
+        checkboxes.forEach(cb => {
+            cb.addEventListener('change', function() {
+                if (!this.checked && checkAll) checkAll.checked = false;
+                toggleBulkBtn();
+            });
+        });
+
+        if (btnBulk) {
+            btnBulk.addEventListener('click', function() {
+                const checkedIds = Array.from(document.querySelectorAll('.employee-checkbox:checked')).map(cb => cb.value);
+                if (checkedIds.length === 0) return;
+
+                Swal.fire({
+                    title: 'Chọn người duyệt hàng loạt',
+                    html: document.getElementById('bulk-manager-template').innerHTML,
+                    showCancelButton: true,
+                    confirmButtonText: 'Cập nhật',
+                    cancelButtonText: 'Hủy',
+                    preConfirm: () => {
+                        return document.getElementById('swal-bulk-manager').value;
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        fetch('{{ route("backend.employees.bulk-manager") }}', {
+                            method: 'PATCH',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                employee_ids: checkedIds,
+                                manager_id: result.value
+                            })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                Swal.fire('Thành công', data.message, 'success').then(() => {
+                                    window.location.reload();
+                                });
+                            } else {
+                                Swal.fire('Lỗi', data.message || 'Có lỗi xảy ra', 'error');
+                            }
+                        })
+                        .catch(error => {
+                            Swal.fire('Lỗi', 'Lỗi kết nối máy chủ', 'error');
+                        });
+                    }
+                });
+            });
+        }
+
     });
 </script>
 @endpush

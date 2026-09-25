@@ -16,15 +16,32 @@
                 <form action="{{ route('backend.attendance-requests.store') }}" method="POST">
                     @csrf
                     
+                    @if($errors->any())
+                        <div class="alert alert-danger d-none" id="server-errors-data">
+                            @foreach($errors->all() as $err)
+                                <div class="server-error-item">{{ $err }}</div>
+                            @endforeach
+                        </div>
+                    @endif
+                    
+                    @if(auth()->check() && auth()->user()->isAdmin())
                     <div class="mb-3">
                         <label class="form-label">Nhân viên <span class="text-danger">*</span></label>
                         <select name="employee_id" class="form-control" required>
                             <option value="">Chọn nhân viên</option>
                             @foreach($employees as $emp)
-                                <option value="{{ $emp->id }}">{{ $emp->name }} ({{ $emp->employee_code }})</option>
+                                <option value="{{ $emp->id }}" data-manager="{{ $emp->manager ? $emp->manager->name : 'Ban giám đốc' }}" {{ old('employee_id', auth()->user()->employee_id) == $emp->id ? 'selected' : '' }}>{{ $emp->name }} ({{ $emp->employee_code }})</option>
                             @endforeach
                         </select>
                     </div>
+                    @else
+                        @if(!auth()->user()->employee_id)
+                            <div class="alert alert-warning">
+                                <strong>Lưu ý:</strong> Tài khoản của bạn chưa được liên kết với hồ sơ nhân viên trên hệ thống. Vui lòng liên hệ Quản trị viên để được thiết lập trước khi tạo phiếu.
+                            </div>
+                        @endif
+                        <input type="hidden" name="employee_id" value="{{ auth()->user()->employee_id }}">
+                    @endif
 
                     <div class="mb-3">
                         <label class="form-label">Loại phiếu <span class="text-danger">*</span></label>
@@ -136,9 +153,81 @@
                         <textarea name="reason" class="form-control" rows="3" required></textarea>
                     </div>
 
-                    <button type="submit" class="btn btn-primary">Lưu phiếu</button>
+                    @if(!auth()->user()->isAdmin() && !auth()->user()->employee_id)
+                        <button type="button" class="btn btn-primary" disabled>Lưu phiếu</button>
+                    @else
+                        <button type="submit" class="btn btn-primary">Lưu phiếu</button>
+                    @endif
                     <a href="{{ route('backend.attendance-requests.index') }}" class="btn btn-light">Hủy</a>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Timeline -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header align-items-center d-flex border-bottom-dashed">
+                <h4 class="card-title mb-0 flex-grow-1">Quy trình duyệt</h4>
+            </div>
+            <div class="card-body">
+                <div class="profile-timeline">
+                    <div class="accordion accordion-flush" id="accordionFlushExample">
+                        <div class="accordion-item border-0">
+                            <div class="accordion-header" id="headingOne">
+                                <a class="accordion-button p-2 shadow-none text-muted" data-bs-toggle="collapse" href="#collapseOne" aria-expanded="true">
+                                    <div class="d-flex align-items-center">
+                                        <div class="flex-shrink-0 avatar-xs">
+                                            <div class="avatar-title bg-primary rounded-circle">
+                                                <i class="ri-user-2-line"></i>
+                                            </div>
+                                        </div>
+                                        <div class="flex-grow-1 ms-3">
+                                            <h6 class="fs-14 mb-0 fw-semibold">
+                                                Bước 1: Quản lý trực tiếp
+                                            </h6>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                            <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#accordionFlushExample">
+                                <div class="accordion-body pt-0" style="border-left: 2px dashed #ced4da; margin-left: 23px; padding-left: 16px;">
+                                    <h6 class="text-primary mb-1">
+                                        Người duyệt: 
+                                        @if(!auth()->user()->isAdmin() && $currentUserEmployee)
+                                            <strong class="text-decoration-underline">{{ $currentUserEmployee->manager ? $currentUserEmployee->manager->name : 'Ban giám đốc' }}</strong>
+                                        @elseif(auth()->user()->isAdmin())
+                                            <strong class="text-decoration-underline" id="manager-name-display"></strong>
+                                        @endif
+                                    </h6>
+                                    <p class="mb-0 mt-2 text-muted">Duyệt phiếu, kiểm tra tính hợp lý của yêu cầu xin nghỉ/công tác.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item border-0">
+                            <div class="accordion-header" id="headingTwo">
+                                <a class="accordion-button p-2 shadow-none text-muted" data-bs-toggle="collapse" href="#collapseTwo" aria-expanded="true">
+                                    <div class="d-flex align-items-center">
+                                        <div class="flex-shrink-0 avatar-xs">
+                                            <div class="avatar-title bg-success rounded-circle">
+                                                <i class="ri-team-line"></i>
+                                            </div>
+                                        </div>
+                                        <div class="flex-grow-1 ms-3">
+                                            <h6 class="fs-14 mb-0 fw-semibold">Bước 2: Hành chính - Nhân sự</h6>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                            <div id="collapseTwo" class="accordion-collapse collapse show" aria-labelledby="headingTwo" data-bs-parent="#accordionFlushExample">
+                                <div class="accordion-body pt-0" style="margin-left: 23px; padding-left: 16px;">
+                                    <p class="mb-0 text-muted">Duyệt cuối, xác nhận lưu hệ thống và tính công/trừ phép.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -226,7 +315,20 @@
             altInput: true,
             altFormat: "d/m/Y",
             locale: "vn",
-            onChange: function() {
+            onChange: function(selectedDates, dateStr, instance) {
+                const hasDate = !!dateStr;
+                const startSessionLeaveSelect = document.getElementById('start_session_leave');
+                const leaveDaysInput = document.querySelector('input[name="leave_days"]');
+                if (startSessionLeaveSelect) startSessionLeaveSelect.disabled = !hasDate;
+                if (leaveDaysInput) leaveDaysInput.disabled = !hasDate;
+                const btnMinus = document.getElementById('btn-minus-leave');
+                const btnPlus = document.getElementById('btn-plus-leave');
+                if (btnMinus) btnMinus.disabled = !hasDate;
+                if (btnPlus) btnPlus.disabled = !hasDate;
+
+                if (!hasDate && startSessionLeaveSelect) {
+                    startSessionLeaveSelect.value = 'morning';
+                }
                 calculateReturnDate();
             }
         });
@@ -272,7 +374,7 @@
 
         // Form logic
         const typeSelect = document.getElementById('request-type');
-        const employeeSelect = document.querySelector('select[name="employee_id"]');
+        const employeeSelect = document.querySelector('[name="employee_id"]');
         
         // Leave Group
         const groupLeave = document.getElementById('group-leave');
@@ -477,8 +579,31 @@
         }
 
         typeSelect.addEventListener('change', updateForm);
-        employeeSelect.addEventListener('change', checkAdjustmentLimit);
-        startDateAdjInput.addEventListener('change', checkAdjustmentLimit);
+        
+        function updateManagerDisplay() {
+            if (employeeSelect && employeeSelect.tagName === 'SELECT') {
+                const selectedOption = employeeSelect.options[employeeSelect.selectedIndex];
+                const managerDisplay = document.getElementById('manager-name-display');
+                if (managerDisplay && selectedOption && selectedOption.value) {
+                    managerDisplay.textContent = selectedOption.getAttribute('data-manager') || 'Ban giám đốc';
+                } else if (managerDisplay) {
+                    managerDisplay.textContent = '';
+                }
+            }
+        }
+        
+        if (employeeSelect) {
+            employeeSelect.addEventListener('change', () => {
+                checkAdjustmentLimit();
+                updateManagerDisplay();
+            });
+            // Initial call
+            updateManagerDisplay();
+        }
+
+        if (startDateAdjInput) {
+            startDateAdjInput.addEventListener('change', checkAdjustmentLimit);
+        }
         
         startDateLeaveInput.addEventListener('change', () => {
             const hasDate = !!startDateLeaveInput.value;
@@ -500,20 +625,48 @@
         leaveDaysInput.addEventListener('input', calculateReturnDate);
 
         document.getElementById('btn-minus-leave').addEventListener('click', function() {
-            let val = parseFloat(leaveDaysInput.value) || 0;
-            if (val > 0.5) {
-                leaveDaysInput.value = val - 0.5;
-                calculateReturnDate();
+            try {
+                leaveDaysInput.stepDown();
+            } catch(e) {
+                let valStr = leaveDaysInput.value.replace(',', '.');
+                let val = parseFloat(valStr) || 0;
+                if (val > 0.5) leaveDaysInput.value = val - 0.5;
             }
+            leaveDaysInput.dispatchEvent(new Event('input'));
         });
 
         document.getElementById('btn-plus-leave').addEventListener('click', function() {
-            let val = parseFloat(leaveDaysInput.value) || 0;
-            leaveDaysInput.value = val + 0.5;
-            calculateReturnDate();
+            try {
+                leaveDaysInput.stepUp();
+            } catch(e) {
+                let valStr = leaveDaysInput.value.replace(',', '.');
+                let val = parseFloat(valStr) || 0;
+                leaveDaysInput.value = val + 0.5;
+            }
+            leaveDaysInput.dispatchEvent(new Event('input'));
         });
 
         updateForm();
+
+        // Show server errors as SweetAlert
+        const errorData = document.getElementById('server-errors-data');
+        if (errorData) {
+            const items = errorData.querySelectorAll('.server-error-item');
+            if (items.length > 0) {
+                let errorHtml = '<ul class="text-start mb-0">';
+                items.forEach(item => {
+                    errorHtml += `<li>${item.textContent}</li>`;
+                });
+                errorHtml += '</ul>';
+
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Đã có lỗi xảy ra',
+                    html: errorHtml,
+                    confirmButtonText: 'Đóng'
+                });
+            }
+        }
     });
 </script>
 @endpush

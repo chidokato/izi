@@ -87,10 +87,12 @@
                             </button>
                             <div class="dropdown-menu dropdown-menu-end">
                                 <h6 class="dropdown-header">Welcome {{ auth()->user()?->name ?? 'Admin' }}!</h6>
+                                @if(auth()->check() && auth()->user()->isAdmin())
                                 <a class="dropdown-item" href="{{ route('backend.users.index') }}">
                                     <i class="mdi mdi-account-circle text-muted fs-16 align-middle me-1"></i>
                                     <span class="align-middle">User</span>
                                 </a>
+                                @endif
                                 <a class="dropdown-item" href="{{ route('backend.admin.logout') }}" onclick="event.preventDefault(); document.getElementById('admin-logout-form').submit();">
                                     <i class="mdi mdi-logout text-muted fs-16 align-middle me-1"></i>
                                     <span class="align-middle">Logout</span>

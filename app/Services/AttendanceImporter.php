@@ -97,7 +97,27 @@ class AttendanceImporter
                     if (! $dept) {
                         $dept = DB::table('departments')->insertGetId(['name' => $r['department'], 'status' => 'active', 'created_at' => $now, 'updated_at' => $now]);
                     }
-                    $employeeId = DB::table('employees')->insertGetId(['employee_code' => $r['code'], 'name' => $r['name'], 'department_id' => $dept, 'status' => 'active', 'created_at' => $now, 'updated_at' => $now]);
+                    $managerId = null;
+                    if ($dept) {
+                        $manager = DB::table('employees')
+                            ->where('department_id', $dept)
+                            ->where('status', 'active')
+                            ->whereIn('position', ['director', 'manager', 'team_leader'])
+                            ->orderByRaw("FIELD(position, 'director', 'manager', 'team_leader')")
+                            ->first();
+                        if ($manager) {
+                            $managerId = $manager->id;
+                        }
+                    }
+                    $employeeId = DB::table('employees')->insertGetId([
+                        'employee_code' => $r['code'], 
+                        'name' => $r['name'], 
+                        'department_id' => $dept, 
+                        'manager_id' => $managerId,
+                        'status' => 'active', 
+                        'created_at' => $now, 
+                        'updated_at' => $now
+                    ]);
                     $created[$r['code']] = true;
                 } else {
                     $employeeId = $employee->id;

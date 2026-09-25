@@ -12,11 +12,12 @@ class EmployeeController extends Controller
         $request->validate([
             'q' => 'nullable|string|max:100',
             'department_id' => 'nullable|integer|exists:departments,id',
+            'position' => 'nullable|in:employee,team_leader,manager,director',
             'status' => 'nullable|in:active,inactive,resigned',
         ]);
         $query = DB::table('employees as e')
             ->leftJoin('departments as d', 'd.id', '=', 'e.department_id')
-            ->select('e.id', 'e.employee_code', 'e.name', 'e.status', 'e.position', 'd.name as department_name');
+            ->select('e.id', 'e.employee_code', 'e.name', 'e.status', 'e.position', 'e.manager_id', 'd.name as department_name');
         if ($request->filled('q')) {
             $term = trim($request->input('q'));
             $query->where(function ($q) use ($term) {
@@ -27,6 +28,9 @@ class EmployeeController extends Controller
         if ($request->filled('department_id')) {
             $query->where('e.department_id', $request->input('department_id'));
         }
+        if ($request->filled('position')) {
+            $query->where('e.position', $request->input('position'));
+        }
         if ($request->filled('status')) {
             $query->where('e.status', $request->input('status'));
         }
@@ -34,6 +38,11 @@ class EmployeeController extends Controller
         return view('backend.employees.index', [
             'employees' => $query->orderBy('e.employee_code')->paginate(50)->withQueryString(),
             'departments' => DB::table('departments')->orderBy('name')->get(['id', 'name']),
+            'managers' => DB::table('employees')
+                ->where('status', 'active')
+                ->whereIn('position', ['team_leader', 'manager', 'director'])
+                ->orderBy('name')
+                ->get(['id', 'name', 'employee_code']),
         ]);
     }
 
@@ -66,6 +75,55 @@ class EmployeeController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Cập nhật chức vụ thành công!'
+        ]);
+    }
+
+    public function changeManager(Request $request, $id)
+    {
+        $request->validate([
+            'manager_id' => 'nullable|integer|exists:employees,id'
+        ]);
+
+        if ($request->manager_id == $id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không thể tự chọn mình làm quản lý!'
+            ], 400);
+        }
+
+        $employee = \App\Models\Employee::findOrFail($id);
+        $employee->manager_id = $request->manager_id;
+        $employee->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Cập nhật quản lý trực tiếp thành công!'
+        ]);
+    }
+
+    public function bulkManager(Request $request)
+    {
+        $request->validate([
+            'employee_ids' => 'required|array',
+            'employee_ids.*' => 'integer|exists:employees,id',
+            'manager_id' => 'nullable|integer|exists:employees,id'
+        ]);
+
+        $managerId = $request->manager_id;
+        $employeeIds = $request->employee_ids;
+
+        if ($managerId && in_array($managerId, $employeeIds)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Bạn không thể chọn người duyệt là một trong những người đang được chọn để cập nhật!'
+            ], 400);
+        }
+
+        \App\Models\Employee::whereIn('id', $employeeIds)->update(['manager_id' => $managerId]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Cập nhật người duyệt hàng loạt thành công cho ' . count($employeeIds) . ' nhân viên!'
         ]);
     }
 }

@@ -13,7 +13,11 @@ class AdminController extends Controller
     public function login(): View|RedirectResponse
     {
         if (Auth::check() && in_array(Auth::user()->permission, [1, 2, 3])) {
-            return redirect()->route('backend.admin.dashboard');
+            if (Auth::user()->is_active) {
+                return redirect()->route('backend.admin.dashboard');
+            } else {
+                Auth::logout();
+            }
         }
 
         return view('backend.auth.login');

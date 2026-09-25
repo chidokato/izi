@@ -65,7 +65,8 @@
                                 <th>Thời gian</th>
                                 <th>Lý do</th>
                                 <th>Ngày tạo</th>
-                                <th>Trạng thái</th>
+                                <th>Quản lý duyệt</th>
+                                <th>NS duyệt</th>
                                 <th>Thao tác</th>
                             </tr>
                         </thead>
@@ -103,33 +104,74 @@
                                     </td>
                                     <td>{{ Str::limit($req->reason, 30) }}</td>
                                     <td>{{ $req->created_at->format('H:i d/m/Y') }}</td>
-                                    <td id="status-badge-{{ $req->id }}">
-                                        @if($req->status == 'pending') 
-                                            @if($req->current_approval_step == 1)
-                                                <span class="badge bg-warning">Chờ Lãnh đạo duyệt</span>
+                                    @php
+                                        $step1 = $req->requestApprovals->where('step', 1)->first();
+                                        $step2 = $req->requestApprovals->where('step', 2)->first();
+                                        
+                                        $canApproveStep1 = false;
+                                        if ($step1 && $req->current_approval_step == 1 && $req->status == 'pending') {
+                                            if ($step1->approver_id == auth()->id() || auth()->user()->isAdmin()) {
+                                                $canApproveStep1 = true;
+                                            }
+                                        }
+                                        
+                                        $canApproveStep2 = false;
+                                        if ($step2 && $req->current_approval_step == 2 && $req->status == 'pending') {
+                                            if ($step2->approver_id == auth()->id() || auth()->user()->isAdmin()) {
+                                                $canApproveStep2 = true;
+                                            }
+                                        }
+                                    @endphp
+                                    <td id="step1-container-{{ $req->id }}">
+                                        @if($step1)
+                                            @if($canApproveStep1)
+                                                <select class="form-select form-select-sm btn-quick-approve-select {{ $step1->status == 'approved' ? 'border-success text-success' : ($step1->status == 'rejected' ? 'border-danger text-danger' : 'border-warning text-warning') }}" data-id="{{ $req->id }}" style="font-weight: 600;">
+                                                    <option value="pending" class="text-warning" {{ $step1->status == 'pending' ? 'selected' : '' }}>Chờ duyệt</option>
+                                                    <option value="approved" class="text-success" {{ $step1->status == 'approved' ? 'selected' : '' }}>Đã duyệt</option>
+                                                    <option value="rejected" class="text-danger" {{ $step1->status == 'rejected' ? 'selected' : '' }}>Từ chối</option>
+                                                </select>
                                             @else
-                                                <span class="badge bg-warning">Chờ Nhân sự duyệt</span>
+                                                @if($step1->status == 'approved') <span class="badge bg-success">Đã duyệt</span>
+                                                @elseif($step1->status == 'rejected') <span class="badge bg-danger">Từ chối</span>
+                                                @else <span class="badge bg-warning">Chờ duyệt</span> @endif
                                             @endif
-                                        @elseif($req->status == 'approved') <span class="badge bg-success">Đã duyệt</span>
-                                        @elseif($req->status == 'rejected') <span class="badge bg-danger">Từ chối</span>
-                                        @else <span class="badge bg-secondary">{{ $req->status }}</span> @endif
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
+                                    </td>
+                                    <td id="step2-container-{{ $req->id }}">
+                                        @if($step2)
+                                            @if($canApproveStep2)
+                                                <select class="form-select form-select-sm btn-quick-approve-select {{ $step2->status == 'approved' ? 'border-success text-success' : ($step2->status == 'rejected' ? 'border-danger text-danger' : 'border-warning text-warning') }}" data-id="{{ $req->id }}" style="font-weight: 600;">
+                                                    <option value="pending" class="text-warning" {{ $step2->status == 'pending' ? 'selected' : '' }}>Chờ duyệt</option>
+                                                    <option value="approved" class="text-success" {{ $step2->status == 'approved' ? 'selected' : '' }}>Đã duyệt</option>
+                                                    <option value="rejected" class="text-danger" {{ $step2->status == 'rejected' ? 'selected' : '' }}>Từ chối</option>
+                                                </select>
+                                            @else
+                                                @if($step2->status == 'approved') <span class="badge bg-success">Đã duyệt</span>
+                                                @elseif($step2->status == 'rejected') <span class="badge bg-danger">Từ chối</span>
+                                                @else <span class="badge bg-warning">Chờ duyệt</span> @endif
+                                            @endif
+                                        @else
+                                            @if($req->status == 'rejected' && $req->current_approval_step == 1)
+                                                <span class="badge bg-danger">Từ chối</span>
+                                            @elseif($req->status == 'cancelled')
+                                                <span class="badge bg-secondary">Đã hủy</span>
+                                            @else
+                                                <span class="badge bg-light text-dark">Chờ QL duyệt</span>
+                                            @endif
+                                        @endif
                                     </td>
                                     <td>
                                         <div class="d-flex gap-1 align-items-center" id="action-buttons-{{ $req->id }}">
-                                            @php
-                                                $canApprove = false;
-                                                if ($req->status == 'pending') {
-                                                    $currentApproval = $req->requestApprovals->where('step', $req->current_approval_step)->first();
-                                                    if ($currentApproval && $currentApproval->approver_id == auth()->id()) {
-                                                        $canApprove = true;
-                                                    }
-                                                }
-                                            @endphp
-                                            @if($canApprove)
-                                                <button class="btn btn-sm btn-success btn-quick-approve" data-id="{{ $req->id }}" data-status="approved">Duyệt</button>
-                                                <button class="btn btn-sm btn-danger btn-quick-approve" data-id="{{ $req->id }}" data-status="rejected">Từ chối</button>
-                                            @endif
                                             <a href="{{ route('backend.attendance-requests.edit', $req->id) }}" class="btn btn-sm btn-info">Chi tiết</a>
+                                            @if(auth()->user()->isAdmin())
+                                                <form action="{{ route('backend.attendance-requests.destroy', $req->id) }}" method="POST" class="d-inline-block form-delete-request">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="btn btn-sm btn-danger"><i class="ri-delete-bin-line"></i></button>
+                                                </form>
+                                            @endif
                                         </div>
                                     </td>
                                 </tr>
@@ -151,51 +193,98 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.btn-quick-approve').forEach(function(btn) {
-        btn.addEventListener('click', function(e) {
-            e.preventDefault();
+    document.querySelectorAll('.btn-quick-approve-select').forEach(function(select) {
+        // Save original value to revert if cancelled or failed
+        select.dataset.original = select.value;
+        
+        select.addEventListener('change', function(e) {
             let id = this.getAttribute('data-id');
-            let status = this.getAttribute('data-status');
+            let status = this.value;
+            let actionText = status == 'approved' ? 'duyệt' : (status == 'rejected' ? 'từ chối' : 'chuyển về chờ duyệt');
             
-            if (confirm('Bạn có chắc chắn muốn ' + (status == 'approved' ? 'duyệt' : 'từ chối') + ' phiếu này?')) {
-                // Disable buttons
-                let buttons = document.querySelectorAll('#action-buttons-' + id + ' .btn-quick-approve');
-                buttons.forEach(b => b.disabled = true);
-                
-                fetch('{{ url("admin/attendance-requests") }}/' + id, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                    },
-                    body: JSON.stringify({
-                        status: status
+            Swal.fire({
+                title: 'Xác nhận',
+                text: `Bạn có chắc chắn muốn ${actionText} phiếu này?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: status == 'approved' ? '#0ab39c' : (status == 'rejected' ? '#f06548' : '#f7b84b'),
+                cancelButtonColor: '#878a99',
+                confirmButtonText: 'Đồng ý',
+                cancelButtonText: 'Hủy bỏ'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    this.disabled = true;
+
+                    fetch('{{ url("admin/attendance-requests") }}/' + id, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                        },
+                        body: JSON.stringify({
+                            status: status
+                        })
                     })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if(data.success) {
-                        let badgeHtml = '';
-                        if (data.status == 'approved') badgeHtml = '<span class=\"badge bg-success\">Đã duyệt</span>';
-                        else if (data.status == 'rejected') badgeHtml = '<span class=\"badge bg-danger\">Từ chối</span>';
-                        else badgeHtml = '<span class=\"badge bg-secondary\">' + data.status + '</span>';
-                        
-                        document.getElementById('status-badge-' + id).innerHTML = badgeHtml;
-                        
-                        // Remove quick buttons
-                        buttons.forEach(b => b.remove());
-                    } else {
-                        alert('Có lỗi xảy ra, vui lòng thử lại.');
-                        buttons.forEach(b => b.disabled = false);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('Lỗi kết nối.');
-                    buttons.forEach(b => b.disabled = false);
-                });
-            }
+                    .then(response => response.json())
+                    .then(data => {
+                        this.disabled = false;
+                        if(data.success) {
+                            // Update border and text colors based on new status
+                            this.classList.remove('border-success', 'text-success', 'border-danger', 'text-danger', 'border-warning', 'text-warning');
+                            if (data.status == 'approved') {
+                                this.classList.add('border-success', 'text-success');
+                            } else if (data.status == 'rejected') {
+                                this.classList.add('border-danger', 'text-danger');
+                            } else if (data.status == 'pending') {
+                                this.classList.add('border-warning', 'text-warning');
+                            }
+                            
+                            Swal.fire({
+                                toast: true,
+                                position: 'bottom-start',
+                                icon: 'success',
+                                title: data.message,
+                                showConfirmButton: false,
+                                timer: 1500
+                            }).then(() => {
+                                window.location.reload();
+                            });
+                        } else {
+                            Swal.fire('Lỗi', 'Có lỗi xảy ra, vui lòng thử lại.', 'error');
+                            this.value = this.dataset.original; // Revert
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        Swal.fire('Lỗi', 'Lỗi kết nối.', 'error');
+                        this.disabled = false;
+                        this.value = this.dataset.original; // Revert
+                    });
+                } else {
+                    this.value = this.dataset.original; // Revert if cancelled
+                }
+            });
+        });
+    });
+
+    document.querySelectorAll('.form-delete-request').forEach(function(form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            Swal.fire({
+                title: 'Xóa phiếu?',
+                text: 'Bạn có chắc chắn muốn xóa phiếu này? Nếu phiếu đã duyệt, số phép năm (nếu có) sẽ được hoàn lại.',
+                icon: 'error',
+                showCancelButton: true,
+                confirmButtonColor: '#f06548',
+                cancelButtonColor: '#878a99',
+                confirmButtonText: 'Xóa',
+                cancelButtonText: 'Hủy'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
         });
     });
 });

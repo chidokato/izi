@@ -118,9 +118,18 @@ class AttendanceCalendarController extends Controller
                     $status = 'leave';
                     $label = 'Nghỉ phép';
                     if ($req->type === 'paid_leave') {
-                        $paidCong = 1;
-                        if (($req->start_session === 'afternoon' && substr($req->start_date, 0, 10) == $dateStr) || ($req->end_session === 'morning' && substr($req->end_date, 0, 10) == $dateStr)) {
-                            $paidCong = 0.5;
+                        if ($rule && $rule->is_working_day) {
+                            if ($date->dayOfWeek == 6) {
+                                $paidCong = 0.5;
+                                if ($req->start_session === 'afternoon' && substr($req->start_date, 0, 10) == $dateStr) {
+                                    $paidCong = 0;
+                                }
+                            } else {
+                                $paidCong = 1;
+                                if (($req->start_session === 'afternoon' && substr($req->start_date, 0, 10) == $dateStr) || ($req->end_session === 'morning' && substr($req->end_date, 0, 10) == $dateStr)) {
+                                    $paidCong = 0.5;
+                                }
+                            }
                         }
                     }
                 } elseif ($req->type === 'attendance_adjustment') {
