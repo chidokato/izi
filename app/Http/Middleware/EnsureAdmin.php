@@ -33,6 +33,7 @@ class EnsureAdmin
                 'backend.attendance-requests.update',
                 'backend.attendance-requests.destroy',
                 'backend.attendance-requests.check-limit',
+                'backend.attendance-requests.bulk-approve',
                 'backend.admin.logout',
                 'backend.admin.dashboard',
             ];

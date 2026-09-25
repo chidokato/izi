@@ -16,6 +16,9 @@
                 <div class="d-flex align-items-center">
                     <h5 class="card-title mb-0 flex-grow-1">Danh sách phiếu</h5>
                     <div class="flex-shrink-0">
+                        @if(isset($canBulkApprove) && $canBulkApprove)
+                        <button type="button" class="btn btn-success d-none" id="btn-bulk-approve"><i class="ri-check-double-line align-bottom me-1"></i> Duyệt hàng loạt</button>
+                        @endif
                         <a href="{{ route('backend.attendance-requests.create') }}" class="btn btn-primary"><i class="ri-add-line align-bottom me-1"></i> Tạo phiếu mới</a>
                     </div>
                 </div>
@@ -59,6 +62,13 @@
                     <table class="table align-middle table-nowrap mb-0">
                         <thead class="table-light">
                             <tr>
+                                @if(isset($canBulkApprove) && $canBulkApprove)
+                                <th style="width: 40px;">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="checkAll">
+                                    </div>
+                                </th>
+                                @endif
                                 <th>Mã phiếu</th>
                                 <th>Nhân viên</th>
                                 <th>Loại</th>
@@ -73,6 +83,13 @@
                         <tbody>
                             @forelse ($requests as $req)
                                 <tr>
+                                    @if(isset($canBulkApprove) && $canBulkApprove)
+                                    <td>
+                                        <div class="form-check">
+                                            <input class="form-check-input request-checkbox" type="checkbox" value="{{ $req->id }}">
+                                        </div>
+                                    </td>
+                                    @endif
                                     <td>{{ $req->code }}</td>
                                     <td>
                                         <div class="fw-medium">{{ optional($req->employee)->name }}</div>
@@ -110,7 +127,7 @@
                                         
                                         $canApproveStep1 = false;
                                         if ($step1 && $req->current_approval_step == 1 && $req->status == 'pending') {
-                                            if ($step1->approver_id == auth()->id() || auth()->user()->isAdmin()) {
+                                            if ($step1->approver_id == auth()->id() || auth()->user()->isAdmin() || optional($req->employee)->manager_id == auth()->user()->employee_id) {
                                                 $canApproveStep1 = true;
                                             }
                                         }
@@ -176,7 +193,7 @@
                                     </td>
                                 </tr>
                             @empty
-                                <tr><td colspan="8" class="text-center">Chưa có dữ liệu</td></tr>
+                                <tr><td colspan="{{ (isset($canBulkApprove) && $canBulkApprove) ? 9 : 8 }}" class="text-center">Chưa có dữ liệu</td></tr>
                             @endforelse
                         </tbody>
                     </table>
@@ -287,6 +304,90 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     });
+
+    const checkAll = document.getElementById('checkAll');
+    const requestCheckboxes = document.querySelectorAll('.request-checkbox');
+    const btnBulkApprove = document.getElementById('btn-bulk-approve');
+
+    function toggleBulkButton() {
+        const checkedCount = document.querySelectorAll('.request-checkbox:checked').length;
+        if (checkedCount > 0) {
+            btnBulkApprove.classList.remove('d-none');
+        } else {
+            btnBulkApprove.classList.add('d-none');
+        }
+    }
+
+    if (checkAll) {
+        checkAll.addEventListener('change', function() {
+            requestCheckboxes.forEach(cb => cb.checked = this.checked);
+            toggleBulkButton();
+        });
+    }
+
+    requestCheckboxes.forEach(cb => {
+        cb.addEventListener('change', function() {
+            if (!this.checked && checkAll) checkAll.checked = false;
+            toggleBulkButton();
+        });
+    });
+
+    if (btnBulkApprove) {
+        btnBulkApprove.addEventListener('click', function() {
+            const selectedIds = Array.from(document.querySelectorAll('.request-checkbox:checked')).map(cb => cb.value);
+            
+            Swal.fire({
+                title: 'Duyệt phiếu hàng loạt',
+                text: `Bạn muốn duyệt ${selectedIds.length} phiếu đã chọn?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#0ab39c',
+                cancelButtonColor: '#878a99',
+                confirmButtonText: 'Đồng ý duyệt',
+                cancelButtonText: 'Hủy bỏ'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({
+                        title: 'Đang xử lý...',
+                        allowOutsideClick: false,
+                        didOpen: () => Swal.showLoading()
+                    });
+
+                    fetch('{{ route("backend.attendance-requests.bulk-approve") }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                        },
+                        body: JSON.stringify({
+                            ids: selectedIds,
+                            status: 'approved'
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Thành công',
+                                text: data.message,
+                                timer: 1500,
+                                showConfirmButton: false
+                            }).then(() => {
+                                window.location.reload();
+                            });
+                        } else {
+                            Swal.fire('Lỗi', data.message || 'Có lỗi xảy ra', 'error');
+                        }
+                    })
+                    .catch(error => {
+                        console.error(error);
+                        Swal.fire('Lỗi', 'Không thể kết nối đến máy chủ', 'error');
+                    });
+                }
+            });
+        });
+    }
 });
 </script>
 @endpush

@@ -59,8 +59,10 @@
                         $canApprove = false;
                         if ($attendanceRequest->status == 'pending') {
                             $currentApproval = $attendanceRequest->requestApprovals->where('step', $attendanceRequest->current_approval_step)->first();
-                            if ($currentApproval && $currentApproval->approver_id == auth()->id()) {
-                                $canApprove = true;
+                            if ($currentApproval) {
+                                if ($currentApproval->approver_id == auth()->id() || auth()->user()->isAdmin() || ($attendanceRequest->current_approval_step == 1 && optional($attendanceRequest->employee)->manager_id == auth()->user()->employee_id)) {
+                                    $canApprove = true;
+                                }
                             }
                         }
                     @endphp

@@ -16,7 +16,15 @@ class AttendanceRequestController extends Controller
 
         $user = auth()->user();
         if ($user && !$user->isAdmin()) {
-            $query->where('employee_id', $user->employee_id);
+            $query->where(function($q) use ($user) {
+                $q->where('employee_id', $user->employee_id)
+                  ->orWhereHas('requestApprovals', function($q2) use ($user) {
+                      $q2->where('approver_id', $user->id);
+                  })
+                  ->orWhereHas('employee', function($q3) use ($user) {
+                      $q3->where('manager_id', $user->employee_id);
+                  });
+            });
         }
 
         if ($request->filled('status')) {
@@ -37,7 +45,13 @@ class AttendanceRequestController extends Controller
 
         $requests = $query->paginate(20);
 
-        return view('backend.attendance_requests.index', compact('requests'));
+        $canBulkApprove = $user->isAdmin();
+        if (!$canBulkApprove && $user->employee_id) {
+            $canBulkApprove = Employee::where('manager_id', $user->employee_id)->exists() || 
+                              \App\Models\RequestApproval::where('approver_id', $user->id)->exists();
+        }
+
+        return view('backend.attendance_requests.index', compact('requests', 'canBulkApprove'));
     }
 
     public function create()
@@ -336,6 +350,88 @@ class AttendanceRequestController extends Controller
         }
 
         return redirect()->route('backend.attendance-requests.index')->with('success', $message ?? 'Đã cập nhật trạng thái phiếu.');
+    }
+
+    public function bulkApprove(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:attendance_requests,id',
+            'status' => 'required|in:approved,rejected',
+        ]);
+
+        $user = auth()->user();
+        $status = $request->status;
+        $count = 0;
+
+        foreach ($request->ids as $id) {
+            $attendanceRequest = AttendanceRequest::find($id);
+            if (!$attendanceRequest || $attendanceRequest->status !== 'pending') continue;
+
+            $currentApproval = $attendanceRequest->requestApprovals->where('step', $attendanceRequest->current_approval_step)->first();
+            
+            $canApprove = false;
+            if ($currentApproval) {
+                if ($currentApproval->approver_id == $user->id || $user->isAdmin() || ($attendanceRequest->current_approval_step == 1 && optional($attendanceRequest->employee)->manager_id == $user->employee_id)) {
+                    $canApprove = true;
+                }
+            }
+
+            if (!$canApprove) continue;
+
+            $originalStatus = $attendanceRequest->status;
+
+            if ($status === 'approved') {
+                if ($attendanceRequest->current_approval_step == 1) {
+                    RequestApproval::where('request_id', $attendanceRequest->id)
+                        ->where('step', 1)
+                        ->update(['status' => 'approved', 'acted_at' => now(), 'approver_id' => $user->id]);
+                    
+                    $adminUser = User::whereIn('permission', [1,2])->first();
+                    $attendanceRequest->update(['current_approval_step' => 2]);
+                    RequestApproval::create([
+                        'request_id' => $attendanceRequest->id,
+                        'approver_id' => $adminUser->id ?? 1,
+                        'step' => 2,
+                        'status' => 'pending',
+                    ]);
+                } else if ($attendanceRequest->current_approval_step == 2) {
+                    RequestApproval::where('request_id', $attendanceRequest->id)
+                        ->where('step', 2)
+                        ->update(['status' => 'approved', 'acted_at' => now(), 'approver_id' => $user->id]);
+                    
+                    $attendanceRequest->update([
+                        'status' => 'approved',
+                        'approved_at' => now(),
+                    ]);
+
+                    if ($originalStatus !== 'approved' && $attendanceRequest->type === 'paid_leave') {
+                        $days = $this->calculateLeaveDays($attendanceRequest);
+                        $attendanceRequest->employee()->decrement('annual_leave_balance', $days);
+                    }
+                }
+            } else if ($status === 'rejected') {
+                RequestApproval::where('request_id', $attendanceRequest->id)
+                    ->where('step', $attendanceRequest->current_approval_step)
+                    ->update(['status' => 'rejected', 'acted_at' => now(), 'approver_id' => $user->id]);
+                
+                $attendanceRequest->update([
+                    'status' => 'rejected',
+                    'rejected_at' => now(),
+                ]);
+
+                if ($originalStatus === 'approved' && $attendanceRequest->type === 'paid_leave') {
+                    $days = $this->calculateLeaveDays($attendanceRequest);
+                    $attendanceRequest->employee()->increment('annual_leave_balance', $days);
+                }
+            }
+            $count++;
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Đã xử lý ' . $count . ' phiếu thành công.',
+        ]);
     }
 
     public function destroy(AttendanceRequest $attendanceRequest)

@@ -156,6 +156,7 @@ Route::prefix('admin/attendance-requests')->name('backend.attendance-requests.')
     Route::get('/create', [\App\Http\Controllers\AttendanceRequestController::class, 'create'])->name('create');
     Route::post('/', [\App\Http\Controllers\AttendanceRequestController::class, 'store'])->name('store');
     Route::get('/check-limit', [\App\Http\Controllers\AttendanceRequestController::class, 'checkLimit'])->name('check-limit');
+    Route::post('/bulk-approve', [\App\Http\Controllers\AttendanceRequestController::class, 'bulkApprove'])->name('bulk-approve');
     Route::get('/{attendanceRequest}/edit', [\App\Http\Controllers\AttendanceRequestController::class, 'edit'])->name('edit');
     Route::put('/{attendanceRequest}', [\App\Http\Controllers\AttendanceRequestController::class, 'update'])->name('update');
     Route::delete('/{attendanceRequest}', [\App\Http\Controllers\AttendanceRequestController::class, 'destroy'])->name('destroy');
