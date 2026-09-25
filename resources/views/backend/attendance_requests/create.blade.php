@@ -46,14 +46,14 @@
                     <div class="mb-3">
                         <label class="form-label">Loại phiếu <span class="text-danger">*</span></label>
                         <select name="type" id="request-type" class="form-control" required>
-                            <option value="paid_leave">Nghỉ phép năm</option>
-                            <option value="unpaid_leave">Nghỉ không lương</option>
-                            <option value="business_trip">Phiếu công tác</option>
-                            <option value="attendance_adjustment">Bổ sung công (quên chấm)</option>
-                            <option value="overtime">Làm tăng ca</option>
+                            <option value="unpaid_leave" {{ old('type', 'unpaid_leave') == 'unpaid_leave' ? 'selected' : '' }}>Nghỉ không lương</option>
+                            <option value="paid_leave" {{ old('type') == 'paid_leave' ? 'selected' : '' }}>Nghỉ phép năm</option>
+                            <option value="business_trip" {{ old('type') == 'business_trip' ? 'selected' : '' }}>Phiếu công tác</option>
+                            <option value="attendance_adjustment" {{ old('type') == 'attendance_adjustment' ? 'selected' : '' }}>Bổ sung công (quên chấm)</option>
+                            <option value="overtime" {{ old('type') == 'overtime' ? 'selected' : '' }}>Làm tăng ca</option>
                         </select>
-                        <div id="adjustment-limit-info" class="text-info mt-1" style="display: none; font-size: 0.875rem;">
-                            <i class="ri-information-line align-middle"></i> Số phiếu quên chấm còn lại trong tháng: <strong id="limit-count">.../3</strong>
+                        <div id="limit-info" class="text-info mt-1" style="display: none; font-size: 0.875rem;">
+                            <i class="ri-information-line align-middle"></i>
                         </div>
                     </div>
 
@@ -154,9 +154,9 @@
                     </div>
 
                     @if(!auth()->user()->isAdmin() && !auth()->user()->employee_id)
-                        <button type="button" class="btn btn-primary" disabled>Lưu phiếu</button>
+                        <button type="button" class="btn btn-primary" id="btn-submit" disabled>Lưu phiếu</button>
                     @else
-                        <button type="submit" class="btn btn-primary">Lưu phiếu</button>
+                        <button type="submit" class="btn btn-primary" id="btn-submit">Lưu phiếu</button>
                     @endif
                     <a href="{{ route('backend.attendance-requests.index') }}" class="btn btn-light">Hủy</a>
                 </form>
@@ -393,8 +393,7 @@
         // Overtime Group
         const groupOvertime = document.getElementById('group-overtime');
         
-        const limitInfo = document.getElementById('adjustment-limit-info');
-        const limitCount = document.getElementById('limit-count');
+        const limitInfo = document.getElementById('limit-info');
 
         function calculateReturnDate() {
             if (typeSelect.value === 'business_trip' || typeSelect.value === 'attendance_adjustment' || typeSelect.value === 'overtime') {
@@ -488,28 +487,80 @@
             returnDateDisplay.value = `${dd}/${mm}/${yyyy} ${returnSessionStr}`;
         }
 
-        function checkAdjustmentLimit() {
-            if (typeSelect.value !== 'attendance_adjustment' || !employeeSelect.value) {
-                return;
+        const isOrphanUser = {{ (!auth()->user()->isAdmin() && !auth()->user()->employee_id) ? 'true' : 'false' }};
+        function setSubmitButtonState(isDisabled) {
+            const btnSubmit = document.getElementById('btn-submit');
+            if (btnSubmit) {
+                btnSubmit.disabled = isOrphanUser ? true : isDisabled;
             }
-            const date = startDateAdjInput.value;
+        }
+
+        let currentLeaveBalance = 0;
+
+        function fetchLimits() {
+            if (!employeeSelect.value) return;
+            const date = startDateAdjInput.value || (new Date().toISOString().split('T')[0]);
             fetch(`{{ route('backend.attendance-requests.check-limit') }}?employee_id=${employeeSelect.value}&date=${date}`)
                 .then(response => response.json())
                 .then(data => {
-                    limitCount.innerText = `${data.remaining}/${data.total}`;
-                    if (data.remaining <= 0) {
-                        limitInfo.classList.remove('text-info');
-                        limitInfo.classList.add('text-danger');
-                        limitInfo.innerHTML = `<i class="ri-error-warning-line align-middle"></i> Nhân viên này đã sử dụng hết 3 phiếu quên chấm trong tháng ${data.month}.`;
-                    } else {
+                    if (typeSelect.value === 'attendance_adjustment') {
+                        if (data.remaining <= 0) {
+                            limitInfo.style.display = 'block';
+                            limitInfo.classList.remove('text-info');
+                            limitInfo.classList.add('text-danger');
+                            limitInfo.innerHTML = `<i class="ri-error-warning-line align-middle"></i> Nhân viên này đã sử dụng hết 3 phiếu quên chấm trong tháng ${data.month}.`;
+                            
+                            setSubmitButtonState(true);
+                            
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Đã hết lượt bổ sung công',
+                                text: `Nhân viên này đã sử dụng hết 3 phiếu quên chấm trong tháng ${data.month}. Không thể làm thêm phiếu này.`,
+                                confirmButtonColor: '#0ab39c',
+                            });
+                        } else {
+                            limitInfo.style.display = 'block';
+                            limitInfo.classList.remove('text-danger');
+                            limitInfo.classList.add('text-info');
+                            limitInfo.innerHTML = `<i class="ri-information-line align-middle"></i> Số phiếu quên chấm còn lại trong tháng ${data.month}: <strong>${data.remaining}/${data.total}</strong>`;
+                            
+                            setSubmitButtonState(false);
+                        }
+                    } else if (typeSelect.value === 'paid_leave') {
+                        currentLeaveBalance = parseFloat(data.leave_balance) || 0;
+                        limitInfo.style.display = 'block';
                         limitInfo.classList.remove('text-danger');
                         limitInfo.classList.add('text-info');
-                        limitInfo.innerHTML = `<i class="ri-information-line align-middle"></i> Số phiếu quên chấm còn lại trong tháng ${data.month}: <strong>${data.remaining}/${data.total}</strong>`;
+                        limitInfo.innerHTML = `<i class="ri-information-line align-middle"></i> Số phép năm còn lại: <strong>${currentLeaveBalance} ngày</strong>`;
+                        validateLeaveBalance();
                     }
                 });
         }
 
+        function validateLeaveBalance() {
+            if (typeSelect.value !== 'paid_leave') return;
+            const requestedDays = parseFloat(leaveDaysInput.value) || 0;
+            if (requestedDays > currentLeaveBalance) {
+                limitInfo.classList.remove('text-info');
+                limitInfo.classList.add('text-danger');
+                limitInfo.innerHTML = `<i class="ri-error-warning-line align-middle"></i> Số phép năm còn lại (${currentLeaveBalance} ngày) không đủ cho yêu cầu này (${requestedDays} ngày).`;
+                setSubmitButtonState(true);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Không đủ phép năm',
+                    text: `Nhân viên này chỉ còn ${currentLeaveBalance} ngày phép năm, nhưng đang xin nghỉ ${requestedDays} ngày. Không thể tạo phiếu.`,
+                    confirmButtonColor: '#0ab39c',
+                });
+            } else {
+                limitInfo.classList.remove('text-danger');
+                limitInfo.classList.add('text-info');
+                limitInfo.innerHTML = `<i class="ri-information-line align-middle"></i> Số phép năm còn lại: <strong>${currentLeaveBalance} ngày</strong>`;
+                setSubmitButtonState(false);
+            }
+        }
+
         function updateForm() {
+            setSubmitButtonState(false);
             const type = typeSelect.value;
             
             if (type === 'business_trip') {
@@ -529,7 +580,7 @@
                 groupBusiness.style.display = 'none';
                 groupOvertime.style.display = 'none';
                 limitInfo.style.display = 'block';
-                checkAdjustmentLimit();
+                fetchLimits();
                 
                 document.querySelectorAll('#group-business input').forEach(el => el.disabled = true);
                 document.querySelectorAll('#group-leave input, #group-leave select').forEach(el => el.disabled = true);
@@ -551,7 +602,12 @@
                 groupAdjustment.style.display = 'none';
                 groupBusiness.style.display = 'none';
                 groupOvertime.style.display = 'none';
-                limitInfo.style.display = 'none';
+                if (type === 'paid_leave') {
+                    limitInfo.style.display = 'block';
+                    fetchLimits();
+                } else {
+                    limitInfo.style.display = 'none';
+                }
                 
                 document.querySelectorAll('#group-business input').forEach(el => el.disabled = true);
                 document.querySelectorAll('#group-adjustment input, #group-adjustment select').forEach(el => el.disabled = true);
@@ -594,7 +650,7 @@
         
         if (employeeSelect) {
             employeeSelect.addEventListener('change', () => {
-                checkAdjustmentLimit();
+                fetchLimits();
                 updateManagerDisplay();
             });
             // Initial call
@@ -602,7 +658,7 @@
         }
 
         if (startDateAdjInput) {
-            startDateAdjInput.addEventListener('change', checkAdjustmentLimit);
+            startDateAdjInput.addEventListener('change', fetchLimits);
         }
         
         startDateLeaveInput.addEventListener('change', () => {
@@ -622,7 +678,10 @@
             calculateReturnDate();
         });
         
-        leaveDaysInput.addEventListener('input', calculateReturnDate);
+        leaveDaysInput.addEventListener('input', () => {
+            calculateReturnDate();
+            validateLeaveBalance();
+        });
 
         document.getElementById('btn-minus-leave').addEventListener('click', function() {
             try {

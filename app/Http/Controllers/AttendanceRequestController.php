@@ -468,11 +468,15 @@ class AttendanceRequestController extends Controller
 
         $remaining = max(0, 3 - $count);
 
+        $employee = \App\Models\Employee::find($employeeId);
+        $leaveBalance = $employee ? $employee->annual_leave_balance : 0;
+
         return response()->json([
             'used' => $count,
             'remaining' => $remaining,
             'total' => 3,
-            'month' => $date->month
+            'month' => $date->month,
+            'leave_balance' => $leaveBalance
         ]);
     }
 
