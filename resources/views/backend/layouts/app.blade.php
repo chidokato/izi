@@ -133,18 +133,36 @@
                     <ul class="navbar-nav" id="navbar-nav">
                         <li class="menu-title"><span>Menu</span></li>
                         @php
-
                             $isAdmin = auth()->check() && auth()->user()->isAdmin();
                             $menuItems = [];
                             
+                            // Group: QUẢN LÝ CHẤM CÔNG
+                            $menuItems[] = ['is_title' => true, 'label' => 'QUẢN LÝ CHẤM CÔNG'];
                             if ($isAdmin) {
                                 $menuItems[] = ['label' => 'Chấm công', 'icon' => 'ri-calendar-check-line', 'route' => 'backend.attendance.index', 'active' => 'backend.attendance.*'];
                             }
-                            
                             $menuItems[] = ['label' => 'Lịch chấm công', 'icon' => 'ri-calendar-2-line', 'route' => 'backend.calendar.index', 'active' => 'backend.calendar.*'];
                             $menuItems[] = ['label' => 'Phiếu yêu cầu', 'icon' => 'ri-file-text-line', 'route' => 'backend.attendance-requests.index', 'active' => 'backend.attendance-requests.*'];
 
+                            // Group: ĐÁNH GIÁ NĂNG LỰC (Everyone)
+                            $menuItems[] = ['is_title' => true, 'label' => 'ĐÁNH GIÁ NĂNG LỰC'];
+                            $menuItems[] = ['label' => 'Đánh giá của tôi', 'icon' => 'ri-user-star-line', 'route' => 'backend.my-evaluations.index', 'active' => 'backend.my-evaluations.*'];
+                            
+                            // Check if current user is manager or hr to show "Duyệt đánh giá"
+                            $isSuperAdmin = auth()->user()->permission == 1;
+                            $isManager = auth()->user()->employee_id && \App\Models\Employee::where('manager_id', auth()->user()->employee_id)->exists();
+                            $isHRRole = auth()->user()->employee_id && \App\Models\Employee::where('hr_id', auth()->user()->employee_id)->exists();
+                            
+                            if ($isManager || $isHRRole || $isSuperAdmin) {
+                                $menuItems[] = ['label' => 'Quản lý duyệt', 'icon' => 'ri-check-double-line', 'route' => 'backend.evaluation-approvals.index', 'active' => 'backend.evaluation-approvals.*'];
+                            }
+
                             if ($isAdmin) {
+                                $menuItems[] = ['label' => 'Tiêu chí đánh giá', 'icon' => 'ri-list-check', 'route' => 'backend.evaluation-criteria.index', 'active' => 'backend.evaluation-criteria.*'];
+                                $menuItems[] = ['label' => 'Cấu hình xếp loại', 'icon' => 'ri-medal-line', 'route' => 'backend.evaluation-grades.index', 'active' => 'backend.evaluation-grades.*'];
+
+                                // Group: QUẢN LÝ NHÂN SỰ & CẤU HÌNH
+                                $menuItems[] = ['is_title' => true, 'label' => 'NHÂN SỰ & CẤU HÌNH'];
                                 $menuItems[] = ['label' => 'Nhân viên', 'icon' => 'ri-team-line', 'route' => 'backend.employees.index', 'active' => 'backend.employees.*'];
                                 $menuItems[] = ['label' => 'Phòng ban', 'icon' => 'ri-building-line', 'route' => 'backend.departments.index', 'active' => 'backend.departments.*'];
                                 $menuItems[] = ['label' => 'Cấu hình tháng', 'icon' => 'ri-settings-4-line', 'route' => 'backend.monthly-settings.index', 'active' => 'backend.monthly-settings.*'];
@@ -153,12 +171,16 @@
                             }
                         @endphp
                         @foreach ($menuItems as $item)
-                            <li class="nav-item">
-                                <a class="nav-link menu-link {{ request()->routeIs($item['active']) ? 'active' : '' }}" href="{{ route($item['route']) }}">
-                                    <i class="{{ $item['icon'] }}"></i>
-                                    <span>{{ $item['label'] }}</span>
-                                </a>
-                            </li>
+                            @if(isset($item['is_title']) && $item['is_title'])
+                                <li class="menu-title"><span>{{ $item['label'] }}</span></li>
+                            @else
+                                <li class="nav-item">
+                                    <a class="nav-link menu-link {{ request()->routeIs($item['active']) ? 'active' : '' }}" href="{{ route($item['route']) }}">
+                                        <i class="{{ $item['icon'] }}"></i>
+                                        <span>{{ $item['label'] }}</span>
+                                    </a>
+                                </li>
+                            @endif
                         @endforeach
                     </ul>
                 </div>

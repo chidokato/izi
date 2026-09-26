@@ -36,6 +36,14 @@ class EnsureAdmin
                 'backend.attendance-requests.bulk-approve',
                 'backend.admin.logout',
                 'backend.admin.dashboard',
+                'backend.my-evaluations.index',
+                'backend.my-evaluations.create',
+                'backend.my-evaluations.store',
+                'backend.my-evaluations.edit',
+                'backend.my-evaluations.update',
+                'backend.evaluation-approvals.index',
+                'backend.evaluation-approvals.edit',
+                'backend.evaluation-approvals.update',
             ];
 
             if (!in_array($request->route()?->getName(), $allowedRoutes)) {

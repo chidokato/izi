@@ -126,14 +126,14 @@
                                         $step2 = $req->requestApprovals->where('step', 2)->first();
                                         
                                         $canApproveStep1 = false;
-                                        if ($step1 && $req->current_approval_step == 1 && $req->status == 'pending') {
+                                        if ($step1) {
                                             if ($step1->approver_id == auth()->id() || auth()->user()->isAdmin() || optional($req->employee)->manager_id == auth()->user()->employee_id) {
                                                 $canApproveStep1 = true;
                                             }
                                         }
                                         
                                         $canApproveStep2 = false;
-                                        if ($step2 && $req->current_approval_step == 2 && $req->status == 'pending') {
+                                        if ($step2) {
                                             if ($step2->approver_id == auth()->id() || auth()->user()->isAdmin()) {
                                                 $canApproveStep2 = true;
                                             }
@@ -142,7 +142,7 @@
                                     <td id="step1-container-{{ $req->id }}">
                                         @if($step1)
                                             @if($canApproveStep1)
-                                                <select class="form-select form-select-sm btn-quick-approve-select {{ $step1->status == 'approved' ? 'border-success text-success' : ($step1->status == 'rejected' ? 'border-danger text-danger' : 'border-warning text-warning') }}" data-id="{{ $req->id }}" style="font-weight: 600;">
+                                                <select class="form-select form-select-sm btn-quick-approve-select {{ $step1->status == 'approved' ? 'border-success text-success' : ($step1->status == 'rejected' ? 'border-danger text-danger' : 'border-warning text-warning') }}" data-id="{{ $req->id }}" data-step="1" style="font-weight: 600;">
                                                     <option value="pending" class="text-warning" {{ $step1->status == 'pending' ? 'selected' : '' }}>Chờ duyệt</option>
                                                     <option value="approved" class="text-success" {{ $step1->status == 'approved' ? 'selected' : '' }}>Đã duyệt</option>
                                                     <option value="rejected" class="text-danger" {{ $step1->status == 'rejected' ? 'selected' : '' }}>Từ chối</option>
@@ -159,7 +159,7 @@
                                     <td id="step2-container-{{ $req->id }}">
                                         @if($step2)
                                             @if($canApproveStep2)
-                                                <select class="form-select form-select-sm btn-quick-approve-select {{ $step2->status == 'approved' ? 'border-success text-success' : ($step2->status == 'rejected' ? 'border-danger text-danger' : 'border-warning text-warning') }}" data-id="{{ $req->id }}" style="font-weight: 600;">
+                                                <select class="form-select form-select-sm btn-quick-approve-select {{ $step2->status == 'approved' ? 'border-success text-success' : ($step2->status == 'rejected' ? 'border-danger text-danger' : 'border-warning text-warning') }}" data-id="{{ $req->id }}" data-step="2" style="font-weight: 600;">
                                                     <option value="pending" class="text-warning" {{ $step2->status == 'pending' ? 'selected' : '' }}>Chờ duyệt</option>
                                                     <option value="approved" class="text-success" {{ $step2->status == 'approved' ? 'selected' : '' }}>Đã duyệt</option>
                                                     <option value="rejected" class="text-danger" {{ $step2->status == 'rejected' ? 'selected' : '' }}>Từ chối</option>
@@ -240,7 +240,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                         },
                         body: JSON.stringify({
-                            status: status
+                            status: status,
+                            step: this.getAttribute('data-step')
                         })
                     })
                     .then(response => response.json())

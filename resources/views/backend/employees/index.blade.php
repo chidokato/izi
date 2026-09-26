@@ -62,7 +62,7 @@
                             <input class="form-check-input" type="checkbox" id="checkAll">
                         </div>
                     </th>
-                    <th>STT</th><th>Mã nhân viên</th><th>Họ tên</th><th>Phòng ban</th><th>Chức vụ</th><th>Người duyệt phiếu</th><th>Trạng thái</th><th>Chấm công</th>
+                    <th>STT</th><th>Mã nhân viên</th><th>Họ tên</th><th>Phòng ban</th><th>Chức vụ</th><th>Người duyệt phiếu</th><th>Nhân sự duyệt</th><th>Trạng thái</th><th>Chấm công</th>
                 </tr></thead>
                 <tbody>
                     @forelse($employees as $employee)
@@ -94,6 +94,16 @@
                             </select>
                         </td>
                         <td>
+                            <select class="form-select form-select-sm hr-select" data-id="{{ $employee->id }}">
+                                <option value="">-- Chọn nhân sự duyệt --</option>
+                                @foreach($hrs as $hr)
+                                    @if($hr->id != $employee->id)
+                                        <option value="{{ $hr->id }}" @selected($employee->hr_id == $hr->id)>{{ $hr->name }} ({{ $hr->employee_code }})</option>
+                                    @endif
+                                @endforeach
+                            </select>
+                        </td>
+                        <td>
                             <select class="form-select form-select-sm status-select fw-bold {{ $employee->status === 'active' ? 'text-success' : ($employee->status === 'inactive' ? 'text-warning' : 'text-danger') }}" data-id="{{ $employee->id }}">
                                 @foreach(['active'=>'Đang làm việc','inactive'=>'Công tác viên','resigned'=>'Nghỉ việc'] as $value=>$label)
                                     <option value="{{ $value }}" class="text-body" @selected($employee->status === $value)>{{ $label }}</option>
@@ -113,12 +123,26 @@
 </div>
 
 <template id="bulk-manager-template">
-    <select id="swal-bulk-manager" class="form-select">
-        <option value="">-- Trực tiếp Ban giám đốc --</option>
-        @foreach($managers as $manager)
-            <option value="{{ $manager->id }}">{{ $manager->name }} ({{ $manager->employee_code }})</option>
-        @endforeach
-    </select>
+    <div class="mb-3 text-start">
+        <label class="form-label">Người duyệt phiếu</label>
+        <select id="swal-bulk-manager" class="form-select">
+            <option value="no_change">-- Giữ nguyên --</option>
+            <option value="">-- Trực tiếp Ban giám đốc --</option>
+            @foreach($managers as $manager)
+                <option value="{{ $manager->id }}">{{ $manager->name }} ({{ $manager->employee_code }})</option>
+            @endforeach
+        </select>
+    </div>
+    <div class="text-start">
+        <label class="form-label">Nhân sự duyệt</label>
+        <select id="swal-bulk-hr" class="form-select">
+            <option value="no_change">-- Giữ nguyên --</option>
+            <option value="">-- Bỏ trống --</option>
+            @foreach($hrs as $hr)
+                <option value="{{ $hr->id }}">{{ $hr->name }} ({{ $hr->employee_code }})</option>
+            @endforeach
+        </select>
+    </div>
 </template>
 @endsection
 
@@ -269,7 +293,48 @@
             });
         });
 
-        // Bulk edit manager logic
+        document.querySelectorAll('.hr-select').forEach(select => {
+            select.addEventListener('change', function () {
+                const employeeId = this.dataset.id;
+                const hrId = this.value;
+                const url = `{{ route('backend.employees.change-hr', ':id') }}`.replace(':id', employeeId);
+                const selectElement = this;
+
+                fetch(url, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ hr_id: hrId })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        toastMixin.fire({
+                            icon: 'success',
+                            title: data.message
+                        });
+                    } else {
+                        // Revert if self-selected
+                        if (!hrId) selectElement.value = "";
+                        toastMixin.fire({
+                            icon: 'error',
+                            title: data.message || 'Có lỗi xảy ra!'
+                        });
+                    }
+                })
+                .catch(error => {
+                    toastMixin.fire({
+                        icon: 'error',
+                        title: 'Lỗi máy chủ!'
+                    });
+                });
+            });
+        });
+
+        // Bulk edit logic
         const checkAll = document.getElementById('checkAll');
         const checkboxes = document.querySelectorAll('.employee-checkbox');
         const btnBulk = document.getElementById('btn-bulk-edit-manager');
@@ -309,10 +374,21 @@
                     confirmButtonText: 'Cập nhật',
                     cancelButtonText: 'Hủy',
                     preConfirm: () => {
-                        return document.getElementById('swal-bulk-manager').value;
+                        return {
+                            manager_id: document.getElementById('swal-bulk-manager').value,
+                            hr_id: document.getElementById('swal-bulk-hr').value
+                        };
                     }
                 }).then((result) => {
                     if (result.isConfirmed) {
+                        let payload = { employee_ids: checkedIds };
+                        if (result.value.manager_id !== 'no_change') payload.manager_id = result.value.manager_id;
+                        if (result.value.hr_id !== 'no_change') payload.hr_id = result.value.hr_id;
+                        
+                        if (Object.keys(payload).length === 1) {
+                            return; // nothing changed
+                        }
+
                         fetch('{{ route("backend.employees.bulk-manager") }}', {
                             method: 'PATCH',
                             headers: {
@@ -320,10 +396,7 @@
                                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
                                 'Accept': 'application/json'
                             },
-                            body: JSON.stringify({
-                                employee_ids: checkedIds,
-                                manager_id: result.value
-                            })
+                            body: JSON.stringify(payload)
                         })
                         .then(response => response.json())
                         .then(data => {

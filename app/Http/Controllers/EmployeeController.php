@@ -17,7 +17,7 @@ class EmployeeController extends Controller
         ]);
         $query = DB::table('employees as e')
             ->leftJoin('departments as d', 'd.id', '=', 'e.department_id')
-            ->select('e.id', 'e.employee_code', 'e.name', 'e.status', 'e.position', 'e.manager_id', 'd.name as department_name');
+            ->select('e.id', 'e.employee_code', 'e.name', 'e.status', 'e.position', 'e.manager_id', 'e.hr_id', 'd.name as department_name');
         if ($request->filled('q')) {
             $term = trim($request->input('q'));
             $query->where(function ($q) use ($term) {
@@ -39,6 +39,11 @@ class EmployeeController extends Controller
             'employees' => $query->orderBy('e.employee_code')->paginate(50)->withQueryString(),
             'departments' => DB::table('departments')->orderBy('name')->get(['id', 'name']),
             'managers' => DB::table('employees')
+                ->where('status', 'active')
+                ->whereIn('position', ['team_leader', 'manager', 'director'])
+                ->orderBy('name')
+                ->get(['id', 'name', 'employee_code']),
+            'hrs' => DB::table('employees')
                 ->where('status', 'active')
                 ->whereIn('position', ['team_leader', 'manager', 'director'])
                 ->orderBy('name')
@@ -101,25 +106,66 @@ class EmployeeController extends Controller
         ]);
     }
 
+    public function changeHr(Request $request, $id)
+    {
+        $request->validate([
+            'hr_id' => 'nullable|integer|exists:employees,id'
+        ]);
+
+        if ($request->hr_id == $id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không thể tự chọn mình làm nhân sự duyệt!'
+            ], 400);
+        }
+
+        $employee = \App\Models\Employee::findOrFail($id);
+        $employee->hr_id = $request->hr_id;
+        $employee->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Cập nhật nhân sự duyệt thành công!'
+        ]);
+    }
+
     public function bulkManager(Request $request)
     {
         $request->validate([
             'employee_ids' => 'required|array',
             'employee_ids.*' => 'integer|exists:employees,id',
-            'manager_id' => 'nullable|integer|exists:employees,id'
+            'manager_id' => 'nullable|integer|exists:employees,id',
+            'hr_id' => 'nullable|integer|exists:employees,id'
         ]);
 
         $managerId = $request->manager_id;
+        $hrId = $request->hr_id;
         $employeeIds = $request->employee_ids;
 
         if ($managerId && in_array($managerId, $employeeIds)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Bạn không thể chọn người duyệt là một trong những người đang được chọn để cập nhật!'
+                'message' => 'Bạn không thể chọn quản lý duyệt là một trong những người đang được chọn để cập nhật!'
+            ], 400);
+        }
+        
+        if ($hrId && in_array($hrId, $employeeIds)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Bạn không thể chọn nhân sự duyệt là một trong những người đang được chọn để cập nhật!'
             ], 400);
         }
 
-        \App\Models\Employee::whereIn('id', $employeeIds)->update(['manager_id' => $managerId]);
+        $dataToUpdate = [];
+        // Only update the fields if they are explicitly sent in request? 
+        // Wait, the modal might send both. So we update both if the request has them.
+        // Actually, let's just update both to what's provided (can be null).
+        if ($request->has('manager_id')) $dataToUpdate['manager_id'] = $managerId;
+        if ($request->has('hr_id')) $dataToUpdate['hr_id'] = $hrId;
+
+        if (!empty($dataToUpdate)) {
+            \App\Models\Employee::whereIn('id', $employeeIds)->update($dataToUpdate);
+        }
 
         return response()->json([
             'success' => true,

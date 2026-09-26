@@ -271,30 +271,40 @@ class AttendanceRequestController extends Controller
 
         $user = auth()->user();
         $status = $request->status;
-
         $originalStatus = $attendanceRequest->status;
 
+        $targetStep = $request->input('step', $attendanceRequest->current_approval_step);
+
         if ($status === 'approved') {
-            if ($attendanceRequest->current_approval_step == 1) {
-                // Manager approved
+            if ($targetStep == 1) {
                 RequestApproval::where('request_id', $attendanceRequest->id)
                     ->where('step', 1)
                     ->update(['status' => 'approved', 'acted_at' => now(), 'approver_id' => $user->id]);
                 
-                // Move to step 2 (HR)
-                $adminUser = User::whereIn('permission', [1,2])->first();
-                $attendanceRequest->update(['current_approval_step' => 2]);
-                RequestApproval::create([
-                    'request_id' => $attendanceRequest->id,
-                    'approver_id' => $adminUser->id ?? 1,
-                    'step' => 2,
+                $step2 = RequestApproval::where('request_id', $attendanceRequest->id)->where('step', 2)->first();
+                if (!$step2) {
+                    $adminUser = User::whereIn('permission', [1,2])->first();
+                    RequestApproval::create([
+                        'request_id' => $attendanceRequest->id,
+                        'approver_id' => $adminUser->id ?? 1,
+                        'step' => 2,
+                        'status' => 'pending',
+                    ]);
+                }
+                
+                $attendanceRequest->update([
+                    'current_approval_step' => 2,
                     'status' => 'pending',
                 ]);
+                
+                if ($originalStatus === 'approved' && $attendanceRequest->type === 'paid_leave') {
+                    $days = $this->calculateLeaveDays($attendanceRequest);
+                    $attendanceRequest->employee()->increment('annual_leave_balance', $days);
+                }
 
                 $message = 'Đã duyệt bước 1, chuyển cho Nhân sự.';
                 
-            } else if ($attendanceRequest->current_approval_step == 2) {
-                // HR approved
+            } else if ($targetStep == 2) {
                 RequestApproval::where('request_id', $attendanceRequest->id)
                     ->where('step', 2)
                     ->update(['status' => 'approved', 'acted_at' => now(), 'approver_id' => $user->id]);
@@ -310,13 +320,16 @@ class AttendanceRequestController extends Controller
                 }
 
                 $message = 'Đã duyệt hoàn tất.';
-            } else {
-                $message = 'Trạng thái đã được cập nhật.';
             }
         } else if ($status === 'rejected') {
             RequestApproval::where('request_id', $attendanceRequest->id)
-                ->where('step', $attendanceRequest->current_approval_step)
+                ->where('step', $targetStep)
                 ->update(['status' => 'rejected', 'acted_at' => now(), 'approver_id' => $user->id]);
+            
+            if ($targetStep == 1) {
+                RequestApproval::where('request_id', $attendanceRequest->id)->where('step', '>', 1)->delete();
+                $attendanceRequest->update(['current_approval_step' => 1]);
+            }
             
             $attendanceRequest->update([
                 'status' => 'rejected',
@@ -329,6 +342,28 @@ class AttendanceRequestController extends Controller
             }
 
             $message = 'Đã từ chối phiếu.';
+        } else if ($status === 'pending') {
+            RequestApproval::where('request_id', $attendanceRequest->id)
+                ->where('step', $targetStep)
+                ->update(['status' => 'pending', 'acted_at' => null, 'approver_id' => $user->id]);
+            
+            if ($targetStep == 1) {
+                RequestApproval::where('request_id', $attendanceRequest->id)->where('step', '>', 1)->delete();
+                $attendanceRequest->update(['current_approval_step' => 1]);
+            }
+            
+            $attendanceRequest->update([
+                'status' => 'pending',
+                'approved_at' => null,
+                'rejected_at' => null,
+            ]);
+
+            if ($originalStatus === 'approved' && $attendanceRequest->type === 'paid_leave') {
+                $days = $this->calculateLeaveDays($attendanceRequest);
+                $attendanceRequest->employee()->increment('annual_leave_balance', $days);
+            }
+
+            $message = 'Đã chuyển về chờ duyệt.';
         } else if ($status === 'cancelled') {
             $attendanceRequest->update(['status' => 'cancelled']);
             

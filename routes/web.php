@@ -131,6 +131,8 @@ Route::patch('admin/employees/{id}/position', [\App\Http\Controllers\EmployeeCon
     ->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->name('backend.employees.change-position');
 Route::patch('admin/employees/{id}/manager', [\App\Http\Controllers\EmployeeController::class, 'changeManager'])
     ->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->name('backend.employees.change-manager');
+Route::patch('admin/employees/{id}/hr', [\App\Http\Controllers\EmployeeController::class, 'changeHr'])
+    ->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->name('backend.employees.change-hr');
 Route::patch('admin/employees/bulk-manager', [\App\Http\Controllers\EmployeeController::class, 'bulkManager'])
     ->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->name('backend.employees.bulk-manager');
 Route::get('admin/departments', [\App\Http\Controllers\DepartmentController::class, 'index'])
@@ -160,6 +162,39 @@ Route::prefix('admin/attendance-requests')->name('backend.attendance-requests.')
     Route::get('/{attendanceRequest}/edit', [\App\Http\Controllers\AttendanceRequestController::class, 'edit'])->name('edit');
     Route::put('/{attendanceRequest}', [\App\Http\Controllers\AttendanceRequestController::class, 'update'])->name('update');
     Route::delete('/{attendanceRequest}', [\App\Http\Controllers\AttendanceRequestController::class, 'destroy'])->name('destroy');
+});
+
+Route::prefix('admin/evaluation-criteria')->name('backend.evaluation-criteria.')->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->group(function () {
+    Route::get('/', [\App\Http\Controllers\Backend\EvaluationCriterionController::class, 'index'])->name('index');
+    Route::get('/create', [\App\Http\Controllers\Backend\EvaluationCriterionController::class, 'create'])->name('create');
+    Route::post('/', [\App\Http\Controllers\Backend\EvaluationCriterionController::class, 'store'])->name('store');
+    Route::get('/{id}/edit', [\App\Http\Controllers\Backend\EvaluationCriterionController::class, 'edit'])->whereNumber('id')->name('edit');
+    Route::post('/{id}/duplicate', [\App\Http\Controllers\Backend\EvaluationCriterionController::class, 'duplicate'])->whereNumber('id')->name('duplicate');
+    Route::put('/{id}', [\App\Http\Controllers\Backend\EvaluationCriterionController::class, 'update'])->whereNumber('id')->name('update');
+    Route::delete('/{id}', [\App\Http\Controllers\Backend\EvaluationCriterionController::class, 'destroy'])->whereNumber('id')->name('destroy');
+});
+
+Route::prefix('admin/evaluation-grades')->name('backend.evaluation-grades.')->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->group(function () {
+    Route::get('/', [\App\Http\Controllers\Backend\EvaluationGradeController::class, 'index'])->name('index');
+    Route::get('/create', [\App\Http\Controllers\Backend\EvaluationGradeController::class, 'create'])->name('create');
+    Route::post('/', [\App\Http\Controllers\Backend\EvaluationGradeController::class, 'store'])->name('store');
+    Route::get('/{id}/edit', [\App\Http\Controllers\Backend\EvaluationGradeController::class, 'edit'])->whereNumber('id')->name('edit');
+    Route::put('/{id}', [\App\Http\Controllers\Backend\EvaluationGradeController::class, 'update'])->whereNumber('id')->name('update');
+    Route::delete('/{id}', [\App\Http\Controllers\Backend\EvaluationGradeController::class, 'destroy'])->whereNumber('id')->name('destroy');
+});
+
+Route::prefix('admin/my-evaluations')->name('backend.my-evaluations.')->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->group(function () {
+    Route::get('/', [\App\Http\Controllers\Backend\MyEvaluationController::class, 'index'])->name('index');
+    Route::get('/create', [\App\Http\Controllers\Backend\MyEvaluationController::class, 'create'])->name('create');
+    Route::post('/', [\App\Http\Controllers\Backend\MyEvaluationController::class, 'store'])->name('store');
+    Route::get('/{id}/edit', [\App\Http\Controllers\Backend\MyEvaluationController::class, 'edit'])->whereNumber('id')->name('edit');
+    Route::put('/{id}', [\App\Http\Controllers\Backend\MyEvaluationController::class, 'update'])->whereNumber('id')->name('update');
+});
+
+Route::prefix('admin/evaluation-approvals')->name('backend.evaluation-approvals.')->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->group(function () {
+    Route::get('/', [\App\Http\Controllers\Backend\EvaluationApprovalController::class, 'index'])->name('index');
+    Route::get('/{id}/edit', [\App\Http\Controllers\Backend\EvaluationApprovalController::class, 'edit'])->whereNumber('id')->name('edit');
+    Route::put('/{id}', [\App\Http\Controllers\Backend\EvaluationApprovalController::class, 'update'])->whereNumber('id')->name('update');
 });
 
 Route::get('auth/google', [\App\Http\Controllers\GoogleController::class, 'redirectToGoogle'])->name('google.redirect');
