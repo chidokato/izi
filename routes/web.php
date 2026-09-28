@@ -191,6 +191,11 @@ Route::prefix('admin/my-evaluations')->name('backend.my-evaluations.')->middlewa
     Route::put('/{id}', [\App\Http\Controllers\Backend\MyEvaluationController::class, 'update'])->whereNumber('id')->name('update');
 });
 
+Route::prefix('admin/profile')->name('backend.profile.')->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->group(function () {
+    Route::get('/', [\App\Http\Controllers\ProfileController::class, 'edit'])->name('edit');
+    Route::put('/', [\App\Http\Controllers\ProfileController::class, 'update'])->name('update');
+});
+
 Route::prefix('admin/evaluation-approvals')->name('backend.evaluation-approvals.')->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->group(function () {
     Route::get('/', [\App\Http\Controllers\Backend\EvaluationApprovalController::class, 'index'])->name('index');
     Route::get('/{id}/edit', [\App\Http\Controllers\Backend\EvaluationApprovalController::class, 'edit'])->whereNumber('id')->name('edit');

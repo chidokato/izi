@@ -81,7 +81,7 @@
                                     <img class="rounded-circle header-profile-user" src="{{ auth()->user()?->avatar ? asset(auth()->user()->avatar) : asset('admin-assets/images/users/avatar-1.jpg') }}" alt="Header Avatar" style="object-fit: cover;">
                                     <span class="text-start ms-xl-2">
                                         <span class="d-none d-xl-inline-block ms-1 fw-medium user-name-text">{{ auth()->user()?->name ?? 'Admin' }}</span>
-                                        <span class="d-none d-xl-block ms-1 fs-12 user-name-sub-text">Administrator</span>
+                                        <span class="d-none d-xl-block ms-1 fs-12 user-name-sub-text text-lowercase">{{ auth()->user()?->email ?? 'Administrator' }}</span>
                                     </span>
                                 </span>
                             </button>
@@ -147,6 +147,9 @@
                             // Group: ĐÁNH GIÁ NĂNG LỰC (Everyone)
                             $menuItems[] = ['is_title' => true, 'label' => 'ĐÁNH GIÁ NĂNG LỰC'];
                             $menuItems[] = ['label' => 'Đánh giá của tôi', 'icon' => 'ri-user-star-line', 'route' => 'backend.my-evaluations.index', 'active' => 'backend.my-evaluations.*'];
+                            
+                            $menuItems[] = ['is_title' => true, 'label' => 'TÀI KHOẢN CÁ NHÂN'];
+                            $menuItems[] = ['label' => 'Thông tin cá nhân', 'icon' => 'ri-user-settings-line', 'route' => 'backend.profile.edit', 'active' => 'backend.profile.*'];
                             
                             // Check if current user is manager or hr to show "Duyệt đánh giá"
                             $isSuperAdmin = auth()->user()->permission == 1;

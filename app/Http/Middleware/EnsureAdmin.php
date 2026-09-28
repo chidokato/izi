@@ -44,6 +44,8 @@ class EnsureAdmin
                 'backend.evaluation-approvals.index',
                 'backend.evaluation-approvals.edit',
                 'backend.evaluation-approvals.update',
+                'backend.profile.edit',
+                'backend.profile.update',
             ];
 
             if (!in_array($request->route()?->getName(), $allowedRoutes)) {
