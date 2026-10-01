@@ -151,7 +151,7 @@
                             // Check if current user is manager or hr to show "Duyệt đánh giá"
                             $isSuperAdmin = auth()->user()->permission == 1;
                             $isManager = auth()->user()->employee_id && \App\Models\Employee::where('manager_id', auth()->user()->employee_id)->exists();
-                            $isHRRole = auth()->user()->employee_id && \App\Models\Employee::where('hr_id', auth()->user()->employee_id)->exists();
+                            $isHRRole = auth()->user()->employee_id && \App\Models\Employee::where('manager_l2_id', auth()->user()->employee_id)->exists();
                             
                             if ($isManager || $isHRRole || $isSuperAdmin) {
                                 $menuItems[] = ['label' => 'Duyệt phiếu đánh giá', 'icon' => 'ri-check-double-line', 'route' => 'backend.evaluation-approvals.index', 'active' => 'backend.evaluation-approvals.*'];

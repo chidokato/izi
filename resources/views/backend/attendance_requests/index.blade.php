@@ -69,7 +69,6 @@
                                     </div>
                                 </th>
                                 @endif
-                                <th>Mã phiếu</th>
                                 <th>Nhân viên</th>
                                 <th>Loại</th>
                                 <th>Thời gian</th>
@@ -90,7 +89,6 @@
                                         </div>
                                     </td>
                                     @endif
-                                    <td>{{ $req->code }}</td>
                                     <td>
                                         <div class="fw-medium">{{ optional($req->employee)->name }}</div>
                                         <small class="text-muted">{{ optional($req->employee)->employee_code }}</small>
@@ -193,7 +191,7 @@
                                     </td>
                                 </tr>
                             @empty
-                                <tr><td colspan="{{ (isset($canBulkApprove) && $canBulkApprove) ? 9 : 8 }}" class="text-center">Chưa có dữ liệu</td></tr>
+                                <tr><td colspan="{{ (isset($canBulkApprove) && $canBulkApprove) ? 8 : 7 }}" class="text-center">Chưa có dữ liệu</td></tr>
                             @endforelse
                         </tbody>
                     </table>

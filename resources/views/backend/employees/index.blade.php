@@ -62,7 +62,7 @@
                             <input class="form-check-input" type="checkbox" id="checkAll">
                         </div>
                     </th>
-                    <th>STT</th><th>Mã nhân viên</th><th>Họ tên</th><th>Phòng ban</th><th>Chức vụ</th><th>Người duyệt lần 1</th><th>Người duyệt lần 2</th><th>Trạng thái</th><th>Chấm công</th>
+                    <th>STT</th><th>Mã nhân viên</th><th>Họ tên</th><th>Phòng ban</th><th>Chức vụ</th><th>Người duyệt lần 1</th><th>Người duyệt lần 2</th><th>Trạng thái</th><th>Thao tác</th>
                 </tr></thead>
                 <tbody>
                     @forelse($employees as $employee)
@@ -85,7 +85,7 @@
                         </td>
                         <td>
                             <select class="form-select form-select-sm manager-select" data-id="{{ $employee->id }}">
-                                <option value="">-- Trực tiếp Ban giám đốc --</option>
+                                <option value="">----</option>
                                 @foreach($managers as $manager)
                                     @if($manager->id != $employee->id && ($manager->department_id == $employee->department_id || $employee->manager_id == $manager->id))
                                         <option value="{{ $manager->id }}" @selected($employee->manager_id == $manager->id)>{{ $manager->name }} ({{ $manager->employee_code }})</option>
@@ -95,10 +95,10 @@
                         </td>
                         <td>
                             <select class="form-select form-select-sm hr-select" data-id="{{ $employee->id }}">
-                                <option value="">-- Chọn người duyệt lần 2 --</option>
+                                <option value="">----</option>
                                 @foreach($hrs as $hr)
-                                    @if($hr->id != $employee->id && ($hr->department_id == $employee->department_id || $employee->hr_id == $hr->id))
-                                        <option value="{{ $hr->id }}" @selected($employee->hr_id == $hr->id)>{{ $hr->name }} ({{ $hr->employee_code }})</option>
+                                    @if($hr->id != $employee->id && ($hr->department_id == $employee->department_id || $employee->manager_l2_id == $hr->id))
+                                        <option value="{{ $hr->id }}" @selected($employee->manager_l2_id == $hr->id)>{{ $hr->name }} ({{ $hr->employee_code }})</option>
                                     @endif
                                 @endforeach
                             </select>
@@ -110,10 +110,12 @@
                                 @endforeach
                             </select>
                         </td>
-                        <td><a class="btn btn-sm btn-soft-primary" href="{{ route('backend.calendar.index', ['employee_id' => $employee->id]) }}">Xem lịch</a></td>
+                        <td>
+                            <a href="{{ route('backend.employees.edit', $employee->id) }}" class="btn btn-sm btn-soft-primary"><i class="ri-pencil-fill"></i> Sửa</a>
+                        </td>
                     </tr>
                     @empty
-                    <tr><td colspan="9" class="text-center text-muted py-4">Không có nhân viên phù hợp. Bạn có thể tạo nhân viên khi nhập file chấm công.</td></tr>
+                    <tr><td colspan="10" class="text-center text-muted py-4">Không có nhân viên phù hợp. Bạn có thể tạo nhân viên khi nhập file chấm công.</td></tr>
                     @endforelse
                 </tbody>
             </table>
@@ -127,7 +129,7 @@
         <label class="form-label">Người duyệt lần 1</label>
         <select id="swal-bulk-manager" class="form-select">
             <option value="no_change">-- Giữ nguyên --</option>
-            <option value="">-- Trực tiếp Ban giám đốc --</option>
+            <option value="">-- Bỏ trống --</option>
             @foreach($managers as $manager)
                 <option value="{{ $manager->id }}">{{ $manager->name }} ({{ $manager->employee_code }})</option>
             @endforeach
@@ -307,7 +309,7 @@
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
                         'Accept': 'application/json'
                     },
-                    body: JSON.stringify({ hr_id: hrId })
+                    body: JSON.stringify({ manager_l2_id: hrId })
                 })
                 .then(response => response.json())
                 .then(data => {
@@ -376,14 +378,14 @@
                     preConfirm: () => {
                         return {
                             manager_id: document.getElementById('swal-bulk-manager').value,
-                            hr_id: document.getElementById('swal-bulk-hr').value
+                            manager_l2_id: document.getElementById('swal-bulk-hr').value
                         };
                     }
                 }).then((result) => {
                     if (result.isConfirmed) {
                         let payload = { employee_ids: checkedIds };
                         if (result.value.manager_id !== 'no_change') payload.manager_id = result.value.manager_id;
-                        if (result.value.hr_id !== 'no_change') payload.hr_id = result.value.hr_id;
+                        if (result.value.manager_l2_id !== 'no_change') payload.manager_l2_id = result.value.manager_l2_id;
                         
                         if (Object.keys(payload).length === 1) {
                             return; // nothing changed

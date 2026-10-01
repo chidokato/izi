@@ -125,6 +125,10 @@ Route::prefix('admin/attendance')->name('backend.attendance.')->middleware(['aut
 });
 Route::get('admin/employees', [\App\Http\Controllers\EmployeeController::class, 'index'])
     ->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->name('backend.employees.index');
+Route::get('admin/employees/{id}/edit', [\App\Http\Controllers\EmployeeController::class, 'edit'])
+    ->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->name('backend.employees.edit');
+Route::put('admin/employees/{id}', [\App\Http\Controllers\EmployeeController::class, 'update'])
+    ->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->name('backend.employees.update');
 Route::patch('admin/employees/{id}/status', [\App\Http\Controllers\EmployeeController::class, 'changeStatus'])
     ->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->name('backend.employees.change-status');
 Route::patch('admin/employees/{id}/position', [\App\Http\Controllers\EmployeeController::class, 'changePosition'])
