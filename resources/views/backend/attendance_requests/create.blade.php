@@ -30,7 +30,7 @@
                         <select name="employee_id" class="form-control" required>
                             <option value="">Chọn nhân viên</option>
                             @foreach($employees as $emp)
-                                <option value="{{ $emp->id }}" data-manager="{{ $emp->manager ? $emp->manager->name : 'Ban giám đốc' }}" {{ old('employee_id', auth()->user()->employee_id) == $emp->id ? 'selected' : '' }}>{{ $emp->name }} ({{ $emp->employee_code }})</option>
+                                <option value="{{ $emp->id }}" data-manager="{{ $emp->manager ? $emp->manager->name : 'Ban giám đốc' }}" data-manager-l2="{{ $emp->managerL2 ? $emp->managerL2->name : 'Bỏ qua' }}" {{ old('employee_id', auth()->user()->employee_id) == $emp->id ? 'selected' : '' }}>{{ $emp->name }} ({{ $emp->employee_code }})</option>
                             @endforeach
                         </select>
                     </div>
@@ -210,12 +210,44 @@
                                 <a class="accordion-button p-2 shadow-none text-muted" data-bs-toggle="collapse" href="#collapseTwo" aria-expanded="true">
                                     <div class="d-flex align-items-center">
                                         <div class="flex-shrink-0 avatar-xs">
+                                            <div class="avatar-title bg-warning rounded-circle">
+                                                <i class="ri-user-star-line"></i>
+                                            </div>
+                                        </div>
+                                        <div class="flex-grow-1 ms-3">
+                                            <h6 class="fs-14 mb-0 fw-semibold">
+                                                Bước 2: Quản lý cấp 2
+                                            </h6>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                            <div id="collapseTwo" class="accordion-collapse collapse show" aria-labelledby="headingTwo" data-bs-parent="#accordionFlushExample">
+                                <div class="accordion-body pt-0" style="border-left: 2px dashed #ced4da; margin-left: 23px; padding-left: 16px;">
+                                    <h6 class="text-warning mb-1">
+                                        Người duyệt: 
+                                        @if(!auth()->user()->isAdmin() && $currentUserEmployee)
+                                            <strong class="text-decoration-underline">{{ $currentUserEmployee->managerL2 ? $currentUserEmployee->managerL2->name : 'Bỏ qua' }}</strong>
+                                        @elseif(auth()->user()->isAdmin())
+                                            <strong class="text-decoration-underline" id="manager-l2-name-display"></strong>
+                                        @endif
+                                    </h6>
+                                    <p class="mb-0 mt-2 text-muted">Duyệt cấp cao hơn (nếu có).</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item border-0">
+                            <div class="accordion-header" id="headingThree">
+                                <a class="accordion-button p-2 shadow-none text-muted" data-bs-toggle="collapse" href="#collapseThree" aria-expanded="true">
+                                    <div class="d-flex align-items-center">
+                                        <div class="flex-shrink-0 avatar-xs">
                                             <div class="avatar-title bg-success rounded-circle">
                                                 <i class="ri-team-line"></i>
                                             </div>
                                         </div>
                                         <div class="flex-grow-1 ms-3">
-                                            <h6 class="fs-14 mb-0 fw-semibold">Bước 2: Hành chính - Nhân sự</h6>
+                                            <h6 class="fs-14 mb-0 fw-semibold">Bước 3: Hành chính - Nhân sự</h6>
                                         </div>
                                     </div>
                                 </a>
@@ -640,10 +672,16 @@
             if (employeeSelect && employeeSelect.tagName === 'SELECT') {
                 const selectedOption = employeeSelect.options[employeeSelect.selectedIndex];
                 const managerDisplay = document.getElementById('manager-name-display');
+                const managerL2Display = document.getElementById('manager-l2-name-display');
                 if (managerDisplay && selectedOption && selectedOption.value) {
                     managerDisplay.textContent = selectedOption.getAttribute('data-manager') || 'Ban giám đốc';
                 } else if (managerDisplay) {
                     managerDisplay.textContent = '';
+                }
+                if (managerL2Display && selectedOption && selectedOption.value) {
+                    managerL2Display.textContent = selectedOption.getAttribute('data-manager-l2') || 'Bỏ qua';
+                } else if (managerL2Display) {
+                    managerL2Display.textContent = '';
                 }
             }
         }

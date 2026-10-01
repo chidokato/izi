@@ -75,6 +75,7 @@
                                 <th>Lý do</th>
                                 <th>Ngày tạo</th>
                                 <th>Quản lý duyệt</th>
+                                <th>Quản lý L2</th>
                                 <th>NS duyệt</th>
                                 <th>Thao tác</th>
                             </tr>
@@ -122,6 +123,7 @@
                                     @php
                                         $step1 = $req->requestApprovals->where('step', 1)->first();
                                         $step2 = $req->requestApprovals->where('step', 2)->first();
+                                        $step3 = $req->requestApprovals->where('step', 3)->first();
                                         
                                         $canApproveStep1 = false;
                                         if ($step1) {
@@ -132,8 +134,15 @@
                                         
                                         $canApproveStep2 = false;
                                         if ($step2) {
-                                            if ($step2->approver_id == auth()->id() || auth()->user()->isAdmin()) {
+                                            if ($step2->approver_id == auth()->id() || auth()->user()->isAdmin() || optional($req->employee)->manager_l2_id == auth()->user()->employee_id) {
                                                 $canApproveStep2 = true;
+                                            }
+                                        }
+
+                                        $canApproveStep3 = false;
+                                        if ($step3) {
+                                            if ($step3->approver_id == auth()->id() || auth()->user()->isAdmin() || optional(auth()->user()->employee)->level == 'HR') {
+                                                $canApproveStep3 = true;
                                             }
                                         }
                                     @endphp
@@ -168,12 +177,39 @@
                                                 @else <span class="badge bg-warning">Chờ duyệt</span> @endif
                                             @endif
                                         @else
-                                            @if($req->status == 'rejected' && $req->current_approval_step == 1)
+                                            @if($req->status == 'rejected' && $req->current_approval_step < 2)
                                                 <span class="badge bg-danger">Từ chối</span>
                                             @elseif($req->status == 'cancelled')
                                                 <span class="badge bg-secondary">Đã hủy</span>
+                                            @elseif($req->current_approval_step == 2)
+                                                <span class="badge bg-warning">Chờ duyệt</span>
                                             @else
-                                                <span class="badge bg-light text-dark">Chờ QL duyệt</span>
+                                                <span class="badge bg-light text-dark">Chờ bước trước</span>
+                                            @endif
+                                        @endif
+                                    </td>
+                                    <td id="step3-container-{{ $req->id }}">
+                                        @if($step3)
+                                            @if($canApproveStep3)
+                                                <select class="form-select form-select-sm btn-quick-approve-select {{ $step3->status == 'approved' ? 'border-success text-success' : ($step3->status == 'rejected' ? 'border-danger text-danger' : 'border-warning text-warning') }}" data-id="{{ $req->id }}" data-step="3" style="font-weight: 600;">
+                                                    <option value="pending" class="text-warning" {{ $step3->status == 'pending' ? 'selected' : '' }}>Chờ duyệt</option>
+                                                    <option value="approved" class="text-success" {{ $step3->status == 'approved' ? 'selected' : '' }}>Đã duyệt</option>
+                                                    <option value="rejected" class="text-danger" {{ $step3->status == 'rejected' ? 'selected' : '' }}>Từ chối</option>
+                                                </select>
+                                            @else
+                                                @if($step3->status == 'approved') <span class="badge bg-success">Đã duyệt</span>
+                                                @elseif($step3->status == 'rejected') <span class="badge bg-danger">Từ chối</span>
+                                                @else <span class="badge bg-warning">Chờ duyệt</span> @endif
+                                            @endif
+                                        @else
+                                            @if($req->status == 'rejected' && $req->current_approval_step < 3)
+                                                <span class="badge bg-danger">Từ chối</span>
+                                            @elseif($req->status == 'cancelled')
+                                                <span class="badge bg-secondary">Đã hủy</span>
+                                            @elseif($req->current_approval_step == 3)
+                                                <span class="badge bg-warning">Chờ duyệt</span>
+                                            @else
+                                                <span class="badge bg-light text-dark">Chờ bước trước</span>
                                             @endif
                                         @endif
                                     </td>

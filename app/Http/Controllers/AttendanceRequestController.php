@@ -232,10 +232,11 @@ class AttendanceRequestController extends Controller
         $employee = Employee::find($request->employee_id);
         
         $adminUser = User::whereIn('permission', [1,2])->first();
+        $hrEmployee = Employee::where('level', 'HR')->first();
+        $hrUser = $hrEmployee ? User::where('employee_id', $hrEmployee->id)->first() : $adminUser;
 
         if ($employee && $employee->manager_id) {
             $managerUser = User::where('employee_id', $employee->manager_id)->first();
-            
             $attendanceRequest->update(['current_approval_step' => 1]);
             RequestApproval::create([
                 'request_id' => $attendanceRequest->id,
@@ -243,12 +244,21 @@ class AttendanceRequestController extends Controller
                 'step' => 1,
                 'status' => 'pending',
             ]);
-        } else {
+        } else if ($employee && $employee->manager_l2_id) {
+            $managerL2User = User::where('employee_id', $employee->manager_l2_id)->first();
             $attendanceRequest->update(['current_approval_step' => 2]);
             RequestApproval::create([
                 'request_id' => $attendanceRequest->id,
-                'approver_id' => $adminUser->id ?? 1,
+                'approver_id' => $managerL2User ? $managerL2User->id : ($adminUser->id ?? 1),
                 'step' => 2,
+                'status' => 'pending',
+            ]);
+        } else {
+            $attendanceRequest->update(['current_approval_step' => 3]);
+            RequestApproval::create([
+                'request_id' => $attendanceRequest->id,
+                'approver_id' => $hrUser ? $hrUser->id : ($adminUser->id ?? 1),
+                'step' => 3,
                 'status' => 'pending',
             ]);
         }
@@ -275,25 +285,38 @@ class AttendanceRequestController extends Controller
 
         $targetStep = $request->input('step', $attendanceRequest->current_approval_step);
 
+        $adminUser = User::whereIn('permission', [1,2])->first();
+
         if ($status === 'approved') {
+            RequestApproval::where('request_id', $attendanceRequest->id)
+                ->where('step', $targetStep)
+                ->update(['status' => 'approved', 'acted_at' => now(), 'approver_id' => $user->id]);
+
             if ($targetStep == 1) {
-                RequestApproval::where('request_id', $attendanceRequest->id)
-                    ->where('step', 1)
-                    ->update(['status' => 'approved', 'acted_at' => now(), 'approver_id' => $user->id]);
-                
-                $step2 = RequestApproval::where('request_id', $attendanceRequest->id)->where('step', 2)->first();
-                if (!$step2) {
-                    $adminUser = User::whereIn('permission', [1,2])->first();
+                $employee = $attendanceRequest->employee;
+                if ($employee && $employee->manager_l2_id) {
+                    $nextStep = 2;
+                    $managerL2User = User::where('employee_id', $employee->manager_l2_id)->first();
+                    $nextApproverId = $managerL2User ? $managerL2User->id : ($adminUser->id ?? 1);
+                } else {
+                    $nextStep = 3;
+                    $hrEmployee = Employee::where('level', 'HR')->first();
+                    $hrUser = $hrEmployee ? User::where('employee_id', $hrEmployee->id)->first() : $adminUser;
+                    $nextApproverId = $hrUser ? $hrUser->id : ($adminUser->id ?? 1);
+                }
+
+                $nextReqApproval = RequestApproval::where('request_id', $attendanceRequest->id)->where('step', $nextStep)->first();
+                if (!$nextReqApproval) {
                     RequestApproval::create([
                         'request_id' => $attendanceRequest->id,
-                        'approver_id' => $adminUser->id ?? 1,
-                        'step' => 2,
+                        'approver_id' => $nextApproverId,
+                        'step' => $nextStep,
                         'status' => 'pending',
                     ]);
                 }
                 
                 $attendanceRequest->update([
-                    'current_approval_step' => 2,
+                    'current_approval_step' => $nextStep,
                     'status' => 'pending',
                 ]);
                 
@@ -302,13 +325,37 @@ class AttendanceRequestController extends Controller
                     $attendanceRequest->employee()->increment('annual_leave_balance', $days);
                 }
 
-                $message = 'Đã duyệt bước 1, chuyển cho Nhân sự.';
+                $message = 'Đã duyệt bước 1.';
                 
             } else if ($targetStep == 2) {
-                RequestApproval::where('request_id', $attendanceRequest->id)
-                    ->where('step', 2)
-                    ->update(['status' => 'approved', 'acted_at' => now(), 'approver_id' => $user->id]);
+                $nextStep = 3;
+                $hrEmployee = Employee::where('level', 'HR')->first();
+                $hrUser = $hrEmployee ? User::where('employee_id', $hrEmployee->id)->first() : $adminUser;
+                $nextApproverId = $hrUser ? $hrUser->id : ($adminUser->id ?? 1);
+
+                $nextReqApproval = RequestApproval::where('request_id', $attendanceRequest->id)->where('step', $nextStep)->first();
+                if (!$nextReqApproval) {
+                    RequestApproval::create([
+                        'request_id' => $attendanceRequest->id,
+                        'approver_id' => $nextApproverId,
+                        'step' => $nextStep,
+                        'status' => 'pending',
+                    ]);
+                }
                 
+                $attendanceRequest->update([
+                    'current_approval_step' => $nextStep,
+                    'status' => 'pending',
+                ]);
+
+                if ($originalStatus === 'approved' && $attendanceRequest->type === 'paid_leave') {
+                    $days = $this->calculateLeaveDays($attendanceRequest);
+                    $attendanceRequest->employee()->increment('annual_leave_balance', $days);
+                }
+
+                $message = 'Đã duyệt bước 2.';
+                
+            } else if ($targetStep == 3) {
                 $attendanceRequest->update([
                     'status' => 'approved',
                     'approved_at' => now(),
@@ -329,6 +376,9 @@ class AttendanceRequestController extends Controller
             if ($targetStep == 1) {
                 RequestApproval::where('request_id', $attendanceRequest->id)->where('step', '>', 1)->delete();
                 $attendanceRequest->update(['current_approval_step' => 1]);
+            } else if ($targetStep == 2) {
+                RequestApproval::where('request_id', $attendanceRequest->id)->where('step', '>', 2)->delete();
+                $attendanceRequest->update(['current_approval_step' => 2]);
             }
             
             $attendanceRequest->update([
@@ -350,6 +400,9 @@ class AttendanceRequestController extends Controller
             if ($targetStep == 1) {
                 RequestApproval::where('request_id', $attendanceRequest->id)->where('step', '>', 1)->delete();
                 $attendanceRequest->update(['current_approval_step' => 1]);
+            } else if ($targetStep == 2) {
+                RequestApproval::where('request_id', $attendanceRequest->id)->where('step', '>', 2)->delete();
+                $attendanceRequest->update(['current_approval_step' => 2]);
             }
             
             $attendanceRequest->update([
@@ -407,7 +460,11 @@ class AttendanceRequestController extends Controller
             
             $canApprove = false;
             if ($currentApproval) {
-                if ($currentApproval->approver_id == $user->id || $user->isAdmin() || ($attendanceRequest->current_approval_step == 1 && optional($attendanceRequest->employee)->manager_id == $user->employee_id)) {
+                if ($currentApproval->approver_id == $user->id || $user->isAdmin() || 
+                    ($attendanceRequest->current_approval_step == 1 && optional($attendanceRequest->employee)->manager_id == $user->employee_id) ||
+                    ($attendanceRequest->current_approval_step == 2 && optional($attendanceRequest->employee)->manager_l2_id == $user->employee_id) ||
+                    ($attendanceRequest->current_approval_step == 3 && optional($user->employee)->level == 'HR')
+                ) {
                     $canApprove = true;
                 }
             }
@@ -417,24 +474,45 @@ class AttendanceRequestController extends Controller
             $originalStatus = $attendanceRequest->status;
 
             if ($status === 'approved') {
+                $adminUser = User::whereIn('permission', [1,2])->first();
+                RequestApproval::where('request_id', $attendanceRequest->id)
+                    ->where('step', $attendanceRequest->current_approval_step)
+                    ->update(['status' => 'approved', 'acted_at' => now(), 'approver_id' => $user->id]);
+
                 if ($attendanceRequest->current_approval_step == 1) {
-                    RequestApproval::where('request_id', $attendanceRequest->id)
-                        ->where('step', 1)
-                        ->update(['status' => 'approved', 'acted_at' => now(), 'approver_id' => $user->id]);
+                    $employee = $attendanceRequest->employee;
+                    if ($employee && $employee->manager_l2_id) {
+                        $nextStep = 2;
+                        $managerL2User = User::where('employee_id', $employee->manager_l2_id)->first();
+                        $nextApproverId = $managerL2User ? $managerL2User->id : ($adminUser->id ?? 1);
+                    } else {
+                        $nextStep = 3;
+                        $hrEmployee = Employee::where('level', 'HR')->first();
+                        $hrUser = $hrEmployee ? User::where('employee_id', $hrEmployee->id)->first() : $adminUser;
+                        $nextApproverId = $hrUser ? $hrUser->id : ($adminUser->id ?? 1);
+                    }
                     
-                    $adminUser = User::whereIn('permission', [1,2])->first();
-                    $attendanceRequest->update(['current_approval_step' => 2]);
+                    $attendanceRequest->update(['current_approval_step' => $nextStep]);
                     RequestApproval::create([
                         'request_id' => $attendanceRequest->id,
-                        'approver_id' => $adminUser->id ?? 1,
-                        'step' => 2,
+                        'approver_id' => $nextApproverId,
+                        'step' => $nextStep,
                         'status' => 'pending',
                     ]);
                 } else if ($attendanceRequest->current_approval_step == 2) {
-                    RequestApproval::where('request_id', $attendanceRequest->id)
-                        ->where('step', 2)
-                        ->update(['status' => 'approved', 'acted_at' => now(), 'approver_id' => $user->id]);
+                    $nextStep = 3;
+                    $hrEmployee = Employee::where('level', 'HR')->first();
+                    $hrUser = $hrEmployee ? User::where('employee_id', $hrEmployee->id)->first() : $adminUser;
+                    $nextApproverId = $hrUser ? $hrUser->id : ($adminUser->id ?? 1);
                     
+                    $attendanceRequest->update(['current_approval_step' => $nextStep]);
+                    RequestApproval::create([
+                        'request_id' => $attendanceRequest->id,
+                        'approver_id' => $nextApproverId,
+                        'step' => $nextStep,
+                        'status' => 'pending',
+                    ]);
+                } else if ($attendanceRequest->current_approval_step == 3) {
                     $attendanceRequest->update([
                         'status' => 'approved',
                         'approved_at' => now(),

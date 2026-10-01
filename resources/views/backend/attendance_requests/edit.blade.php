@@ -60,7 +60,11 @@
                         if ($attendanceRequest->status == 'pending') {
                             $currentApproval = $attendanceRequest->requestApprovals->where('step', $attendanceRequest->current_approval_step)->first();
                             if ($currentApproval) {
-                                if ($currentApproval->approver_id == auth()->id() || auth()->user()->isAdmin() || ($attendanceRequest->current_approval_step == 1 && optional($attendanceRequest->employee)->manager_id == auth()->user()->employee_id)) {
+                                if ($currentApproval->approver_id == auth()->id() || auth()->user()->isAdmin() || 
+                                    ($attendanceRequest->current_approval_step == 1 && optional($attendanceRequest->employee)->manager_id == auth()->user()->employee_id) ||
+                                    ($attendanceRequest->current_approval_step == 2 && optional($attendanceRequest->employee)->manager_l2_id == auth()->user()->employee_id) ||
+                                    ($attendanceRequest->current_approval_step == 3 && optional(auth()->user()->employee)->level == 'HR')
+                                ) {
                                     $canApprove = true;
                                 }
                             }
@@ -108,7 +112,7 @@
                                             </div>
                                         </div>
                                         <div class="flex-grow-1 ms-3">
-                                            <h6 class="fs-14 mb-0 fw-semibold">Bước {{ $approval->step }}: {{ $approval->step == 1 ? 'Quản lý trực tiếp' : 'Hành chính - Nhân sự' }}</h6>
+                                            <h6 class="fs-14 mb-0 fw-semibold">Bước {{ $approval->step }}: {{ $approval->step == 1 ? 'Quản lý trực tiếp' : ($approval->step == 2 ? 'Quản lý cấp 2' : 'Hành chính - Nhân sự') }}</h6>
                                         </div>
                                     </div>
                                 </a>
@@ -118,6 +122,8 @@
                                     @if($approval->status == 'pending')
                                         @if($approval->step == 1 && optional($attendanceRequest->employee)->manager)
                                             <p class="mb-0 text-muted">Đang chờ <strong class="text-dark">{{ $attendanceRequest->employee->manager->name }}</strong> duyệt.</p>
+                                        @elseif($approval->step == 2 && optional($attendanceRequest->employee)->managerL2)
+                                            <p class="mb-0 text-muted">Đang chờ <strong class="text-dark">{{ $attendanceRequest->employee->managerL2->name }}</strong> duyệt.</p>
                                         @else
                                             <p class="mb-0 text-muted">Đang chờ <strong class="text-dark">{{ optional($approval->approver)->name }}</strong> duyệt.</p>
                                         @endif
