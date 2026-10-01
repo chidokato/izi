@@ -87,7 +87,7 @@
                             <select class="form-select form-select-sm manager-select" data-id="{{ $employee->id }}">
                                 <option value="">-- Trực tiếp Ban giám đốc --</option>
                                 @foreach($managers as $manager)
-                                    @if($manager->id != $employee->id)
+                                    @if($manager->id != $employee->id && ($manager->department_id == $employee->department_id || $employee->manager_id == $manager->id))
                                         <option value="{{ $manager->id }}" @selected($employee->manager_id == $manager->id)>{{ $manager->name }} ({{ $manager->employee_code }})</option>
                                     @endif
                                 @endforeach

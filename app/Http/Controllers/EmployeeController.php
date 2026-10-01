@@ -42,12 +42,18 @@ class EmployeeController extends Controller
                 ->where('status', 'active')
                 ->whereIn('position', ['team_leader', 'manager', 'director'])
                 ->orderBy('name')
-                ->get(['id', 'name', 'employee_code']),
-            'hrs' => DB::table('employees')
-                ->where('status', 'active')
-                ->whereIn('position', ['team_leader', 'manager', 'director'])
-                ->orderBy('name')
-                ->get(['id', 'name', 'employee_code']),
+                ->get(['id', 'name', 'employee_code', 'department_id']),
+            'hrs' => DB::table('employees as e')
+                ->join('departments as d', 'd.id', '=', 'e.department_id')
+                ->where('e.status', 'active')
+                ->whereIn('e.position', ['team_leader', 'manager', 'director'])
+                ->where(function($q) {
+                    $q->where('d.name', 'like', '%HCNS%')
+                      ->orWhere('d.name', 'like', '%Nhân sự%')
+                      ->orWhere('d.name', 'like', '%Văn phòng%');
+                })
+                ->orderBy('e.name')
+                ->get(['e.id', 'e.name', 'e.employee_code']),
         ]);
     }
 
