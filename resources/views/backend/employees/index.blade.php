@@ -62,7 +62,7 @@
                             <input class="form-check-input" type="checkbox" id="checkAll">
                         </div>
                     </th>
-                    <th>STT</th><th>Mã nhân viên</th><th>Họ tên</th><th>Phòng ban</th><th>Chức vụ</th><th>Người duyệt phiếu</th><th>Nhân sự duyệt</th><th>Trạng thái</th><th>Chấm công</th>
+                    <th>STT</th><th>Mã nhân viên</th><th>Họ tên</th><th>Phòng ban</th><th>Chức vụ</th><th>Người duyệt lần 1</th><th>Người duyệt lần 2</th><th>Trạng thái</th><th>Chấm công</th>
                 </tr></thead>
                 <tbody>
                     @forelse($employees as $employee)
@@ -95,9 +95,9 @@
                         </td>
                         <td>
                             <select class="form-select form-select-sm hr-select" data-id="{{ $employee->id }}">
-                                <option value="">-- Chọn nhân sự duyệt --</option>
+                                <option value="">-- Chọn người duyệt lần 2 --</option>
                                 @foreach($hrs as $hr)
-                                    @if($hr->id != $employee->id)
+                                    @if($hr->id != $employee->id && ($hr->department_id == $employee->department_id || $employee->hr_id == $hr->id))
                                         <option value="{{ $hr->id }}" @selected($employee->hr_id == $hr->id)>{{ $hr->name }} ({{ $hr->employee_code }})</option>
                                     @endif
                                 @endforeach
@@ -124,7 +124,7 @@
 
 <template id="bulk-manager-template">
     <div class="mb-3 text-start">
-        <label class="form-label">Người duyệt phiếu</label>
+        <label class="form-label">Người duyệt lần 1</label>
         <select id="swal-bulk-manager" class="form-select">
             <option value="no_change">-- Giữ nguyên --</option>
             <option value="">-- Trực tiếp Ban giám đốc --</option>
@@ -134,7 +134,7 @@
         </select>
     </div>
     <div class="text-start">
-        <label class="form-label">Nhân sự duyệt</label>
+        <label class="form-label">Người duyệt lần 2</label>
         <select id="swal-bulk-hr" class="form-select">
             <option value="no_change">-- Giữ nguyên --</option>
             <option value="">-- Bỏ trống --</option>

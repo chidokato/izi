@@ -47,13 +47,8 @@ class EmployeeController extends Controller
                 ->join('departments as d', 'd.id', '=', 'e.department_id')
                 ->where('e.status', 'active')
                 ->whereIn('e.position', ['team_leader', 'manager', 'director'])
-                ->where(function($q) {
-                    $q->where('d.name', 'like', '%HCNS%')
-                      ->orWhere('d.name', 'like', '%Nhân sự%')
-                      ->orWhere('d.name', 'like', '%Văn phòng%');
-                })
                 ->orderBy('e.name')
-                ->get(['e.id', 'e.name', 'e.employee_code']),
+                ->get(['e.id', 'e.name', 'e.employee_code', 'e.department_id']),
         ]);
     }
 
@@ -98,7 +93,7 @@ class EmployeeController extends Controller
         if ($request->manager_id == $id) {
             return response()->json([
                 'success' => false,
-                'message' => 'Không thể tự chọn mình làm quản lý!'
+                'message' => 'Không thể tự chọn mình làm người duyệt lần 1!'
             ], 400);
         }
 
@@ -108,7 +103,7 @@ class EmployeeController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Cập nhật quản lý trực tiếp thành công!'
+            'message' => 'Cập nhật người duyệt lần 1 thành công!'
         ]);
     }
 
@@ -121,7 +116,7 @@ class EmployeeController extends Controller
         if ($request->hr_id == $id) {
             return response()->json([
                 'success' => false,
-                'message' => 'Không thể tự chọn mình làm nhân sự duyệt!'
+                'message' => 'Không thể tự chọn mình làm người duyệt lần 2!'
             ], 400);
         }
 
@@ -131,7 +126,7 @@ class EmployeeController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Cập nhật nhân sự duyệt thành công!'
+            'message' => 'Cập nhật người duyệt lần 2 thành công!'
         ]);
     }
 
@@ -151,14 +146,14 @@ class EmployeeController extends Controller
         if ($managerId && in_array($managerId, $employeeIds)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Bạn không thể chọn quản lý duyệt là một trong những người đang được chọn để cập nhật!'
+                'message' => 'Bạn không thể chọn người duyệt lần 1 là một trong những người đang được chọn để cập nhật!'
             ], 400);
         }
         
         if ($hrId && in_array($hrId, $employeeIds)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Bạn không thể chọn nhân sự duyệt là một trong những người đang được chọn để cập nhật!'
+                'message' => 'Bạn không thể chọn người duyệt lần 2 là một trong những người đang được chọn để cập nhật!'
             ], 400);
         }
 
