@@ -26,15 +26,19 @@ class AttendanceCalendarController extends Controller
         $month = $request->filled('month')
             ? CarbonImmutable::createFromFormat('!Y-m', $request->input('month'))
             : CarbonImmutable::parse($latest ?: now('Asia/Ho_Chi_Minh'))->startOfMonth();
+            
+        $periodStart = $month->copy()->day(16);
+        $periodEnd = $month->copy()->addMonth()->day(15);
+        
         $entries = $employee ? DB::table('attendance_entries')->where('employee_id', $employee->id)
-            ->whereBetween('work_date', [$month->toDateString(), $month->endOfMonth()->toDateString()])->get()->keyBy('work_date') : collect();
+            ->whereBetween('work_date', [$periodStart->toDateString(), $periodEnd->toDateString()])->get()->keyBy('work_date') : collect();
             
         $requests = $employee ? DB::table('attendance_requests')
             ->where('employee_id', $employee->id)
             ->where('status', 'approved')
-            ->where(function($q) use ($month) {
-                $q->whereBetween('start_date', [$month->toDateString(), $month->endOfMonth()->toDateString()])
-                  ->orWhereBetween('end_date', [$month->toDateString(), $month->endOfMonth()->toDateString()]);
+            ->where(function($q) use ($periodStart, $periodEnd) {
+                $q->whereBetween('start_date', [$periodStart->toDateString(), $periodEnd->toDateString()])
+                  ->orWhereBetween('end_date', [$periodStart->toDateString(), $periodEnd->toDateString()]);
             })->get() : collect();
 
         $schedules = DB::table('work_schedules')->get(['id', 'name', 'status']);
@@ -56,8 +60,8 @@ class AttendanceCalendarController extends Controller
         $totalCongThucTe = 0;
         $totalCongTinhLuong = 0;
 
-        for ($date = $month->startOfWeek(); $date->lte($month->endOfMonth()->endOfWeek()); $date = $date->addDay()) {
-            $inMonth = $date->format('Y-m') === $month->format('Y-m');
+        for ($date = $periodStart->copy()->startOfWeek(); $date->lte($periodEnd->copy()->endOfWeek()); $date = $date->addDay()) {
+            $inMonth = $date->between($periodStart, $periodEnd);
             $dateStr = $date->toDateString();
             $entry = $inMonth ? clone ($entries->get($dateStr) ?? (object)['checkin' => null, 'checkout' => null]) : null;
             if ($entry && !isset($entry->id)) { $entry = null; } // Only keep it if it's a real entry initially
@@ -226,7 +230,7 @@ class AttendanceCalendarController extends Controller
             ];
         }
 
-        return view('backend.attendance.calendar', compact('employees', 'employee', 'month', 'days', 'totals', 'labels', 'latest', 'totalCongThucTe', 'totalCongTinhLuong'));
+        return view('backend.attendance.calendar', compact('employees', 'employee', 'month', 'periodStart', 'periodEnd', 'days', 'totals', 'labels', 'latest', 'totalCongThucTe', 'totalCongTinhLuong'));
     }
 
     public function swapPunch(Request $request)

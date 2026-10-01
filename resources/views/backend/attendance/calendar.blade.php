@@ -62,7 +62,7 @@
     <div><h5 class="mb-1">{{ $employee->name }} <span class="text-muted">· {{ $employee->employee_code }}</span></h5><span class="text-muted">{{ $employee->department_name ?? 'Chưa có phòng ban' }}</span></div>
     <div class="d-flex align-items-center gap-2">
         @if($month->format('Y-m') > '1900-01')<a class="btn btn-light" aria-label="Tháng trước" href="{{ route('backend.calendar.index', ['employee_id'=>$employee->id, 'month'=>$month->subMonth()->format('Y-m')]) }}">‹ Trước</a>@endif
-        <strong>Tháng {{ $month->format('m/Y') }}</strong>
+        <strong>Kỳ {{ $periodStart->format('d/m') }} - {{ $periodEnd->format('d/m/Y') }}</strong>
         @if($month->format('Y-m') < '2199-12')<a class="btn btn-light" aria-label="Tháng sau" href="{{ route('backend.calendar.index', ['employee_id'=>$employee->id, 'month'=>$month->addMonth()->format('Y-m')]) }}">Sau ›</a>@endif
         <a class="btn btn-soft-primary" href="{{ route('backend.calendar.index', ['employee_id'=>$employee->id, 'month'=>now('Asia/Ho_Chi_Minh')->format('Y-m')]) }}">Tháng này</a>
     </div>
@@ -93,7 +93,7 @@
             @foreach($days as $day)
             <section class="attendance-day {{ $day['in_month'] ? $day['status'] : 'outside' }} {{ $day['today'] ? 'is-today' : '' }}" aria-label="{{ $day['date']->format('d/m/Y') }}{{ $day['in_month'] ? ': '.$day['label'] : '' }}">
                 <div class="d-flex justify-content-between align-items-center">
-                    <span class="day-number">{{ $day['date']->day }}</span>
+                    <span class="day-number">{{ $day['date']->day == 1 ? $day['date']->format('d/m') : $day['date']->day }}</span>
                     <div>
                         @if($day['today'])<small class="me-1">Hôm nay</small>@endif
                         @if(isset($day['cong']) && $day['cong'] !== null)
