@@ -42,8 +42,8 @@ class AttendanceFileReader
             throw new InvalidArgumentException('Tối đa 10 sheet mỗi file.');
         }
         foreach ($info as $s) {
-            if ($s['totalRows'] > 2100 || $s['totalColumns'] > 100) {
-                throw new InvalidArgumentException('Mỗi sheet tối đa 2.100 dòng và 100 cột.');
+            if ($s['totalRows'] > 5000 || $s['totalColumns'] > 100) {
+                throw new InvalidArgumentException('Mỗi sheet tối đa 5.000 dòng và 100 cột.');
             }
         }
         $book = $reader->load($path);

@@ -148,17 +148,17 @@
                             $menuItems[] = ['is_title' => true, 'label' => 'ĐÁNH GIÁ NĂNG LỰC'];
                             $menuItems[] = ['label' => 'Đánh giá của tôi', 'icon' => 'ri-user-star-line', 'route' => 'backend.my-evaluations.index', 'active' => 'backend.my-evaluations.*'];
                             
-                            $menuItems[] = ['is_title' => true, 'label' => 'TÀI KHOẢN CÁ NHÂN'];
-                            $menuItems[] = ['label' => 'Thông tin cá nhân', 'icon' => 'ri-user-settings-line', 'route' => 'backend.profile.edit', 'active' => 'backend.profile.*'];
-                            
                             // Check if current user is manager or hr to show "Duyệt đánh giá"
                             $isSuperAdmin = auth()->user()->permission == 1;
                             $isManager = auth()->user()->employee_id && \App\Models\Employee::where('manager_id', auth()->user()->employee_id)->exists();
                             $isHRRole = auth()->user()->employee_id && \App\Models\Employee::where('hr_id', auth()->user()->employee_id)->exists();
                             
                             if ($isManager || $isHRRole || $isSuperAdmin) {
-                                $menuItems[] = ['label' => 'Quản lý duyệt', 'icon' => 'ri-check-double-line', 'route' => 'backend.evaluation-approvals.index', 'active' => 'backend.evaluation-approvals.*'];
+                                $menuItems[] = ['label' => 'Duyệt phiếu đánh giá', 'icon' => 'ri-check-double-line', 'route' => 'backend.evaluation-approvals.index', 'active' => 'backend.evaluation-approvals.*'];
                             }
+
+                            $menuItems[] = ['is_title' => true, 'label' => 'TÀI KHOẢN CÁ NHÂN'];
+                            $menuItems[] = ['label' => 'Thông tin cá nhân', 'icon' => 'ri-user-settings-line', 'route' => 'backend.profile.edit', 'active' => 'backend.profile.*'];
 
                             if ($isAdmin) {
                                 $menuItems[] = ['label' => 'Tiêu chí đánh giá', 'icon' => 'ri-list-check', 'route' => 'backend.evaluation-criteria.index', 'active' => 'backend.evaluation-criteria.*'];

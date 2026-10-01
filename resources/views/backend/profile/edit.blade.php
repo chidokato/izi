@@ -24,6 +24,70 @@
                 <div class="row">
                     <div class="col-xl-9">
                         <div class="card border mb-3">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0 text-primary">Cấu hình đăng nhập</h5>
+                                <p class="text-danger fw-medium mb-0 mt-1"><i class="ri-information-line align-middle me-1"></i>Có thể dùng 1 trong 3 thông tin dưới đây để đăng nhập vào hệ thống.</p>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-lg-4">
+                                        <div class="mb-3">
+                                            <label class="form-label">Mã nhân viên</label>
+                                            <input type="text" class="form-control bg-light" value="{{ $user->employee->employee_code ?? 'N/A' }}" readonly>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-4">
+                                        <div class="mb-3">
+                                            <label for="email" class="form-label">Email</label>
+                                            <input type="email" class="form-control @error('email') is-invalid @enderror" id="email" name="email" value="{{ old('email', $user->email ?? '') }}">
+                                            @error('email')
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-4">
+                                        <div class="mb-3">
+                                            <label for="phone" class="form-label">Số điện thoại</label>
+                                            <input type="text" class="form-control @error('phone') is-invalid @enderror" id="phone" name="phone" value="{{ old('phone', $user->phone ?? '') }}">
+                                            @error('phone')
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                        </div>
+                                    </div>
+
+                                    <div class="col-12 mb-3 mt-2">
+                                        <hr class="mt-0">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" role="switch" id="toggle-password-change">
+                                            <label class="form-check-label" for="toggle-password-change">Thay đổi mật khẩu</label>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-lg-6 password-fields">
+                                        <div class="mb-0">
+                                            <label for="password" class="form-label">Mật khẩu mới</label>
+                                            <input type="password" class="form-control @error('password') is-invalid @enderror" id="password" name="password" autocomplete="new-password" disabled>
+                                            @error('password')
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                        </div>
+                                    </div>
+
+                                    <div class="col-lg-6 password-fields">
+                                        <div class="mb-0">
+                                            <label for="password_confirmation" class="form-label">Nhập lại mật khẩu</label>
+                                            <input type="password" class="form-control" id="password_confirmation" name="password_confirmation" autocomplete="new-password" disabled>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card border mb-3">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0 text-primary">Thông tin nhân sự</h5>
+                                <p class="text-danger fw-medium mb-0 mt-1">Thông tin này được liên kết từ hồ sơ nhân sự, bạn không thể tự thay đổi.</p>
+                            </div>
                             <div class="card-body">
                                 <div class="row">
                                     <div class="col-12">
@@ -35,25 +99,9 @@
                                             @enderror
                                         </div>
                                     </div>
-                                    <div class="col-12">
-                                        <div class="mb-3">
-                                            <label for="bio" class="form-label">Giới thiệu ngắn (Bio)</label>
-                                            <textarea class="form-control @error('bio') is-invalid @enderror" id="bio" name="bio" rows="3">{{ old('bio', $user->bio ?? '') }}</textarea>
-                                            @error('bio')
-                                                <div class="invalid-feedback">{{ $message }}</div>
-                                            @enderror
-                                        </div>
-                                    </div>
+                                    
 
                                     @if($user->employee)
-                                        <div class="col-12 mt-3 mb-2">
-                                            <hr>
-                                            <h5 class="mb-0 text-primary">Thông tin nhân sự</h5>
-                                            <p class="text-muted small">Thông tin này được liên kết từ hồ sơ nhân sự, bạn không thể tự thay đổi.</p>
-                                        </div>
-
-
-
                                         <div class="col-lg-6">
                                             <div class="mb-3">
                                                 <label class="form-label">Phòng ban</label>
@@ -130,69 +178,21 @@
                                         </div>
                                     </div>
 
+                                    <div class="col-12">
+                                        <div class="mb-3">
+                                            <label for="bio" class="form-label">Giới thiệu ngắn (Bio)</label>
+                                            <textarea class="form-control @error('bio') is-invalid @enderror" id="bio" name="bio" rows="3">{{ old('bio', $user->bio ?? '') }}</textarea>
+                                            @error('bio')
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                        </div>
+                                    </div>
+
                                 </div>
                             </div>
                         </div>
 
-                        <div class="card border mb-3">
-                            <div class="card-header">
-                                <h5 class="card-title mb-0">Cấu hình đăng nhập</h5>
-                                <p class="text-muted small mb-0 mt-1">Có thể dùng 1 trong 3 thông tin dưới đây để đăng nhập vào hệ thống.</p>
-                            </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-lg-4">
-                                        <div class="mb-3">
-                                            <label class="form-label">Mã nhân viên</label>
-                                            <input type="text" class="form-control bg-light" value="{{ $user->employee->employee_code ?? 'N/A' }}" readonly>
-                                        </div>
-                                    </div>
-                                    <div class="col-lg-4">
-                                        <div class="mb-3">
-                                            <label for="email" class="form-label">Email</label>
-                                            <input type="email" class="form-control @error('email') is-invalid @enderror" id="email" name="email" value="{{ old('email', $user->email ?? '') }}">
-                                            @error('email')
-                                                <div class="invalid-feedback">{{ $message }}</div>
-                                            @enderror
-                                        </div>
-                                    </div>
-                                    <div class="col-lg-4">
-                                        <div class="mb-3">
-                                            <label for="phone" class="form-label">Số điện thoại</label>
-                                            <input type="text" class="form-control @error('phone') is-invalid @enderror" id="phone" name="phone" value="{{ old('phone', $user->phone ?? '') }}">
-                                            @error('phone')
-                                                <div class="invalid-feedback">{{ $message }}</div>
-                                            @enderror
-                                        </div>
-                                    </div>
-
-                                    <div class="col-12 mb-3 mt-2">
-                                        <hr class="mt-0">
-                                        <div class="form-check form-switch">
-                                            <input class="form-check-input" type="checkbox" role="switch" id="toggle-password-change">
-                                            <label class="form-check-label" for="toggle-password-change">Thay đổi mật khẩu</label>
-                                        </div>
-                                    </div>
-
-                                    <div class="col-lg-6 password-fields">
-                                        <div class="mb-0">
-                                            <label for="password" class="form-label">Mật khẩu mới</label>
-                                            <input type="password" class="form-control @error('password') is-invalid @enderror" id="password" name="password" autocomplete="new-password" disabled>
-                                            @error('password')
-                                                <div class="invalid-feedback">{{ $message }}</div>
-                                            @enderror
-                                        </div>
-                                    </div>
-
-                                    <div class="col-lg-6 password-fields">
-                                        <div class="mb-0">
-                                            <label for="password_confirmation" class="form-label">Nhập lại mật khẩu</label>
-                                            <input type="password" class="form-control" id="password_confirmation" name="password_confirmation" autocomplete="new-password" disabled>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        
                     </div>
 
                     <div class="col-xl-3">
