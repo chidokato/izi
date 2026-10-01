@@ -131,14 +131,14 @@
 
                                         <div class="col-lg-6">
                                             <div class="mb-3">
-                                                <label class="form-label">Quản lý trực tiếp</label>
+                                                <label class="form-label">Người duyệt lần 1</label>
                                                 <input type="text" class="form-control bg-light" value="{{ $user->employee->manager ? $user->employee->manager->name : 'N/A' }}" readonly>
                                             </div>
                                         </div>
 
                                         <div class="col-lg-6">
                                             <div class="mb-3">
-                                                <label class="form-label">Nhân sự (HR)</label>
+                                                <label class="form-label">Người duyệt lần 2</label>
                                                 @php
                                                     $hr = \App\Models\Employee::find($user->employee->hr_id);
                                                 @endphp
