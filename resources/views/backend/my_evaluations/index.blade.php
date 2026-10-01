@@ -8,7 +8,15 @@
     <div class="card">
         <div class="card-header d-flex align-items-center justify-content-between">
             <h4 class="card-title mb-0">Danh sách phiếu đánh giá</h4>
-            <a href="{{ route('backend.my-evaluations.create') }}" class="btn btn-primary">Tạo phiếu tháng này (Tháng {{ date('n') }})</a>
+            @php
+                $currentDay = date('j');
+                $isOpen = $currentDay >= 16 && $currentDay <= 30;
+            @endphp
+            @if($isOpen)
+                <a href="{{ route('backend.my-evaluations.create') }}" class="btn btn-primary">Tạo phiếu tháng này (Tháng {{ date('n') }})</a>
+            @else
+                <button type="button" class="btn btn-secondary" disabled title="Chỉ mở từ ngày 16 đến 30 hàng tháng">Tạo phiếu tháng này (Tháng {{ date('n') }})</button>
+            @endif
         </div>
         <div class="card-body">
             @php

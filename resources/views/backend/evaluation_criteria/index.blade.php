@@ -34,7 +34,9 @@
                             <!-- Parent Row -->
                             <tr class="table-info">
                                 <td><strong>{{ $criterion->order }}</strong></td>
-                                <td><strong>{{ $criterion->name }}</strong></td>
+                                <td>
+                                    <input type="text" class="form-control fw-bold quick-edit-name" data-id="{{ $criterion->id }}" value="{{ $criterion->name }}" style="width: 100%; min-width: 200px; border-color: transparent; background: transparent;">
+                                </td>
                                 <td>
                                     <strong>{{ $criterion->children->sum('max_score') ?: '-' }}</strong>
                                     <small class="text-muted">(Tổng con)</small>
@@ -63,7 +65,12 @@
                             @foreach($criterion->children as $child)
                                 <tr>
                                     <td class="ps-4">{{ $child->order }}</td>
-                                    <td class="ps-4">-- {{ $child->name }}</td>
+                                    <td class="ps-4">
+                                        <div class="d-flex align-items-center">
+                                            <span class="me-2 text-muted">--</span>
+                                            <input type="text" class="form-control quick-edit-name" data-id="{{ $child->id }}" value="{{ $child->name }}" style="width: 100%; min-width: 200px; border-color: transparent; background: transparent;">
+                                        </div>
+                                    </td>
                                     <td>{{ $child->max_score }}</td>
                                     <td>
                                         @if ($child->is_active)
@@ -97,3 +104,80 @@
         </div>
     </div>
 @endsection
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const inputs = document.querySelectorAll('.quick-edit-name');
+        
+        inputs.forEach(input => {
+            let originalValue = input.value;
+            
+            // Thêm hiệu ứng focus để nhận biết đang sửa
+            input.addEventListener('focus', function() {
+                this.style.borderColor = '#878a99';
+                this.style.background = '#fff';
+            });
+
+            input.addEventListener('blur', function() {
+                this.style.borderColor = 'transparent';
+                this.style.background = 'transparent';
+                
+                const newValue = this.value.trim();
+                const id = this.getAttribute('data-id');
+
+                if (newValue !== originalValue && newValue !== '') {
+                    // Hiển thị loading nhẹ
+                    this.style.opacity = '0.5';
+
+                    fetch(`/admin/evaluation-criteria/${id}/quick-update`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({ name: newValue })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        this.style.opacity = '1';
+                        if (data.success) {
+                            originalValue = newValue;
+                            // Optional: Hiển thị toast nhẹ góc màn hình
+                            if (typeof Toastify !== 'undefined') {
+                                Toastify({
+                                    text: "Đã lưu tên tiêu chí",
+                                    duration: 2000,
+                                    gravity: "top",
+                                    position: "right",
+                                    backgroundColor: "#4fC6E1",
+                                }).showToast();
+                            }
+                        } else {
+                            this.value = originalValue;
+                            alert('Có lỗi xảy ra khi lưu.');
+                        }
+                    })
+                    .catch(error => {
+                        this.style.opacity = '1';
+                        this.value = originalValue;
+                        console.error('Error:', error);
+                        alert('Lỗi kết nối.');
+                    });
+                } else if (newValue === '') {
+                    this.value = originalValue;
+                }
+            });
+
+            // Lắng nghe phím Enter
+            input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    this.blur();
+                }
+            });
+        });
+    });
+</script>
+@endpush

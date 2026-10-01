@@ -31,6 +31,11 @@ class MyEvaluationController extends Controller
             return redirect()->back()->with('error', 'Tài khoản chưa được liên kết nhân viên.');
         }
 
+        $currentDay = date('j');
+        if ($currentDay < 16 || $currentDay > 30) {
+            return redirect()->route('backend.my-evaluations.index')->with('error', 'Chức năng tự đánh giá chỉ mở từ ngày 16 đến ngày 30 hàng tháng.');
+        }
+
         $month = date('n');
         $year = date('Y');
 

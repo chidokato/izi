@@ -100,4 +100,16 @@ class EvaluationCriterionController extends Controller
 
         return redirect()->route('backend.evaluation-criteria.edit', $newCriterion->id)->with('success', 'Đã nhân bản tiêu chí. Bạn đang xem bản sao.');
     }
+
+    public function quickUpdate(Request $request, $id)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+        ]);
+
+        $criterion = EvaluationCriterion::findOrFail($id);
+        $criterion->update(['name' => $request->name]);
+
+        return response()->json(['success' => true, 'message' => 'Cập nhật thành công']);
+    }
 }

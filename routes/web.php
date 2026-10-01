@@ -171,6 +171,7 @@ Route::prefix('admin/evaluation-criteria')->name('backend.evaluation-criteria.')
     Route::get('/{id}/edit', [\App\Http\Controllers\Backend\EvaluationCriterionController::class, 'edit'])->whereNumber('id')->name('edit');
     Route::post('/{id}/duplicate', [\App\Http\Controllers\Backend\EvaluationCriterionController::class, 'duplicate'])->whereNumber('id')->name('duplicate');
     Route::put('/{id}', [\App\Http\Controllers\Backend\EvaluationCriterionController::class, 'update'])->whereNumber('id')->name('update');
+    Route::post('/{id}/quick-update', [\App\Http\Controllers\Backend\EvaluationCriterionController::class, 'quickUpdate'])->whereNumber('id')->name('quick-update');
     Route::delete('/{id}', [\App\Http\Controllers\Backend\EvaluationCriterionController::class, 'destroy'])->whereNumber('id')->name('destroy');
 });
 
