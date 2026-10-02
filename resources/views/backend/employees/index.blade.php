@@ -51,7 +51,7 @@
         </form>
         <div class="d-flex justify-content-between align-items-center mb-2">
             <div>
-                <button type="button" class="btn btn-sm btn-primary d-none" id="btn-bulk-edit-manager">Sửa người duyệt hàng loạt</button>
+                <button type="button" class="btn btn-sm btn-primary d-none" id="btn-bulk-edit-manager">Cập nhật hàng loạt</button>
             </div>
         </div>
         <div class="table-responsive">
@@ -132,6 +132,16 @@
 </div>
 
 <template id="bulk-manager-template">
+    <div class="mb-3 text-start">
+        <label class="form-label">Phòng ban</label>
+        <select id="swal-bulk-department" class="form-select">
+            <option value="no_change">-- Giữ nguyên --</option>
+            <option value="">-- Bỏ trống --</option>
+            @foreach($departments as $department)
+                <option value="{{ $department->id }}">{{ $department->name }}</option>
+            @endforeach
+        </select>
+    </div>
     <div class="mb-3 text-start">
         <label class="form-label">Người duyệt lần 1</label>
         <select id="swal-bulk-manager" class="form-select">
@@ -418,13 +428,14 @@
                 if (checkedIds.length === 0) return;
 
                 Swal.fire({
-                    title: 'Chọn người duyệt hàng loạt',
+                    title: 'Cập nhật hàng loạt',
                     html: document.getElementById('bulk-manager-template').innerHTML,
                     showCancelButton: true,
                     confirmButtonText: 'Cập nhật',
                     cancelButtonText: 'Hủy',
                     preConfirm: () => {
                         return {
+                            department_id: document.getElementById('swal-bulk-department').value,
                             manager_id: document.getElementById('swal-bulk-manager').value,
                             manager_l2_id: document.getElementById('swal-bulk-hr').value
                         };
@@ -432,6 +443,7 @@
                 }).then((result) => {
                     if (result.isConfirmed) {
                         let payload = { employee_ids: checkedIds };
+                        if (result.value.department_id !== 'no_change') payload.department_id = result.value.department_id;
                         if (result.value.manager_id !== 'no_change') payload.manager_id = result.value.manager_id;
                         if (result.value.manager_l2_id !== 'no_change') payload.manager_l2_id = result.value.manager_l2_id;
                         

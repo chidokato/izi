@@ -192,10 +192,12 @@ class EmployeeController extends Controller
         $request->validate([
             'employee_ids' => 'required|array',
             'employee_ids.*' => 'integer|exists:employees,id',
+            'department_id' => 'nullable|integer|exists:departments,id',
             'manager_id' => 'nullable|integer|exists:employees,id',
             'manager_l2_id' => 'nullable|integer|exists:employees,id'
         ]);
 
+        $departmentId = $request->department_id;
         $managerId = $request->manager_id;
         $hrId = $request->manager_l2_id;
         $employeeIds = $request->employee_ids;
@@ -218,6 +220,7 @@ class EmployeeController extends Controller
         // Only update the fields if they are explicitly sent in request? 
         // Wait, the modal might send both. So we update both if the request has them.
         // Actually, let's just update both to what's provided (can be null).
+        if ($request->has('department_id')) $dataToUpdate['department_id'] = $departmentId;
         if ($request->has('manager_id')) $dataToUpdate['manager_id'] = $managerId;
         if ($request->has('manager_l2_id')) $dataToUpdate['manager_l2_id'] = $hrId;
 
@@ -227,7 +230,7 @@ class EmployeeController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Cập nhật người duyệt hàng loạt thành công cho ' . count($employeeIds) . ' nhân viên!'
+            'message' => 'Cập nhật thông tin hàng loạt thành công cho ' . count($employeeIds) . ' nhân viên!'
         ]);
     }
 }
