@@ -56,16 +56,40 @@
                                         <div class="position-relative h-100 d-flex flex-column">
                                             <div class="mb-4">
                                                 <a href="{{ route('login') }}" class="d-inline-block text-white text-decoration-none">
-                                                    <h2 class="nhadat-brand mb-0 text-white fw-bold">I<span>ZI</span></h2>
+                                                    <h2 class="nhadat-brand mb-0 text-white fw-bold">H<span>CC</span></h2>
                                                 </a>
                                             </div>
 
                                             <div class="mt-auto text-white">
                                                 <span class="badge bg-light-subtle text-success text-uppercase mb-3">HỆ THỐNG NỘI BỘ</span>
-                                                <h1 class="display-6 fw-semibold text-white mb-3">Hệ thống quản lý chấm công & đánh giá nhân sự</h1>
-                                                <p class="fs-15 text-white text-opacity-75 mb-4">
-                                                    Khu vực này dành riêng cho nhân viên để quản lý chấm công, làm phiếu yêu cầu, đánh giá công việc và các nghiệp vụ vận hành khác.
-                                                </p>
+                                                @if(session('setup_user_id'))
+                                                    <h1 class="display-6 fw-semibold text-white mb-3">Chú ý</h1>
+                                                    <div class="p-3 rounded mb-4 shadow-sm" style="background-color: rgba(255, 193, 7, 0.15); border: 1px solid rgba(255, 193, 7, 0.4); border-left: 4px solid #ffc107;">
+                                                        <div class="d-flex align-items-start mb-2">
+                                                            <i class="ri-error-warning-fill text-warning me-2 fs-5 lh-1"></i>
+                                                            <div class="fs-15 text-white text-opacity-100 lh-base">
+                                                                <strong>Đăng nhập lần đầu</strong> vui lòng đổi mật khẩu và bổ sung Email & Số điện thoại.
+                                                            </div>
+                                                        </div>
+                                                        <div class="d-flex align-items-start mb-2">
+                                                            <i class="ri-information-fill text-warning me-2 fs-5 lh-1"></i>
+                                                            <div class="fs-15 text-white text-opacity-100 lh-base">
+                                                                Từ lần sau, bạn sẽ dùng 1 trong 3 thông tin này kết hợp với mật khẩu để đăng nhập.
+                                                            </div>
+                                                        </div>
+                                                        <div class="d-flex align-items-start">
+                                                            <i class="ri-lock-password-fill text-warning me-2 fs-5 lh-1"></i>
+                                                            <div class="fs-15 text-white text-opacity-100 lh-base">
+                                                                Mật khẩu mới <strong class="text-warning">phải khác</strong> mật khẩu mặc định.
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                @else
+                                                    <h1 class="display-6 fw-semibold text-white mb-3">Hệ thống quản lý chấm công & đánh giá nhân sự</h1>
+                                                    <p class="fs-15 text-white text-opacity-75 mb-4">
+                                                        Khu vực này dành riêng cho nhân viên để quản lý chấm công, làm phiếu yêu cầu, đánh giá công việc và các nghiệp vụ vận hành khác.
+                                                    </p>
+                                                @endif
 
                                                 <div class="feature-note mb-4">
                                                     <div class="d-flex align-items-start gap-3">
@@ -105,9 +129,8 @@
                                             @endphp
                                             <form action="{{ route('backend.admin.first_time_setup') }}" method="POST">
                                                 @csrf
-                                                <div class="mb-2">
-                                                    <h5 class="mb-1 text-primary">Thông tin đăng nhập</h5>
-                                                    <p class="text-muted mb-3">Từ lần sau, bạn có thể dùng 1 trong 3 thông tin dưới đây kết hợp với mật khẩu để đăng nhập vào hệ thống.</p>
+                                                <div class="mb-4">
+                                                    <h3 class="text-primary fw-bold">Thông tin đăng nhập</h3>
                                                 </div>
                                                 <div class="mb-3">
                                                     <label class="form-label">Mã nhân viên</label>

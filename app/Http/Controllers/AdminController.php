@@ -45,7 +45,7 @@ class AdminController extends Controller
                 $user = \App\Models\User::create([
                     'name' => $employee->name,
                     'email' => strtolower($employee->employee_code) . '@hcc.local',
-                    'password' => \Illuminate\Support\Facades\Hash::make('123456'),
+                    'password' => \Illuminate\Support\Facades\Hash::make('idc@123'),
                     'permission' => 3,
                     'employee_id' => $employee->id,
                     'is_active' => true,
@@ -55,7 +55,7 @@ class AdminController extends Controller
 
         if ($user && in_array($user->permission, [1, 2, 3])) {
             if (Auth::attempt(['email' => $user->email, 'password' => $password], $request->boolean('remember'))) {
-                if (\Illuminate\Support\Facades\Hash::check('123456', $user->password)) {
+                if (\Illuminate\Support\Facades\Hash::check('idc@123', $user->password)) {
                     Auth::logout();
                     session(['setup_user_id' => $user->id]);
                     return redirect()->route('login');
@@ -84,27 +84,37 @@ class AdminController extends Controller
         if (!$setupUserId) {
             return redirect()->route('login');
         }
+        
+        $user = \App\Models\User::find($setupUserId);
+        if (!$user) {
+            return redirect()->route('login');
+        }
 
         $request->validate([
             'email' => 'required|email|unique:users,email,' . $setupUserId,
             'phone' => 'required|string',
-            'new_password' => 'required|string|min:6|confirmed',
+            'new_password' => [
+                'required',
+                'string',
+                'min:6',
+                'confirmed',
+                function ($attribute, $value, $fail) use ($user) {
+                    if (\Illuminate\Support\Facades\Hash::check($value, $user->password)) {
+                        $fail('Mật khẩu mới phải khác mật khẩu mặc định.');
+                    }
+                }
+            ],
         ]);
 
-        $user = \App\Models\User::find($setupUserId);
-        if ($user) {
-            $user->email = $request->email;
-            $user->phone = $request->phone;
-            $user->password = \Illuminate\Support\Facades\Hash::make($request->new_password);
-            $user->is_active = true;
-            $user->save();
+        $user->email = $request->email;
+        $user->phone = $request->phone;
+        $user->password = \Illuminate\Support\Facades\Hash::make($request->new_password);
+        $user->is_active = true;
+        $user->save();
             
-            session()->forget('setup_user_id');
-            Auth::login($user, true);
-            return redirect()->route('backend.admin.dashboard');
-        }
-
-        return redirect()->route('login');
+        session()->forget('setup_user_id');
+        Auth::login($user, true);
+        return redirect()->route('backend.admin.dashboard');
     }
 
     public function logout(Request $request): RedirectResponse

@@ -19,7 +19,7 @@ Route::get('/run-sync-employees', function () {
         \App\Models\User::create([
             'name' => $employee->name,
             'email' => strtolower($employee->employee_code) . '@hcc.local',
-            'password' => \Illuminate\Support\Facades\Hash::make('123456'),
+            'password' => \Illuminate\Support\Facades\Hash::make('idc@123'),
             'permission' => 3,
             'employee_id' => $employee->id,
             'is_active' => false,
@@ -27,6 +27,19 @@ Route::get('/run-sync-employees', function () {
         $count++;
     }
     return "Synced $count employees";
+});
+
+Route::get('/update-default-passwords', function () {
+    $users = \App\Models\User::all();
+    $count = 0;
+    foreach ($users as $user) {
+        if (\Illuminate\Support\Facades\Hash::check('123456', $user->password)) {
+            $user->password = \Illuminate\Support\Facades\Hash::make('idc@123');
+            $user->save();
+            $count++;
+        }
+    }
+    return "Đã cập nhật $count tài khoản từ mật khẩu cũ (123456) sang mật khẩu mới (idc@123).";
 });
 
 Route::get('/sso/hcc', [\App\Http\Controllers\HccSsoController::class, 'login'])
