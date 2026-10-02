@@ -130,10 +130,38 @@
                                             <p class="mb-0 text-muted">Đang chờ <strong class="text-dark">{{ optional($approval->approver)->name }}</strong> duyệt.</p>
                                         @endif
                                     @elseif($approval->status == 'approved')
-                                        <p class="mb-1 text-success"><strong class="text-dark">{{ optional($approval->approver)->name }}</strong> đã duyệt</p>
+                                        @php
+                                            $actualApproverName = optional($approval->approver)->name;
+                                            $intendedApproverName = '';
+                                            if ($approval->step == 1 && optional($attendanceRequest->employee)->manager) {
+                                                $intendedApproverName = $attendanceRequest->employee->manager->name;
+                                            } elseif ($approval->step == 2 && optional($attendanceRequest->employee)->managerL2) {
+                                                $intendedApproverName = $attendanceRequest->employee->managerL2->name;
+                                            }
+                                        @endphp
+                                        <p class="mb-1 text-success">
+                                            <strong class="text-dark">{{ $actualApproverName }}</strong> đã duyệt
+                                            @if($intendedApproverName && $actualApproverName != $intendedApproverName && $actualApproverName != 'Hành chính - Nhân sự')
+                                                <small class="text-muted" style="font-weight: normal;">(duyệt thay {{ $intendedApproverName }})</small>
+                                            @endif
+                                        </p>
                                         <p class="mb-0 text-muted"><i class="ri-clock-line align-middle me-1"></i> {{ $approval->acted_at ? $approval->acted_at->format('d/m/Y H:i') : '' }}</p>
                                     @elseif($approval->status == 'rejected')
-                                        <p class="mb-1 text-danger"><strong class="text-dark">{{ optional($approval->approver)->name }}</strong> đã từ chối</p>
+                                        @php
+                                            $actualRejecterName = optional($approval->approver)->name;
+                                            $intendedRejecterName = '';
+                                            if ($approval->step == 1 && optional($attendanceRequest->employee)->manager) {
+                                                $intendedRejecterName = $attendanceRequest->employee->manager->name;
+                                            } elseif ($approval->step == 2 && optional($attendanceRequest->employee)->managerL2) {
+                                                $intendedRejecterName = $attendanceRequest->employee->managerL2->name;
+                                            }
+                                        @endphp
+                                        <p class="mb-1 text-danger">
+                                            <strong class="text-dark">{{ $actualRejecterName }}</strong> đã từ chối
+                                            @if($intendedRejecterName && $actualRejecterName != $intendedRejecterName && $actualRejecterName != 'Hành chính - Nhân sự')
+                                                <small class="text-muted" style="font-weight: normal;">(từ chối thay {{ $intendedRejecterName }})</small>
+                                            @endif
+                                        </p>
                                         <p class="mb-0 text-muted"><i class="ri-clock-line align-middle me-1"></i> {{ $approval->acted_at ? $approval->acted_at->format('d/m/Y H:i') : '' }}</p>
                                     @endif
                                 </div>
