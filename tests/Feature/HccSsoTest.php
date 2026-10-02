@@ -10,9 +10,9 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
-class IziSsoTest extends TestCase
+class HccSsoTest extends TestCase
 {
-    private string $secret = 'test-izi-sso-secret';
+    private string $secret = 'test-hcc-sso-secret';
 
     protected function setUp(): void
     {
@@ -21,7 +21,7 @@ class IziSsoTest extends TestCase
         config([
             'database.default' => 'sqlite',
             'database.connections.sqlite.database' => ':memory:',
-            'services.izi_sso.shared_secret' => $this->secret,
+            'services.hcc_sso.shared_secret' => $this->secret,
         ]);
         DB::purge('sqlite');
 
@@ -35,7 +35,7 @@ class IziSsoTest extends TestCase
         $payload = [
             'id' => 'source-user-42',
             'email' => 'member@example.test',
-            'name' => 'Nguoi dung IZI',
+            'name' => 'Nguoi dung HCC',
             'phone' => '0900000000',
             'timestamp' => now()->timestamp,
         ];
@@ -53,7 +53,7 @@ class IziSsoTest extends TestCase
     public function test_legacy_encrypted_token_creates_and_authenticates_a_moderator(): void
     {
         $sourceKey = random_bytes(32);
-        config(['services.izi_sso.source_app_key' => 'base64:'.base64_encode($sourceKey)]);
+        config(['services.hcc_sso.source_app_key' => 'base64:'.base64_encode($sourceKey)]);
 
         $payload = [
             'id' => 'source-user-99',
@@ -64,7 +64,7 @@ class IziSsoTest extends TestCase
         ];
         $token = (new Encrypter($sourceKey, 'AES-256-CBC'))->encryptString(json_encode($payload));
 
-        $this->get('/sso/izi?token='.urlencode($token))->assertRedirect('/admin');
+        $this->get('/sso/hcc?token='.urlencode($token))->assertRedirect('/admin');
 
         $user = User::where('email', $payload['email'])->firstOrFail();
         $this->assertAuthenticatedAs($user);
@@ -95,7 +95,7 @@ class IziSsoTest extends TestCase
 
     public function test_unsigned_sso_request_is_rejected(): void
     {
-        $this->get('/sso/izi?payload=not-a-valid-payload&signature=invalid')
+        $this->get('/sso/hcc?payload=not-a-valid-payload&signature=invalid')
             ->assertForbidden();
         $this->assertSame(0, User::count());
     }
@@ -105,6 +105,6 @@ class IziSsoTest extends TestCase
         $encodedPayload = rtrim(strtr(base64_encode(json_encode($payload)), '+/', '-_'), '=');
         $signature = hash_hmac('sha256', $encodedPayload, $this->secret);
 
-        return '/sso/izi?payload='.urlencode($encodedPayload).'&signature='.$signature;
+        return '/sso/hcc?payload='.urlencode($encodedPayload).'&signature='.$signature;
     }
 }

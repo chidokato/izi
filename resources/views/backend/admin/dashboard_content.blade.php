@@ -7,7 +7,7 @@
 @section('content')
     <div class="card">
         <div class="card-body p-4">
-            <h1 class="h3">Quản trị IZI</h1>
+            <h1 class="h3">Quản trị HCC</h1>
             <p class="text-muted mb-0">Chào {{ auth()->user()->name }}, bạn đã đăng nhập vào hệ thống.</p>
         </div>
     </div>

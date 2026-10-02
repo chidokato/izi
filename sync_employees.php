@@ -17,7 +17,7 @@ foreach ($employees as $employee) {
     if (!$employee->employee_code) continue;
     User::create([
         'name' => $employee->name,
-        'email' => strtolower($employee->employee_code) . '@izi.local',
+        'email' => strtolower($employee->employee_code) . '@hcc.local',
         'password' => Hash::make('123456'),
         'permission' => 3,
         'employee_id' => $employee->id,

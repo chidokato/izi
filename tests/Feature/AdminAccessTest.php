@@ -63,7 +63,7 @@ class AdminAccessTest extends TestCase
         $this->post('/admin/login', ['email' => $user->email, 'password' => 'Test-password-937!'])
             ->assertRedirect('/admin');
         $this->assertAuthenticatedAs($user);
-        $this->get('/admin')->assertOk()->assertSee('Quản trị IZI');
+        $this->get('/admin')->assertOk()->assertSee('Quản trị HCC');
         $this->get('/')->assertRedirect('/admin');
         $this->get('/admin/login')->assertRedirect('/admin');
     }

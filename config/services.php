@@ -36,9 +36,9 @@ return [
         'model' => env('GEMINI_MODEL', 'gemini-1.5-flash'),
     ],
 
-    'izi_sso' => [
-        'shared_secret' => env('IZI_SSO_SHARED_SECRET'),
-        'source_app_key' => env('IZI_SSO_SOURCE_APP_KEY'),
+    'hcc_sso' => [
+        'shared_secret' => env('HCC_SSO_SHARED_SECRET'),
+        'source_app_key' => env('HCC_SSO_SOURCE_APP_KEY'),
     ],
 
     'openai' => [

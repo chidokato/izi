@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 
-class IziSsoController extends Controller
+class HccSsoController extends Controller
 {
     public function login(Request $request): RedirectResponse
     {
@@ -28,7 +28,7 @@ class IziSsoController extends Controller
             'phone' => ['nullable', 'string', 'max:50'],
             'timestamp' => ['required', 'integer'],
         ], [
-            'employee_code.required' => 'Tài khoản của bạn chưa được cập nhật Mã Nhân Viên. Vui lòng cập nhật bên Indochine trước khi vào IZI.',
+            'employee_code.required' => 'Tài khoản của bạn chưa được cập nhật Mã Nhân Viên. Vui lòng cập nhật bên Indochine trước khi vào HCC.',
         ]);
 
         if ($validator->fails()) {
@@ -106,7 +106,7 @@ class IziSsoController extends Controller
 
     private function decodeLegacyToken(string $token): array
     {
-        $sourceAppKey = (string) config('services.izi_sso.source_app_key');
+        $sourceAppKey = (string) config('services.hcc_sso.source_app_key');
         abort_if($sourceAppKey === '', 503, 'Chưa cấu hình khóa SSO từ web nguồn.');
 
         if (Str::startsWith($sourceAppKey, 'base64:')) {
@@ -131,9 +131,9 @@ class IziSsoController extends Controller
     {
         $encodedPayload = (string) $request->query('payload');
         $signature = (string) $request->query('signature');
-        $secret = (string) config('services.izi_sso.shared_secret');
+        $secret = (string) config('services.hcc_sso.shared_secret');
 
-        abort_if($secret === '', 503, 'SSO IZI chưa được cấu hình.');
+        abort_if($secret === '', 503, 'SSO HCC chưa được cấu hình.');
         abort_unless($encodedPayload !== '' && $signature !== '', 403, 'Yêu cầu SSO không hợp lệ.');
         abort_unless(
             hash_equals(hash_hmac('sha256', $encodedPayload, $secret), $signature),

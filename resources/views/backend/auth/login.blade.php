@@ -2,10 +2,10 @@
 <html lang="vi" data-layout="vertical" data-topbar="light" data-sidebar="dark" data-sidebar-size="lg" data-sidebar-image="none" data-preloader="disable" data-theme="default" data-theme-colors="default">
 <head>
     <meta charset="utf-8" />
-    <title>Dang nhap Admin | IZI</title>
+    <title>Dang nhap Admin | HCC</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Trang dang nhap khu vuc quan tri IZI." />
-    <meta name="author" content="IZI" />
+    <meta name="description" content="Trang dang nhap khu vuc quan tri HCC." />
+    <meta name="author" content="HCC" />
     <link rel="shortcut icon" href="{{ asset('admin-assets/images/favicon.ico') }}">
 
     <script src="{{ asset('admin-assets/js/layout.js') }}"></script>
@@ -151,7 +151,7 @@
                                         @else
                                         <div>
                                             <h5 class="text-primary">Đăng nhập quản trị</h5>
-                                            <p class="text-muted">Nhập thông tin để vào hệ thống nội bộ IZI.</p>
+                                            <p class="text-muted">Nhập thông tin để vào hệ thống nội bộ HCC.</p>
                                         </div>
 
                                         <div class="mt-4">
@@ -227,7 +227,7 @@
                     <div class="col-lg-12">
                         <div class="text-center">
                             <p class="mb-0 text-muted">
-                                &copy; <script>document.write(new Date().getFullYear())</script> IZI Admin
+                                &copy; <script>document.write(new Date().getFullYear())</script> HCC Admin
                             </p>
                         </div>
                     </div>

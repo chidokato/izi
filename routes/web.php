@@ -18,7 +18,7 @@ Route::get('/run-sync-employees', function () {
         if (!$employee->employee_code) continue;
         \App\Models\User::create([
             'name' => $employee->name,
-            'email' => strtolower($employee->employee_code) . '@izi.local',
+            'email' => strtolower($employee->employee_code) . '@hcc.local',
             'password' => \Illuminate\Support\Facades\Hash::make('123456'),
             'permission' => 3,
             'employee_id' => $employee->id,
@@ -29,9 +29,9 @@ Route::get('/run-sync-employees', function () {
     return "Synced $count employees";
 });
 
-Route::get('/sso/izi', [\App\Http\Controllers\IziSsoController::class, 'login'])
+Route::get('/sso/hcc', [\App\Http\Controllers\HccSsoController::class, 'login'])
     ->middleware('throttle:20,1')
-    ->name('sso.izi.login');
+    ->name('sso.hcc.login');
 Route::get('/admin/login', [AdminController::class, 'login'])->name('backend.admin.login');
 Route::post('/admin/login', [AdminController::class, 'authenticate'])
     ->middleware('throttle:5,1')->name('backend.admin.authenticate');

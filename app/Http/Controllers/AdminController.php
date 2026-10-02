@@ -44,7 +44,7 @@ class AdminController extends Controller
             if ($employee) {
                 $user = \App\Models\User::create([
                     'name' => $employee->name,
-                    'email' => strtolower($employee->employee_code) . '@izi.local',
+                    'email' => strtolower($employee->employee_code) . '@hcc.local',
                     'password' => \Illuminate\Support\Facades\Hash::make('123456'),
                     'permission' => 3,
                     'employee_id' => $employee->id,

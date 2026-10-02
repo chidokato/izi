@@ -22,7 +22,7 @@ class EvaluationApprovalController extends Controller
         }
 
         $directReportIds = Employee::where('manager_id', $user->employee_id)->pluck('id')->toArray();
-        $hrReportIds = Employee::where('hr_id', $user->employee_id)->pluck('id')->toArray();
+        $hrReportIds = Employee::where('manager_l2_id', $user->employee_id)->pluck('id')->toArray();
         
         // Nếu là Super Admin (permission=1) thì cho phép xem tất cả
         $isSuperAdmin = $user->permission == 1;

@@ -23,7 +23,7 @@ migrations do not implement these workflows.
 
 ## Initial installation on this checkout
 
-At inspection, the configured local database `izi` was empty. The legacy
+At inspection, the configured local database `hcc` was empty. The legacy
 `2026_08_14_100000_add_course_tabs_fields_to_posts_table.php` migration depends on
 a missing `posts` table and must not be run as part of attendance installation.
 Use an explicit migration path list for the existing users and permission
