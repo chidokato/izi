@@ -218,13 +218,13 @@
                                             <a href="{{ route('backend.attendance-requests.edit', $req->id) }}" class="btn btn-sm btn-info">Chi tiết</a>
                                             @php
                                                 $hasAction = $req->requestApprovals->where('status', '!=', 'pending')->count() > 0;
-                                                $canDelete = (auth()->user()->isAdmin() || auth()->user()->employee_id == $req->employee_id) && !$hasAction;
+                                                $isOwnerOrAdmin = (auth()->user()->isAdmin() || auth()->user()->employee_id == $req->employee_id);
                                             @endphp
-                                            @if($canDelete)
+                                            @if($isOwnerOrAdmin)
                                                 <form action="{{ route('backend.attendance-requests.destroy', $req->id) }}" method="POST" class="d-inline-block form-delete-request">
                                                     @csrf
                                                     @method('DELETE')
-                                                    <button type="submit" class="btn btn-sm btn-danger"><i class="ri-delete-bin-line"></i></button>
+                                                    <button type="submit" class="btn btn-sm btn-danger" @if($hasAction) disabled title="Không thể xóa phiếu đã có người thao tác duyệt" @endif><i class="ri-delete-bin-line"></i></button>
                                                 </form>
                                             @endif
                                         </div>
