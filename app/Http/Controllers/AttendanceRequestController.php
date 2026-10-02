@@ -15,14 +15,15 @@ class AttendanceRequestController extends Controller
         $query = AttendanceRequest::with(['employee', 'requestApprovals'])->latest();
 
         $user = auth()->user();
-        if ($user && !$user->isAdmin()) {
+        if ($user && !$user->isAdmin() && optional($user->employee)->level !== 'HR') {
             $query->where(function($q) use ($user) {
                 $q->where('employee_id', $user->employee_id)
                   ->orWhereHas('requestApprovals', function($q2) use ($user) {
                       $q2->where('approver_id', $user->id);
                   })
                   ->orWhereHas('employee', function($q3) use ($user) {
-                      $q3->where('manager_id', $user->employee_id);
+                      $q3->where('manager_id', $user->employee_id)
+                         ->orWhere('manager_l2_id', $user->employee_id);
                   });
             });
         }

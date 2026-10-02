@@ -125,8 +125,7 @@
                                         @elseif($approval->step == 2 && optional($attendanceRequest->employee)->managerL2)
                                             <p class="mb-0 text-muted">Đang chờ <strong class="text-dark">{{ $attendanceRequest->employee->managerL2->name }}</strong> duyệt.</p>
                                         @elseif($approval->step == 3)
-                                            @php $hr = \App\Models\Employee::where('level', 'HR')->first(); @endphp
-                                            <p class="mb-0 text-muted">Đang chờ <strong class="text-dark">{{ $hr ? $hr->name : 'Hành chính - Nhân sự' }}</strong> duyệt.</p>
+                                            <p class="mb-0 text-muted">Đang chờ <strong class="text-dark">Hành chính - Nhân sự</strong> duyệt.</p>
                                         @else
                                             <p class="mb-0 text-muted">Đang chờ <strong class="text-dark">{{ optional($approval->approver)->name }}</strong> duyệt.</p>
                                         @endif
