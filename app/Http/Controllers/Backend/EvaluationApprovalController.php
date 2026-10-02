@@ -57,7 +57,7 @@ class EvaluationApprovalController extends Controller
         $evaluation = Evaluation::with(['employee', 'details.criterion.parent'])->findOrFail($id);
 
         $directReportIds = Employee::where('manager_id', $user->employee_id)->pluck('id')->toArray();
-        $hrReportIds = Employee::where('hr_id', $user->employee_id)->pluck('id')->toArray();
+        $hrReportIds = Employee::where('manager_l2_id', $user->employee_id)->pluck('id')->toArray();
         $isSuperAdmin = $user->permission == 1;
 
         $isManager = in_array($evaluation->employee_id, $directReportIds);
@@ -80,7 +80,7 @@ class EvaluationApprovalController extends Controller
         $evaluation = Evaluation::findOrFail($id);
         
         $directReportIds = Employee::where('manager_id', $user->employee_id)->pluck('id')->toArray();
-        $hrReportIds = Employee::where('hr_id', $user->employee_id)->pluck('id')->toArray();
+        $hrReportIds = Employee::where('manager_l2_id', $user->employee_id)->pluck('id')->toArray();
         $isSuperAdmin = $user->permission == 1;
 
         $isManager = in_array($evaluation->employee_id, $directReportIds);

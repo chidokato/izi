@@ -156,6 +156,10 @@ Route::patch('admin/employees/bulk-manager', [\App\Http\Controllers\EmployeeCont
     ->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->name('backend.employees.bulk-manager');
 Route::get('admin/departments', [\App\Http\Controllers\DepartmentController::class, 'index'])
     ->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->name('backend.departments.index');
+Route::get('admin/departments/{id}/edit', [\App\Http\Controllers\DepartmentController::class, 'edit'])
+    ->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->name('backend.departments.edit');
+Route::put('admin/departments/{id}', [\App\Http\Controllers\DepartmentController::class, 'update'])
+    ->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->name('backend.departments.update');
 Route::get('admin/attendance-calendar', [\App\Http\Controllers\AttendanceCalendarController::class, 'index'])
     ->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->name('backend.calendar.index');
 Route::post('admin/attendance-calendar/swap', [\App\Http\Controllers\AttendanceCalendarController::class, 'swapPunch'])

@@ -36,4 +36,84 @@ class DepartmentController extends Controller
                 ->paginate(50)->withQueryString(),
         ]);
     }
+
+    public function edit($id)
+    {
+        $department = DB::table('departments')->where('id', $id)->first();
+        if (!$department) {
+            return redirect()->route('backend.departments.index')->with('error', 'Không tìm thấy phòng ban.');
+        }
+
+        $allDepartments = DB::table('departments')->orderBy('sort_order')->orderBy('name')->get();
+        $descendants = $this->getDescendantIds($allDepartments, $id);
+        $invalidParentIds = array_merge([$id], $descendants);
+
+        $departmentsTree = $this->buildTreeSelect($allDepartments);
+
+        return view('backend.departments.edit', [
+            'department' => $department,
+            'departmentsTree' => $departmentsTree,
+            'invalidParentIds' => $invalidParentIds,
+        ]);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $department = DB::table('departments')->where('id', $id)->first();
+        if (!$department) {
+            return redirect()->route('backend.departments.index')->with('error', 'Không tìm thấy phòng ban.');
+        }
+
+        $request->validate([
+            'code' => 'nullable|string|max:50|unique:departments,code,' . $id,
+            'name' => 'required|string|max:255',
+            'parent_id' => 'nullable|exists:departments,id',
+            'sort_order' => 'nullable|integer|min:0',
+            'status' => 'required|in:active,inactive',
+        ]);
+
+        if ($request->filled('parent_id')) {
+            $allDepartments = DB::table('departments')->get();
+            $descendants = $this->getDescendantIds($allDepartments, $id);
+            if ($request->input('parent_id') == $id || in_array($request->input('parent_id'), $descendants)) {
+                return back()->with('error', 'Không thể chọn phòng ban này làm cấp trên để tránh vòng lặp.')->withInput();
+            }
+        }
+
+        DB::table('departments')->where('id', $id)->update([
+            'code' => $request->input('code'),
+            'name' => $request->input('name'),
+            'parent_id' => $request->input('parent_id') ?: null,
+            'sort_order' => $request->input('sort_order', 0),
+            'status' => $request->input('status', 'active'),
+            'updated_at' => now(),
+        ]);
+
+        return redirect()->route('backend.departments.index')->with('success', 'Cập nhật phòng ban thành công.');
+    }
+
+    private function getDescendantIds($departments, $parentId)
+    {
+        $descendants = [];
+        foreach ($departments as $department) {
+            if ($department->parent_id == $parentId) {
+                $descendants[] = $department->id;
+                $descendants = array_merge($descendants, $this->getDescendantIds($departments, $department->id));
+            }
+        }
+        return $descendants;
+    }
+
+    private function buildTreeSelect($departments, $parentId = null, $prefix = '')
+    {
+        $tree = [];
+        foreach ($departments as $department) {
+            if ($department->parent_id == $parentId) {
+                $department->name_with_prefix = $prefix . $department->name;
+                $tree[] = $department;
+                $tree = array_merge($tree, $this->buildTreeSelect($departments, $department->id, $prefix . '-- '));
+            }
+        }
+        return $tree;
+    }
 }

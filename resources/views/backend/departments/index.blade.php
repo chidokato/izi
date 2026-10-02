@@ -33,7 +33,7 @@
         <p class="text-muted">Số nhân viên gồm tất cả trạng thái, chỉ tính người thuộc trực tiếp phòng ban. Bấm vào số lượng để xem danh sách.</p>
         <div class="table-responsive">
             <table class="table table-striped table-nowrap align-middle">
-                <thead class="table-light"><tr><th>STT</th><th>Mã phòng ban</th><th>Tên phòng ban</th><th>Phòng ban cấp trên</th><th>Số nhân viên</th><th>Trạng thái</th></tr></thead>
+                <thead class="table-light"><tr><th>STT</th><th>Mã phòng ban</th><th>Tên phòng ban</th><th>Phòng ban cấp trên</th><th>Số nhân viên</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
                 <tbody>
                     @forelse($departments as $department)
                     <tr>
@@ -43,9 +43,12 @@
                         <td>{{ $department->parent_name ?? '—' }}</td>
                         <td><a href="{{ route('backend.employees.index', ['department_id' => $department->id]) }}" aria-label="Xem nhân viên phòng {{ $department->name }}">{{ $department->employee_count }}</a></td>
                         <td><span class="badge {{ $department->status === 'active' ? 'bg-success' : 'bg-secondary' }}">{{ $department->status === 'active' ? 'Đang hoạt động' : 'Ngừng hoạt động' }}</span></td>
+                        <td>
+                            <a href="{{ route('backend.departments.edit', $department->id) }}" class="btn btn-sm btn-soft-primary">Sửa</a>
+                        </td>
                     </tr>
                     @empty
-                    <tr><td colspan="6" class="text-center text-muted py-4">Không có phòng ban phù hợp. Phòng ban mới có thể được tạo khi nhập file chấm công.</td></tr>
+                    <tr><td colspan="7" class="text-center text-muted py-4">Không có phòng ban phù hợp. Phòng ban mới có thể được tạo khi nhập file chấm công.</td></tr>
                     @endforelse
                 </tbody>
             </table>
