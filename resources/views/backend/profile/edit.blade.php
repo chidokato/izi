@@ -140,7 +140,7 @@
                                             <div class="mb-3">
                                                 <label class="form-label">Người duyệt lần 2</label>
                                                 @php
-                                                    $hr = \App\Models\Employee::find($user->employee->hr_id);
+                                                    $hr = \App\Models\Employee::find($user->employee->manager_l2_id);
                                                 @endphp
                                                 <input type="text" class="form-control bg-light" value="{{ $hr ? $hr->name : 'N/A' }}" readonly>
                                             </div>

@@ -36,7 +36,7 @@ class ProfileController extends Controller
             'secondary_phone' => ['nullable', 'string', 'max:50'],
             'whatsapp_phone' => ['nullable', 'string', 'max:50'],
 
-            'avatar_file' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:2048'],
+            'avatar_file' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:10240'],
             'remove_avatar' => ['nullable'],
             'password' => ['nullable', 'string', 'min:6', 'confirmed'],
         ]);
