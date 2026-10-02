@@ -146,6 +146,8 @@ Route::patch('admin/employees/{id}/status', [\App\Http\Controllers\EmployeeContr
     ->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->name('backend.employees.change-status');
 Route::patch('admin/employees/{id}/position', [\App\Http\Controllers\EmployeeController::class, 'changePosition'])
     ->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->name('backend.employees.change-position');
+Route::patch('admin/employees/{id}/department', [\App\Http\Controllers\EmployeeController::class, 'changeDepartment'])
+    ->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->name('backend.employees.change-department');
 Route::patch('admin/employees/{id}/manager', [\App\Http\Controllers\EmployeeController::class, 'changeManager'])
     ->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->name('backend.employees.change-manager');
 Route::patch('admin/employees/{id}/hr', [\App\Http\Controllers\EmployeeController::class, 'changeHr'])

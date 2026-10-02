@@ -125,6 +125,22 @@ class EmployeeController extends Controller
         ]);
     }
 
+    public function changeDepartment(Request $request, $id)
+    {
+        $request->validate([
+            'department_id' => 'nullable|integer|exists:departments,id'
+        ]);
+
+        $employee = \App\Models\Employee::findOrFail($id);
+        $employee->department_id = $request->department_id;
+        $employee->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Cập nhật phòng ban thành công!'
+        ]);
+    }
+
     public function changeManager(Request $request, $id)
     {
         $request->validate([

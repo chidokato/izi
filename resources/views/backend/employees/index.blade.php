@@ -75,7 +75,14 @@
                         <td>{{ $employees->firstItem() + $loop->index }}</td>
                         <td>{{ $employee->employee_code }}</td>
                         <td>{{ $employee->name }}</td>
-                        <td>{{ $employee->department_name ?? 'Chưa có phòng ban' }}</td>
+                        <td>
+                            <select class="form-select form-select-sm department-select fw-bold text-dark" data-id="{{ $employee->id }}">
+                                <option value="">----</option>
+                                @foreach($departments as $department)
+                                    <option value="{{ $department->id }}" @selected($employee->department_id == $department->id)>{{ $department->name }}</option>
+                                @endforeach
+                            </select>
+                        </td>
                         <td>
                             <select class="form-select form-select-sm position-select fw-bold {{ $employee->position === 'director' ? 'text-danger' : ($employee->position === 'manager' ? 'text-primary' : ($employee->position === 'team_leader' ? 'text-info' : 'text-secondary')) }}" data-id="{{ $employee->id }}">
                                 @foreach(['employee'=>'Nhân viên','team_leader'=>'Trưởng nhóm','manager'=>'Trưởng phòng','director'=>'Giám đốc'] as $value=>$label)
@@ -192,6 +199,47 @@
                             icon: 'success',
                             title: data.message
                         });
+                    } else {
+                        toastMixin.fire({
+                            icon: 'error',
+                            title: data.message || 'Có lỗi xảy ra!'
+                        });
+                    }
+                })
+                .catch(error => {
+                    toastMixin.fire({
+                        icon: 'error',
+                        title: 'Lỗi máy chủ!'
+                    });
+                });
+            });
+        });
+
+        document.querySelectorAll('.department-select').forEach(select => {
+            select.addEventListener('change', function () {
+                const employeeId = this.dataset.id;
+                const departmentId = this.value;
+                const url = `{{ route('backend.employees.change-department', ':id') }}`.replace(':id', employeeId);
+
+                fetch(url, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ department_id: departmentId })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        toastMixin.fire({
+                            icon: 'success',
+                            title: data.message
+                        });
+                        // Automatically reload the page after a brief delay because changing department 
+                        // might invalidate the current options in the Manager 1/2 dropdowns.
+                        setTimeout(() => window.location.reload(), 1000);
                     } else {
                         toastMixin.fire({
                             icon: 'error',
