@@ -549,7 +549,14 @@ class AttendanceRequestController extends Controller
 
     public function destroy(AttendanceRequest $attendanceRequest)
     {
-        if (!auth()->user()->isAdmin()) {
+        $user = auth()->user();
+        $hasAction = $attendanceRequest->requestApprovals()->where('status', '!=', 'pending')->exists();
+        
+        if ($hasAction) {
+            return redirect()->route('backend.attendance-requests.index')->with('error', 'Không thể xóa phiếu đã có người duyệt hoặc từ chối.');
+        }
+
+        if (!$user->isAdmin() && $user->employee_id != $attendanceRequest->employee_id) {
             abort(403, 'Unauthorized action.');
         }
 

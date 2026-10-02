@@ -216,7 +216,11 @@
                                     <td>
                                         <div class="d-flex gap-1 align-items-center" id="action-buttons-{{ $req->id }}">
                                             <a href="{{ route('backend.attendance-requests.edit', $req->id) }}" class="btn btn-sm btn-info">Chi tiết</a>
-                                            @if(auth()->user()->isAdmin())
+                                            @php
+                                                $hasAction = $req->requestApprovals->where('status', '!=', 'pending')->count() > 0;
+                                                $canDelete = (auth()->user()->isAdmin() || auth()->user()->employee_id == $req->employee_id) && !$hasAction;
+                                            @endphp
+                                            @if($canDelete)
                                                 <form action="{{ route('backend.attendance-requests.destroy', $req->id) }}" method="POST" class="d-inline-block form-delete-request">
                                                     @csrf
                                                     @method('DELETE')
