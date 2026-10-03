@@ -11,7 +11,8 @@
     <div class="col-md-3"><label for="schedule-code" class="form-label">Mã lịch <span class="text-danger">*</span></label><input id="schedule-code" name="code" class="form-control" value="{{ old('code',$schedule->code ?? '') }}" maxlength="50" placeholder="Ví dụ: HC01" required></div>
     <div class="col-md-6"><label for="schedule-name" class="form-label">Tên lịch <span class="text-danger">*</span></label><input id="schedule-name" name="name" class="form-control" value="{{ old('name',$schedule->name ?? '') }}" maxlength="255" placeholder="Ví dụ: Hành chính văn phòng" required></div>
     <div class="col-md-3"><label for="schedule-status" class="form-label">Trạng thái</label><select id="schedule-status" name="status" class="form-select"><option value="active" @selected(old('status',$schedule->status ?? 'active')==='active')>Đang sử dụng</option><option value="inactive" @selected(old('status',$schedule->status ?? 'active')==='inactive')>Ngừng sử dụng</option></select></div>
-    <div class="col-12"><label for="schedule-description" class="form-label">Ghi chú</label><textarea id="schedule-description" name="description" class="form-control" rows="2" maxlength="2000">{{ old('description',$schedule->description ?? '') }}</textarea></div>
+    <div class="col-md-3"><label for="schedule-grace" class="form-label">Cho phép đi trễ/về sớm (phút)</label><input type="number" id="schedule-grace" name="grace_period" class="form-control" value="{{ old('grace_period',$schedule->grace_period ?? 0) }}" min="0" max="120"></div>
+    <div class="col-md-9"><label for="schedule-description" class="form-label">Ghi chú</label><textarea id="schedule-description" name="description" class="form-control" rows="1" maxlength="2000">{{ old('description',$schedule->description ?? '') }}</textarea></div>
 </div></div></div>
 <div class="card"><div class="card-body">
 <h5>Khung giờ theo ngày trong tuần</h5>

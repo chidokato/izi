@@ -65,6 +65,7 @@ class WorkScheduleController extends Controller
         $data = $request->validate([
             'code' => ['required', 'string', 'max:50', 'regex:/^[A-Za-z0-9_.-]+$/', Rule::unique('work_schedules', 'code')->ignore($id)],
             'name' => 'required|string|max:255', 'description' => 'nullable|string|max:2000', 'status' => 'required|in:active,inactive',
+            'grace_period' => 'nullable|integer|min:0|max:120',
             'rules' => 'required|array|size:7', 'rules.*' => 'required|array',
             'rules.*.is_working_day' => 'required|boolean', 'rules.*.ot_next_day' => 'required|boolean',
             'rules.*.start_time' => 'nullable|date_format:H:i', 'rules.*.end_time' => 'nullable|date_format:H:i',
@@ -137,7 +138,7 @@ class WorkScheduleController extends Controller
             if ($id && DB::table('employee_schedules')->where('work_schedule_id', $id)->exists()) {
                 throw ValidationException::withMessages(['name' => 'Lịch này đã được gán cho nhân viên. Hãy tạo lịch mới để giữ nguyên cấu hình đã áp dụng.']);
             }
-            $values = ['code' => $data['code'], 'name' => $data['name'], 'description' => $data['description'] ?? null, 'status' => $data['status'], 'updated_at' => now()];
+            $values = ['code' => $data['code'], 'name' => $data['name'], 'description' => $data['description'] ?? null, 'status' => $data['status'], 'grace_period' => $data['grace_period'] ?? 0, 'updated_at' => now()];
             $oldRules = $id ? DB::table('work_schedule_rules')->where('work_schedule_id', $id)->get()->toArray() : [];
             if ($id) {
                 DB::table('work_schedules')->where('id', $id)->update($values);

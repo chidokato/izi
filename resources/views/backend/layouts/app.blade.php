@@ -29,7 +29,7 @@
                                     <img src="{{ asset('admin-assets/images/logo-sm.png') }}" alt="" height="50">
                                 </span>
                                 <span class="logo-lg">
-                                    <span class="fs-2 fw-bold">HCC</span>
+                                    <span class="fs-2 fw-bold text-white">INDOCHINE</span>
                                 </span>
                             </a>
                             <a href="{{ route('backend.admin.dashboard') }}" class="logo logo-light">
@@ -37,7 +37,7 @@
                                     <img src="{{ asset('admin-assets/images/logo-sm.png') }}" alt="" height="50">
                                 </span>
                                 <span class="logo-lg">
-                                    <span class="fs-2 fw-bold">HCC</span>
+                                    <span class="fs-2 fw-bold text-white">INDOCHINE</span>
                                 </span>
                             </a>
                         </div>
@@ -111,7 +111,7 @@
                         <img src="{{ asset('admin-assets/images/logo-sm.png') }}" alt="" height="22">
                     </span>
                     <span class="logo-lg">
-                        <span class="fs-2 fw-bold">HCC</span>
+                        <span class="fs-2 fw-bold text-white">INDOCHINE</span>
                     </span>
                 </a>
                 <a href="{{ route('backend.admin.dashboard') }}" class="logo logo-light">
@@ -119,7 +119,7 @@
                         <img src="{{ asset('admin-assets/images/logo-sm.png') }}" alt="" height="22">
                     </span>
                     <span class="logo-lg">
-                        <span class="fs-2 fw-bold">HCC</span>
+                        <span class="fs-2 fw-bold text-white">INDOCHINE</span>
                     </span>
                 </a>
                 <button type="button" class="btn btn-sm p-0 fs-20 header-item float-end btn-vertical-sm-hover" id="vertical-hover">
@@ -131,7 +131,6 @@
                 <div class="container-fluid">
                     <div id="two-column-menu"></div>
                     <ul class="navbar-nav" id="navbar-nav">
-                        <li class="menu-title"><span>Menu</span></li>
                         @php
                             $isAdmin = auth()->check() && auth()->user()->isAdmin();
                             $menuItems = [];
@@ -157,20 +156,25 @@
                                 $menuItems[] = ['label' => 'Duyệt phiếu đánh giá', 'icon' => 'ri-check-double-line', 'route' => 'backend.evaluation-approvals.index', 'active' => 'backend.evaluation-approvals.*'];
                             }
 
-                            $menuItems[] = ['is_title' => true, 'label' => 'TÀI KHOẢN CÁ NHÂN'];
-                            $menuItems[] = ['label' => 'Thông tin cá nhân', 'icon' => 'ri-user-settings-line', 'route' => 'backend.profile.edit', 'active' => 'backend.profile.*'];
-
                             if ($isAdmin) {
                                 $menuItems[] = ['label' => 'Tiêu chí đánh giá', 'icon' => 'ri-list-check', 'route' => 'backend.evaluation-criteria.index', 'active' => 'backend.evaluation-criteria.*'];
                                 $menuItems[] = ['label' => 'Cấu hình xếp loại', 'icon' => 'ri-medal-line', 'route' => 'backend.evaluation-grades.index', 'active' => 'backend.evaluation-grades.*'];
+                            }
 
+                            $menuItems[] = ['is_title' => true, 'label' => 'QUẢN LÝ TÀI KHOẢN'];
+                            $menuItems[] = ['label' => 'Thông tin cá nhân', 'icon' => 'ri-user-settings-line', 'route' => 'backend.profile.edit', 'active' => 'backend.profile.*'];
+                            
+                            if ($isAdmin) {
+                                $menuItems[] = ['label' => 'Nhân viên', 'icon' => 'ri-team-line', 'route' => 'backend.employees.index', 'active' => 'backend.employees.*'];
+                                $menuItems[] = ['label' => 'Tài khoản', 'icon' => 'ri-user-3-line', 'route' => 'backend.users.index', 'active' => 'backend.users.*'];
+                            }
+
+                            if ($isAdmin) {
                                 // Group: QUẢN LÝ NHÂN SỰ & CẤU HÌNH
                                 $menuItems[] = ['is_title' => true, 'label' => 'NHÂN SỰ & CẤU HÌNH'];
-                                $menuItems[] = ['label' => 'Nhân viên', 'icon' => 'ri-team-line', 'route' => 'backend.employees.index', 'active' => 'backend.employees.*'];
                                 $menuItems[] = ['label' => 'Phòng ban', 'icon' => 'ri-building-line', 'route' => 'backend.departments.index', 'active' => 'backend.departments.*'];
                                 $menuItems[] = ['label' => 'Cấu hình tháng', 'icon' => 'ri-settings-4-line', 'route' => 'backend.monthly-settings.index', 'active' => 'backend.monthly-settings.*'];
                                 $menuItems[] = ['label' => 'Giờ làm việc', 'icon' => 'ri-time-line', 'route' => 'backend.schedules.index', 'active' => 'backend.schedules.*'];
-                                $menuItems[] = ['label' => 'Tài khoản', 'icon' => 'ri-user-3-line', 'route' => 'backend.users.index', 'active' => 'backend.users.*'];
                             }
                         @endphp
                         @foreach ($menuItems as $item)
