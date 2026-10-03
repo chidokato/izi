@@ -39,7 +39,7 @@
                 <label for="employee-status" class="form-label">Trạng thái</label>
                 <select id="employee-status" name="status" class="form-select">
                     <option value="">Tất cả</option>
-                    @foreach(['active'=>'Đang làm việc','inactive'=>'Công tác viên','resigned'=>'Nghỉ việc'] as $value=>$label)
+                    @foreach(['active'=>'Chính thức','probation'=>'Thử việc','inactive'=>'Công tác viên','resigned'=>'Nghỉ việc'] as $value=>$label)
                         <option value="{{ $value }}" @selected(request('status') === $value)>{{ $label }}</option>
                     @endforeach
                 </select>
@@ -62,7 +62,7 @@
                             <input class="form-check-input" type="checkbox" id="checkAll">
                         </div>
                     </th>
-                    <th>STT</th><th>Mã nhân viên</th><th>Họ tên</th><th>Phòng ban</th><th>Chức vụ</th><th>Người duyệt lần 1</th><th>Người duyệt lần 2</th><th>Trạng thái</th><th>Thao tác</th>
+                    <th>STT</th><th>Mã nhân viên</th><th>Họ tên</th><th>Phòng ban</th><th>Chức vụ</th><th>Người duyệt lần 1</th><th>Người duyệt lần 2</th><th>Trạng thái</th><th>Phép năm</th><th>Thao tác</th>
                 </tr></thead>
                 <tbody>
                     @forelse($employees as $employee)
@@ -111,18 +111,21 @@
                             </select>
                         </td>
                         <td>
-                            <select class="form-select form-select-sm status-select fw-bold {{ $employee->status === 'active' ? 'text-success' : ($employee->status === 'inactive' ? 'text-warning' : 'text-danger') }}" data-id="{{ $employee->id }}">
-                                @foreach(['active'=>'Đang làm việc','inactive'=>'Công tác viên','resigned'=>'Nghỉ việc'] as $value=>$label)
+                            <select class="form-select form-select-sm status-select fw-bold {{ $employee->status === 'active' ? 'text-success' : ($employee->status === 'inactive' ? 'text-warning' : ($employee->status === 'probation' ? 'text-info' : 'text-danger')) }}" data-id="{{ $employee->id }}" data-old-value="{{ $employee->status }}">
+                                @foreach(['active'=>'Chính thức','probation'=>'Thử việc','inactive'=>'Công tác viên','resigned'=>'Nghỉ việc'] as $value=>$label)
                                     <option value="{{ $value }}" class="text-body" @selected($employee->status === $value)>{{ $label }}</option>
                                 @endforeach
                             </select>
+                        </td>
+                        <td>
+                            <input type="number" step="0.5" class="form-control form-control-sm annual-leave-input text-center" data-id="{{ $employee->id }}" value="{{ (float)$employee->annual_leave_balance }}" style="width: 70px;">
                         </td>
                         <td>
                             <a href="{{ route('backend.employees.edit', $employee->id) }}" class="btn btn-sm btn-soft-primary"><i class="ri-pencil-fill"></i> Sửa</a>
                         </td>
                     </tr>
                     @empty
-                    <tr><td colspan="10" class="text-center text-muted py-4">Không có nhân viên phù hợp. Bạn có thể tạo nhân viên khi nhập file chấm công.</td></tr>
+                    <tr><td colspan="11" class="text-center text-muted py-4">Không có nhân viên phù hợp. Bạn có thể tạo nhân viên khi nhập file chấm công.</td></tr>
                     @endforelse
                 </tbody>
             </table>
@@ -165,7 +168,20 @@
 </template>
 @endsection
 
+@push('styles')
+<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+<style>
+    /* Fix daterangepicker z-index over sweetalert */
+    .daterangepicker {
+        z-index: 10000 !important;
+    }
+</style>
+@endpush
+
 @push('scripts')
+<script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const toastMixin = Swal.mixin({
@@ -184,44 +200,109 @@
             select.addEventListener('change', function () {
                 const employeeId = this.dataset.id;
                 const status = this.value;
+                const oldValue = this.dataset.oldValue;
                 const url = `{{ route('backend.employees.change-status', ':id') }}`.replace(':id', employeeId);
                 const selectElement = this;
 
-                // Update text color
-                selectElement.classList.remove('text-success', 'text-warning', 'text-danger');
-                if (status === 'active') selectElement.classList.add('text-success');
-                else if (status === 'inactive') selectElement.classList.add('text-warning');
-                else if (status === 'resigned') selectElement.classList.add('text-danger');
+                const sendStatusRequest = (payload) => {
+                    // Update text color
+                    selectElement.classList.remove('text-success', 'text-warning', 'text-danger', 'text-info');
+                    if (status === 'active') selectElement.classList.add('text-success');
+                    else if (status === 'inactive') selectElement.classList.add('text-warning');
+                    else if (status === 'resigned') selectElement.classList.add('text-danger');
+                    else if (status === 'probation') selectElement.classList.add('text-info');
 
-                fetch(url, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({ status: status })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        toastMixin.fire({
-                            icon: 'success',
-                            title: data.message
-                        });
-                    } else {
+                    fetch(url, {
+                        method: 'PATCH',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify(payload)
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            selectElement.dataset.oldValue = status;
+                            if (payload.annual_leave_balance !== undefined) {
+                                // Update the annual leave input next to it
+                                const row = selectElement.closest('tr');
+                                const leaveInput = row.querySelector('.annual-leave-input');
+                                if (leaveInput) leaveInput.value = data.annual_leave_balance;
+                            }
+                            toastMixin.fire({
+                                icon: 'success',
+                                title: data.message
+                            });
+                        } else {
+                            selectElement.value = oldValue;
+                            toastMixin.fire({
+                                icon: 'error',
+                                title: data.message || 'Có lỗi xảy ra!'
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        selectElement.value = oldValue;
                         toastMixin.fire({
                             icon: 'error',
-                            title: data.message || 'Có lỗi xảy ra!'
+                            title: 'Lỗi máy chủ!'
                         });
-                    }
-                })
-                .catch(error => {
-                    toastMixin.fire({
-                        icon: 'error',
-                        title: 'Lỗi máy chủ!'
                     });
-                });
+                };
+
+                if (status === 'active' && oldValue !== 'active') {
+                    const today = moment().format('DD/MM/YYYY');
+                    Swal.fire({
+                        title: 'Chuyển sang Chính thức',
+                        html: `
+                            <div class="text-start mb-3">
+                                <label class="form-label">Ngày làm việc chính thức</label>
+                                <input type="text" id="swal-join-date" class="form-control" value="${today}">
+                            </div>
+                            <div class="text-start">
+                                <label class="form-label">Phép năm khởi tạo</label>
+                                <input type="number" id="swal-annual-leave" class="form-control" value="0" step="0.5" min="0">
+                            </div>
+                        `,
+                        showCancelButton: true,
+                        confirmButtonText: 'Lưu',
+                        cancelButtonText: 'Hủy',
+                        didOpen: () => {
+                            $('#swal-join-date').daterangepicker({
+                                singleDatePicker: true,
+                                showDropdowns: true,
+                                autoUpdateInput: true,
+                                locale: {
+                                    format: 'DD/MM/YYYY',
+                                    daysOfWeek: ["CN", "T2", "T3", "T4", "T5", "T6", "T7"],
+                                    monthNames: ["Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5", "Tháng 6", "Tháng 7", "Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12"],
+                                    firstDay: 1
+                                }
+                            });
+                        },
+                        preConfirm: () => {
+                            let joinDateStr = document.getElementById('swal-join-date').value;
+                            // Convert DD/MM/YYYY to YYYY-MM-DD for backend
+                            let joinDateParts = joinDateStr.split('/');
+                            let backendDate = joinDateParts.length === 3 ? `${joinDateParts[2]}-${joinDateParts[1]}-${joinDateParts[0]}` : null;
+                            return {
+                                status: status,
+                                join_date: backendDate,
+                                annual_leave_balance: document.getElementById('swal-annual-leave').value
+                            }
+                        }
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            sendStatusRequest(result.value);
+                        } else {
+                            selectElement.value = oldValue;
+                        }
+                    });
+                } else {
+                    sendStatusRequest({ status: status });
+                }
             });
         });
 
@@ -379,6 +460,44 @@
                     } else {
                         // Revert if self-selected
                         if (!hrId) selectElement.value = "";
+                        toastMixin.fire({
+                            icon: 'error',
+                            title: data.message || 'Có lỗi xảy ra!'
+                        });
+                    }
+                })
+                .catch(error => {
+                    toastMixin.fire({
+                        icon: 'error',
+                        title: 'Lỗi máy chủ!'
+                    });
+                });
+            });
+        });
+
+        document.querySelectorAll('.annual-leave-input').forEach(input => {
+            input.addEventListener('change', function () {
+                const employeeId = this.dataset.id;
+                const value = this.value;
+                const url = `{{ route('backend.employees.change-annual-leave', ':id') }}`.replace(':id', employeeId);
+
+                fetch(url, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ annual_leave_balance: value })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        toastMixin.fire({
+                            icon: 'success',
+                            title: data.message
+                        });
+                    } else {
                         toastMixin.fire({
                             icon: 'error',
                             title: data.message || 'Có lỗi xảy ra!'

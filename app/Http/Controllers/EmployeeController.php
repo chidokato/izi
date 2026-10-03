@@ -13,11 +13,11 @@ class EmployeeController extends Controller
             'q' => 'nullable|string|max:100',
             'department_id' => 'nullable|integer|exists:departments,id',
             'position' => 'nullable|in:employee,team_leader,manager,director',
-            'status' => 'nullable|in:active,inactive,resigned',
+            'status' => 'nullable|in:active,inactive,resigned,probation',
         ]);
         $query = DB::table('employees as e')
             ->leftJoin('departments as d', 'd.id', '=', 'e.department_id')
-            ->select('e.id', 'e.employee_code', 'e.name', 'e.status', 'e.position', 'e.manager_id', 'e.manager_l2_id', 'e.department_id', 'd.name as department_name');
+            ->select('e.id', 'e.employee_code', 'e.name', 'e.status', 'e.position', 'e.manager_id', 'e.manager_l2_id', 'e.department_id', 'e.annual_leave_balance', 'd.name as department_name');
         if ($request->filled('q')) {
             $term = trim($request->input('q'));
             $query->where(function ($q) use ($term) {
@@ -81,7 +81,7 @@ class EmployeeController extends Controller
             'manager_l2_id' => 'nullable|integer|exists:employees,id',
             'join_date' => 'nullable|date',
             'leave_date' => 'nullable|date',
-            'status' => 'required|in:active,inactive,resigned'
+            'status' => 'required|in:active,inactive,resigned,probation'
         ]);
 
         if ($request->manager_id == $id || $request->manager_l2_id == $id) {
@@ -96,16 +96,25 @@ class EmployeeController extends Controller
     public function changeStatus(Request $request, $id)
     {
         $request->validate([
-            'status' => 'required|in:active,inactive,resigned'
+            'status' => 'required|in:active,inactive,resigned,probation',
+            'annual_leave_balance' => 'nullable|numeric|min:0',
+            'join_date' => 'nullable|date'
         ]);
 
         $employee = \App\Models\Employee::findOrFail($id);
         $employee->status = $request->status;
+        if ($request->has('annual_leave_balance')) {
+            $employee->annual_leave_balance = $request->annual_leave_balance;
+        }
+        if ($request->has('join_date')) {
+            $employee->join_date = $request->join_date;
+        }
         $employee->save();
 
         return response()->json([
             'success' => true,
-            'message' => 'Cập nhật trạng thái thành công!'
+            'message' => 'Cập nhật trạng thái thành công!',
+            'annual_leave_balance' => $employee->annual_leave_balance
         ]);
     }
 
@@ -138,6 +147,22 @@ class EmployeeController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Cập nhật phòng ban thành công!'
+        ]);
+    }
+
+    public function changeAnnualLeave(Request $request, $id)
+    {
+        $request->validate([
+            'annual_leave_balance' => 'required|numeric'
+        ]);
+
+        $employee = \App\Models\Employee::findOrFail($id);
+        $employee->annual_leave_balance = $request->annual_leave_balance;
+        $employee->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Cập nhật phép năm thành công!'
         ]);
     }
 

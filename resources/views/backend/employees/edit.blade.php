@@ -131,7 +131,7 @@
                                         <div class="mb-3">
                                             <label class="form-label">Trạng thái làm việc <span class="text-danger">*</span></label>
                                             <select name="status" class="form-select @error('status') is-invalid @enderror">
-                                                @foreach(['active'=>'Đang làm việc','inactive'=>'Công tác viên','resigned'=>'Nghỉ việc'] as $val => $label)
+                                                @foreach(['active'=>'Chính thức','probation'=>'Thử việc','inactive'=>'Công tác viên','resigned'=>'Nghỉ việc'] as $val => $label)
                                                     <option value="{{ $val }}" @selected(old('status', $employee->status) == $val)>{{ $label }}</option>
                                                 @endforeach
                                             </select>
