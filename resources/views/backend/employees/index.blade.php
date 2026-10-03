@@ -9,7 +9,9 @@
 <div class="card">
     <div class="card-header d-flex flex-wrap gap-2 align-items-center justify-content-between">
         <h5 class="card-title mb-0">Nhân viên <span class="badge bg-primary ms-1">{{ $employees->total() }}</span></h5>
-        <a class="btn btn-soft-primary" href="{{ route('backend.attendance.index') }}">Nhập từ file chấm công</a>
+        <div class="d-flex gap-2">
+            <a href="{{ route('backend.employees.create') }}" class="btn btn-success"><i class="ri-add-line align-bottom me-1"></i> Thêm nhân viên</a>
+        </div>
     </div>
     <div class="card-body">
         <form method="get" action="{{ route('backend.employees.index') }}" class="row g-3 mb-4">

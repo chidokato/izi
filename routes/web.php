@@ -138,6 +138,10 @@ Route::prefix('admin/attendance')->name('backend.attendance.')->middleware(['aut
 });
 Route::get('admin/employees', [\App\Http\Controllers\EmployeeController::class, 'index'])
     ->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->name('backend.employees.index');
+Route::get('admin/employees/create', [\App\Http\Controllers\EmployeeController::class, 'create'])
+    ->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->name('backend.employees.create');
+Route::post('admin/employees', [\App\Http\Controllers\EmployeeController::class, 'store'])
+    ->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->name('backend.employees.store');
 Route::get('admin/employees/{id}/edit', [\App\Http\Controllers\EmployeeController::class, 'edit'])
     ->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->name('backend.employees.edit');
 Route::put('admin/employees/{id}', [\App\Http\Controllers\EmployeeController::class, 'update'])

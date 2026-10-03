@@ -1,0 +1,1 @@
+<?php $c = file_get_contents('resources/views/backend/employees/create.blade.php'); $c = preg_replace('/\\->([a-zA-Z0-9_]+)/', 'null', $c); $c = str_replace('old(''status'', null)', 'old(''status'', ''active'')', $c); file_put_contents('resources/views/backend/employees/create.blade.php', $c);

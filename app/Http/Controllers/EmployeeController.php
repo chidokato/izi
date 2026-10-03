@@ -52,6 +52,45 @@ class EmployeeController extends Controller
         ]);
     }
 
+    public function create()
+    {
+        $departments = DB::table('departments')->orderBy('name')->get();
+        $managers = DB::table('employees')
+            ->where('status', 'active')
+            ->whereIn('position', ['team_leader', 'manager', 'director'])
+            ->orderBy('name')
+            ->get(['id', 'name', 'employee_code', 'department_id']);
+        $hrs = DB::table('employees')
+            ->where('status', 'active')
+            ->whereIn('position', ['team_leader', 'manager', 'director'])
+            ->orderBy('name')
+            ->get(['id', 'name', 'employee_code', 'department_id']);
+
+        return view('backend.employees.create', compact('departments', 'managers', 'hrs'));
+    }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'employee_code' => 'required|string|max:50|unique:employees,employee_code',
+            'name' => 'required|string|max:255',
+            'email' => 'nullable|email|max:255',
+            'phone' => 'nullable|string|max:30',
+            'department_id' => 'nullable|integer|exists:departments,id',
+            'position' => 'nullable|string',
+            'level' => 'nullable|string|max:100',
+            'manager_id' => 'nullable|integer|exists:employees,id',
+            'manager_l2_id' => 'nullable|integer|exists:employees,id',
+            'join_date' => 'nullable|date',
+            'leave_date' => 'nullable|date',
+            'status' => 'required|in:active,inactive,resigned,probation'
+        ]);
+
+        \App\Models\Employee::create($validated);
+
+        return redirect()->route('backend.employees.index')->with('success', 'Thêm mới nhân viên thành công!');
+    }
+
     public function edit($id)
     {
         $employee = \App\Models\Employee::findOrFail($id);
