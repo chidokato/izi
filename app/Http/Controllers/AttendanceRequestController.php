@@ -206,10 +206,10 @@ class AttendanceRequestController extends Controller
             }
         }
         
-        $deadline = \Carbon\Carbon::create($cycleYear, $cycleMonth, 20, 23, 59, 59);
+        $deadline = \Carbon\Carbon::create($cycleYear, $cycleMonth, 22, 23, 59, 59);
         
         if (now() > $deadline) {
-            return back()->withInput()->withErrors(['time' => 'Đã quá hạn chốt công. Các phiếu của kỳ công tháng ' . $cycleMonth . '/' . $cycleYear . ' (từ 16/' . ($cycleMonth == 1 ? 12 : $cycleMonth - 1) . ' đến 15/' . $cycleMonth . ') chỉ được tạo trước ngày 21 tháng ' . $cycleMonth . '.']);
+            return back()->withInput()->withErrors(['time' => 'Đã quá hạn chốt công. Các phiếu của kỳ công tháng ' . $cycleMonth . '/' . $cycleYear . ' (từ 16/' . ($cycleMonth == 1 ? 12 : $cycleMonth - 1) . ' đến 15/' . $cycleMonth . ') chỉ được tạo trước ngày 23 tháng ' . $cycleMonth . '.']);
         }
 
         $existingRequests = AttendanceRequest::where('employee_id', $request->employee_id)
