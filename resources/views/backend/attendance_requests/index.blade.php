@@ -70,6 +70,7 @@
                                 </th>
                                 @endif
                                 <th>Nhân viên</th>
+                                <th>Phòng ban</th>
                                 <th>Loại</th>
                                 <th>Thời gian</th>
                                 <th>Lý do</th>
@@ -94,6 +95,7 @@
                                         <div class="fw-medium">{{ optional($req->employee)->name }}</div>
                                         <small class="text-muted">{{ optional($req->employee)->employee_code }}</small>
                                     </td>
+                                    <td>{{ optional(optional($req->employee)->department)->name ?? '-' }}</td>
                                     <td>
                                         @if($req->type == 'paid_leave') Nghỉ phép
                                         @elseif($req->type == 'unpaid_leave') Không lương
@@ -118,7 +120,9 @@
                                             @endif
                                         @endif
                                     </td>
-                                    <td>{{ Str::limit($req->reason, 30) }}</td>
+                                    <td>
+                                        <div style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; white-space: pre-wrap; word-break: break-word; min-width: 150px; max-width: 250px;" title="{{ $req->reason }}">{{ $req->reason }}</div>
+                                    </td>
                                     <td>{{ $req->created_at->format('H:i d/m/Y') }}</td>
                                     @php
                                         $step1 = $req->requestApprovals->where('step', 1)->first();
@@ -231,7 +235,7 @@
                                     </td>
                                 </tr>
                             @empty
-                                <tr><td colspan="{{ (isset($canBulkApprove) && $canBulkApprove) ? 8 : 7 }}" class="text-center">Chưa có dữ liệu</td></tr>
+                                <tr><td colspan="{{ (isset($canBulkApprove) && $canBulkApprove) ? 11 : 10 }}" class="text-center">Chưa có dữ liệu</td></tr>
                             @endforelse
                         </tbody>
                     </table>
