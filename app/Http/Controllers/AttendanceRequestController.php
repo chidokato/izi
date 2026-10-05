@@ -194,6 +194,24 @@ class AttendanceRequestController extends Controller
             $newEnd->setTime($request->end_session === 'morning' ? 12 : 23, 59, 59);
         }
 
+        // Kiểm tra hạn chốt công ngày 20
+        $cycleMonth = $newStart->month;
+        $cycleYear = $newStart->year;
+        
+        if ($newStart->day > 15) {
+            $cycleMonth += 1;
+            if ($cycleMonth > 12) {
+                $cycleMonth = 1;
+                $cycleYear += 1;
+            }
+        }
+        
+        $deadline = \Carbon\Carbon::create($cycleYear, $cycleMonth, 20, 23, 59, 59);
+        
+        if (now() > $deadline) {
+            return back()->withInput()->withErrors(['time' => 'Đã quá hạn chốt công. Các phiếu của kỳ công tháng ' . $cycleMonth . '/' . $cycleYear . ' (từ 16/' . ($cycleMonth == 1 ? 12 : $cycleMonth - 1) . ' đến 15/' . $cycleMonth . ') chỉ được tạo trước ngày 21 tháng ' . $cycleMonth . '.']);
+        }
+
         $existingRequests = AttendanceRequest::where('employee_id', $request->employee_id)
             ->whereIn('status', ['pending', 'approved'])
             ->get();
