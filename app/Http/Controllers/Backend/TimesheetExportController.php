@@ -33,7 +33,8 @@ class TimesheetExportController extends Controller
 
         $employeesQuery = DB::table('employees as e')
             ->leftJoin('departments as d', 'e.department_id', '=', 'd.id')
-            ->select('e.id', 'e.employee_code', 'e.name', 'e.position', 'e.join_date', 'e.status', 'd.name as department_name');
+            ->select('e.id', 'e.employee_code', 'e.name', 'e.position', 'e.join_date', 'e.status', 'd.name as department_name')
+            ->whereIn('e.status', ['active', 'probation']);
             
         if ($q) {
             $employeesQuery->where(function($query) use ($q) {

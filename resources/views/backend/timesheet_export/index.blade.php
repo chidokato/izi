@@ -68,7 +68,18 @@
                             <td class="text-center fw-medium" style="position: sticky; left: 0; background-color: #fff; z-index: 1;">{{ $emp['employee_code'] }}</td>
                             <td style="position: sticky; left: 80px; background-color: #fff; z-index: 1; min-width: 150px;">{{ $emp['name'] }}</td>
                             <td>{{ $emp['department_name'] }}</td>
-                            <td class="text-center">{{ $emp['status'] == 'active' ? 'NV' : 'HTV' }}</td>
+                            <td class="text-center">
+                                @php
+                                    $statusMap = [
+                                        'active' => 'CT',
+                                        'probation' => 'HTV',
+                                        'collaborator' => 'CTV',
+                                        'ctv' => 'CTV',
+                                        'freelancer' => 'CTV'
+                                    ];
+                                @endphp
+                                {{ $statusMap[$emp['status']] ?? strtoupper($emp['status']) }}
+                            </td>
                             <td class="text-center">{{ $emp['join_date'] }}</td>
                             <td class="text-center">{{ $emp['probation_end'] }}</td>
                             
