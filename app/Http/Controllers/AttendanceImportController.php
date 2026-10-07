@@ -182,4 +182,9 @@ class AttendanceImportController extends Controller
 
         return redirect()->route('backend.attendance.index')->with('success', "Đã lưu {$result['success']} dòng; {$result['duplicate']} dòng giống dữ liệu cũ; {$result['errors']} dòng lỗi; {$result['skipped']} dòng bỏ qua.");
     }
+    public function syncDepartments()
+    {
+        DB::statement('UPDATE attendance_entries a JOIN employees e ON a.employee_id = e.id SET a.department_id = e.department_id WHERE a.department_id IS NULL');
+        return back()->with('success', 'Đã đồng bộ phòng ban cho các dữ liệu cũ.');
+    }
 }

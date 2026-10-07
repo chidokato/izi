@@ -135,6 +135,7 @@ Route::prefix('admin/attendance')->name('backend.attendance.')->middleware(['aut
     Route::post('/preview', [\App\Http\Controllers\AttendanceImportController::class, 'preview'])->middleware('throttle:10,1')->name('preview');
     Route::get('/imports/{id}', [\App\Http\Controllers\AttendanceImportController::class, 'show'])->whereNumber('id')->name('show');
     Route::post('/imports/{id}/confirm', [\App\Http\Controllers\AttendanceImportController::class, 'confirm'])->whereNumber('id')->name('confirm');
+    Route::post('/sync-departments', [\App\Http\Controllers\AttendanceImportController::class, 'syncDepartments'])->name('sync-departments');
 });
 Route::get('admin/employees', [\App\Http\Controllers\EmployeeController::class, 'index'])
     ->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->name('backend.employees.index');
