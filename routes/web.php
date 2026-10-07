@@ -150,6 +150,8 @@ Route::get('admin/employees/{id}/edit', [\App\Http\Controllers\EmployeeControlle
     ->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->name('backend.employees.edit');
 Route::put('admin/employees/{id}', [\App\Http\Controllers\EmployeeController::class, 'update'])
     ->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->name('backend.employees.update');
+Route::delete('admin/employees/{id}', [\App\Http\Controllers\EmployeeController::class, 'destroy'])
+    ->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->name('backend.employees.destroy');
 Route::patch('admin/employees/{id}/status', [\App\Http\Controllers\EmployeeController::class, 'changeStatus'])
     ->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->name('backend.employees.change-status');
 Route::patch('admin/employees/{id}/position', [\App\Http\Controllers\EmployeeController::class, 'changePosition'])

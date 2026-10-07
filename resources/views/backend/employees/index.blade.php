@@ -128,7 +128,14 @@
                             <input type="number" step="0.5" class="form-control form-control-sm annual-leave-input text-center" data-id="{{ $employee->id }}" value="{{ (float)$employee->annual_leave_balance }}" style="width: 70px;">
                         </td>
                         <td>
-                            <a href="{{ route('backend.employees.edit', $employee->id) }}" class="btn btn-sm btn-soft-primary"><i class="ri-pencil-fill"></i> Sửa</a>
+                            <div class="d-flex gap-2">
+                                <a href="{{ route('backend.employees.edit', $employee->id) }}" class="btn btn-sm btn-soft-primary"><i class="ri-pencil-fill"></i> Sửa</a>
+                                <form action="{{ route('backend.employees.destroy', $employee->id) }}" method="POST" class="d-inline-block" onsubmit="return confirm('Bạn có chắc chắn muốn xóa nhân viên này? Dữ liệu không thể khôi phục!');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-sm btn-soft-danger"><i class="ri-delete-bin-fill"></i> Xóa</button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                     @empty

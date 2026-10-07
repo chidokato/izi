@@ -173,6 +173,14 @@ class EmployeeController extends Controller
         return redirect()->route('backend.employees.index')->with('success', 'Cập nhật thông tin nhân viên thành công!');
     }
 
+    public function destroy($id)
+    {
+        $employee = \App\Models\Employee::findOrFail($id);
+        $employee->delete();
+        
+        return back()->with('success', 'Xóa nhân viên thành công!');
+    }
+
     public function changeStatus(Request $request, $id)
     {
         $request->validate([
