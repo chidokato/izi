@@ -44,7 +44,7 @@ class AttendanceCalendarController extends Controller
                   ->orWhereBetween('end_date', [$periodStart->toDateString(), $periodEnd->toDateString()]);
             })->get() : collect();
 
-        $schedules = DB::table('work_schedules')->get(['id', 'name', 'status']);
+        $schedules = DB::table('work_schedules')->get(['id', 'name', 'status', 'grace_period']);
         $activeSchedules = $schedules->where('status', 'active');
         $defaultSchedule = $activeSchedules->firstWhere('name', 'Giờ hành chính');
         $selectedSchedule = $defaultSchedule ? $defaultSchedule->id : ($activeSchedules->count() === 1 ? $activeSchedules->first()->id : null);
@@ -79,6 +79,8 @@ class AttendanceCalendarController extends Controller
             $matches = $assignments->filter(fn ($a) => $a->effective_from <= $dateStr && ($a->effective_to === null || $a->effective_to >= $dateStr));
             $scheduleId = $matches->first() ? $matches->first()->work_schedule_id : $selectedSchedule;
             $rule = $matches->count() > 1 ? null : $rules->get($scheduleId.':'.$date->dayOfWeek);
+            $schedule = $schedules->firstWhere('id', $scheduleId);
+            $gracePeriod = $schedule ? ($schedule->grace_period ?? 0) : 0;
             
             if ($req && $req->type === 'attendance_adjustment' && $inMonth && $rule) {
                 if (!$entry) $entry = (object)['checkin' => null, 'checkout' => null];
@@ -230,6 +232,7 @@ class AttendanceCalendarController extends Controller
                 'request' => $inMonth ? $req : null,
                 'cong' => $cong,
                 'metrics' => $metrics,
+                'grace_period' => $gracePeriod,
             ];
         }
 

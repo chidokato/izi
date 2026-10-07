@@ -93,8 +93,12 @@
         </div>
     </td>
     <td title="{{ $entry->calculation_note }}"><strong>{{ $hours === null ? '—' : ($hours == floor($hours) ? number_format($hours, 0) : rtrim(rtrim(number_format($hours, 2, ',', '.'), '0'), ',')) }}</strong></td>
-    <td class="{{ ($entry->metrics['late_arrival'] ?? 0) > 0 ? 'text-danger' : '' }}">{{ $entry->metrics['late_arrival'] ?? '—' }}</td>
-    <td class="{{ ($entry->metrics['early_departure'] ?? 0) > 0 ? 'text-danger' : '' }}">{{ $entry->metrics['early_departure'] ?? '—' }}</td>
+    @php
+        $late = max(0, ($entry->metrics['late_arrival'] ?? 0) - ($entry->grace_period ?? 0));
+        $early = max(0, ($entry->metrics['early_departure'] ?? 0) - ($entry->grace_period ?? 0));
+    @endphp
+    <td class="{{ $late > 0 ? 'text-danger' : '' }}">{{ $late > 0 ? $late : '—' }}</td>
+    <td class="{{ $early > 0 ? 'text-danger' : '' }}">{{ $early > 0 ? $early : '—' }}</td>
     <td>
         @if(isset($entry->request))
             <span class="text-primary fw-medium"><i class="ri-file-list-3-line align-middle"></i> {{ $entry->calculation_note }}</span>

@@ -32,7 +32,7 @@ class AttendanceImportController extends Controller
         $entries = $query->orderByDesc('a.work_date')->orderBy('e.employee_code')->paginate(50)->withQueryString();
 
 
-        $schedules = DB::table('work_schedules')->orderBy('name')->get(['id', 'name', 'status']);
+        $schedules = DB::table('work_schedules')->orderBy('name')->get(['id', 'name', 'status', 'grace_period']);
         $activeSchedules = $schedules->where('status', 'active');
         $selectedSchedule = $request->input('schedule_id');
         if (!$selectedSchedule) {
@@ -64,6 +64,8 @@ class AttendanceImportController extends Controller
             $assignment = $matches->first();
             $scheduleId = $assignment ? $assignment->work_schedule_id : $selectedSchedule;
             $rule = $matches->count() > 1 ? null : $rules->get($scheduleId.':'.\Carbon\Carbon::parse($entry->work_date)->dayOfWeek);
+            $schedule = $schedules->firstWhere('id', $scheduleId);
+            $entry->grace_period = $schedule ? ($schedule->grace_period ?? 0) : 0;
             
             // Check for approved request on this day
             $req = $requests->first(function($r) use ($entry) {

@@ -64,7 +64,11 @@
         @if($month->format('Y-m') > '1900-01')<a class="btn btn-light" aria-label="Tháng trước" href="{{ route('backend.calendar.index', ['employee_id'=>$employee->id, 'month'=>$month->subMonth()->format('Y-m')]) }}">‹ Trước</a>@endif
         <strong>Kỳ {{ $periodStart->format('d/m') }} - {{ $periodEnd->format('d/m/Y') }}</strong>
         @if($month->format('Y-m') < '2199-12')<a class="btn btn-light" aria-label="Tháng sau" href="{{ route('backend.calendar.index', ['employee_id'=>$employee->id, 'month'=>$month->addMonth()->format('Y-m')]) }}">Sau ›</a>@endif
-        <a class="btn btn-soft-primary" href="{{ route('backend.calendar.index', ['employee_id'=>$employee->id]) }}">Kỳ này</a>
+        @php
+            $now = now('Asia/Ho_Chi_Minh');
+            $currentCycleMonth = $now->day >= 16 ? $now->copy()->addMonth() : $now;
+        @endphp
+        <a class="btn btn-soft-primary" href="{{ route('backend.calendar.index', ['employee_id'=>$employee->id, 'month'=>$currentCycleMonth->format('Y-m')]) }}">Kỳ này</a>
     </div>
 </div>
 <div class="row g-2 mb-3">
@@ -126,8 +130,8 @@
                     @php
                         $displayLabel = $day['label'];
                         if ($day['status'] === 'complete' && isset($day['metrics'])) {
-                            $late = $day['metrics']['late_arrival'] ?? 0;
-                            $early = $day['metrics']['early_departure'] ?? 0;
+                            $late = max(0, ($day['metrics']['late_arrival'] ?? 0) - ($day['grace_period'] ?? 0));
+                            $early = max(0, ($day['metrics']['early_departure'] ?? 0) - ($day['grace_period'] ?? 0));
                             if ($late > 0 || $early > 0) {
                                 $arr = [];
                                 if ($late > 0) $arr[] = "Muộn {$late}p";
