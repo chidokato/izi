@@ -187,4 +187,14 @@ class AttendanceImportController extends Controller
         DB::statement('UPDATE attendance_entries a JOIN employees e ON a.employee_id = e.id SET a.department_id = e.department_id WHERE a.department_id IS NULL');
         return back()->with('success', 'Đã đồng bộ phòng ban cho các dữ liệu cũ.');
     }
+
+    public function fixDb()
+    {
+        if (\Illuminate\Support\Facades\Schema::hasColumn('attendance_entries', 'department_name')) {
+            \Illuminate\Support\Facades\Schema::table('attendance_entries', function (\Illuminate\Database\Schema\Blueprint $table) {
+                $table->dropColumn('department_name');
+            });
+        }
+        return back()->with('success', 'Đã sửa lỗi Database trên server thành công!');
+    }
 }

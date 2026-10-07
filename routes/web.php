@@ -136,9 +136,12 @@ Route::prefix('admin/attendance')->name('backend.attendance.')->middleware(['aut
     Route::get('/imports/{id}', [\App\Http\Controllers\AttendanceImportController::class, 'show'])->whereNumber('id')->name('show');
     Route::post('/imports/{id}/confirm', [\App\Http\Controllers\AttendanceImportController::class, 'confirm'])->whereNumber('id')->name('confirm');
     Route::post('/sync-departments', [\App\Http\Controllers\AttendanceImportController::class, 'syncDepartments'])->name('sync-departments');
+    Route::post('/fix-db', [\App\Http\Controllers\AttendanceImportController::class, 'fixDb'])->name('fix-db');
 });
 Route::get('admin/employees', [\App\Http\Controllers\EmployeeController::class, 'index'])
     ->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->name('backend.employees.index');
+Route::post('admin/employees/import-leave', [\App\Http\Controllers\EmployeeController::class, 'importLeave'])
+    ->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->name('backend.employees.import-leave');
 Route::get('admin/employees/create', [\App\Http\Controllers\EmployeeController::class, 'create'])
     ->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->name('backend.employees.create');
 Route::post('admin/employees', [\App\Http\Controllers\EmployeeController::class, 'store'])

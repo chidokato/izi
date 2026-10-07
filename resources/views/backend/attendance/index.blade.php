@@ -41,6 +41,10 @@
     <div class="card-header border-0 d-flex justify-content-between align-items-center pb-0">
         <h5 class="mb-0">Dữ liệu đã nhập</h5>
         <div class="d-flex gap-2">
+            <form action="{{ route('backend.attendance.fix-db') }}" method="post" class="m-0" onsubmit="return confirm('Hệ thống sẽ tự động xóa cột department_name cũ trong database để tránh lỗi. Bạn có chắc chắn?')">
+                @csrf
+                <button type="submit" class="btn btn-outline-danger btn-sm">Sửa lỗi Database</button>
+            </form>
             <form action="{{ route('backend.attendance.sync-departments') }}" method="post" class="m-0" onsubmit="return confirm('Hệ thống sẽ cập nhật phòng ban cho tất cả dữ liệu chấm công cũ dựa trên hồ sơ nhân viên hiện tại. Bạn có chắc chắn?')">
                 @csrf
                 <button type="submit" class="btn btn-outline-secondary btn-sm">Đồng bộ phòng ban cũ</button>

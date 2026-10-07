@@ -91,6 +91,39 @@ class EmployeeController extends Controller
         return redirect()->route('backend.employees.index')->with('success', 'Thêm mới nhân viên thành công!');
     }
 
+    public function importLeave(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls,csv,txt|max:5120'
+        ]);
+
+        try {
+            $file = $request->file('file');
+            $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file->getRealPath());
+            $worksheet = $spreadsheet->getActiveSheet();
+            $rows = $worksheet->toArray();
+            
+            $updatedCount = 0;
+            // Bỏ qua dòng tiêu đề, duyệt từ dòng thứ 2
+            foreach (array_slice($rows, 1) as $row) {
+                $employeeCode = trim((string)($row[0] ?? ''));
+                $leaveBalance = trim((string)($row[1] ?? ''));
+                
+                if ($employeeCode !== '' && is_numeric($leaveBalance)) {
+                    $affected = \Illuminate\Support\Facades\DB::table('employees')
+                        ->where('employee_code', $employeeCode)
+                        ->update(['annual_leave_balance' => (float) $leaveBalance]);
+                    if ($affected) {
+                        $updatedCount++;
+                    }
+                }
+            }
+            return back()->with('success', "Đã đồng bộ thành công phép năm cho {$updatedCount} nhân viên!");
+        } catch (\Exception $e) {
+            return back()->withErrors(['file' => 'Lỗi khi đọc file: ' . $e->getMessage()]);
+        }
+    }
+
     public function edit($id)
     {
         $employee = \App\Models\Employee::findOrFail($id);
