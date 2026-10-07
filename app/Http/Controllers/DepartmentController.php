@@ -37,6 +37,39 @@ class DepartmentController extends Controller
         ]);
     }
 
+    public function create()
+    {
+        $allDepartments = DB::table('departments')->orderBy('sort_order')->orderBy('name')->get();
+        $departmentsTree = $this->buildTreeSelect($allDepartments);
+
+        return view('backend.departments.create', [
+            'departmentsTree' => $departmentsTree,
+        ]);
+    }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'code' => 'nullable|string|max:50|unique:departments,code',
+            'name' => 'required|string|max:255',
+            'parent_id' => 'nullable|exists:departments,id',
+            'sort_order' => 'nullable|integer|min:0',
+            'status' => 'required|in:active,inactive',
+        ]);
+
+        DB::table('departments')->insert([
+            'code' => $request->input('code'),
+            'name' => $request->input('name'),
+            'parent_id' => $request->input('parent_id') ?: null,
+            'sort_order' => $request->input('sort_order', 0),
+            'status' => $request->input('status', 'active'),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        return redirect()->route('backend.departments.index')->with('success', 'Thêm phòng ban thành công.');
+    }
+
     public function edit($id)
     {
         $department = DB::table('departments')->where('id', $id)->first();
@@ -90,6 +123,28 @@ class DepartmentController extends Controller
         ]);
 
         return redirect()->route('backend.departments.index')->with('success', 'Cập nhật phòng ban thành công.');
+    }
+
+    public function destroy($id)
+    {
+        $department = DB::table('departments')->where('id', $id)->first();
+        if (!$department) {
+            return redirect()->route('backend.departments.index')->with('error', 'Không tìm thấy phòng ban.');
+        }
+
+        $employeesCount = DB::table('employees')->where('department_id', $id)->count();
+        if ($employeesCount > 0) {
+            return redirect()->route('backend.departments.index')->with('error', 'Không thể xóa phòng ban đang có nhân viên.');
+        }
+
+        $subDepartmentsCount = DB::table('departments')->where('parent_id', $id)->count();
+        if ($subDepartmentsCount > 0) {
+            return redirect()->route('backend.departments.index')->with('error', 'Không thể xóa phòng ban đang có phòng ban con.');
+        }
+
+        DB::table('departments')->where('id', $id)->delete();
+
+        return redirect()->route('backend.departments.index')->with('success', 'Xóa phòng ban thành công.');
     }
 
     private function getDescendantIds($departments, $parentId)

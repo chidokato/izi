@@ -9,7 +9,10 @@
 <div class="card">
     <div class="card-header d-flex flex-wrap gap-2 align-items-center justify-content-between">
         <h5 class="card-title mb-0">Phòng ban <span class="badge bg-primary ms-1">{{ $departments->total() }}</span></h5>
-        <a class="btn btn-soft-primary" href="{{ route('backend.attendance.index') }}">Nhập từ file chấm công</a>
+        <div class="d-flex gap-2">
+            <a class="btn btn-primary" href="{{ route('backend.departments.create') }}">Thêm mới</a>
+            <a class="btn btn-soft-primary" href="{{ route('backend.attendance.index') }}">Nhập từ file chấm công</a>
+        </div>
     </div>
     <div class="card-body">
         <form method="get" action="{{ route('backend.departments.index') }}" class="row g-3 mb-3">
@@ -44,7 +47,14 @@
                         <td><a href="{{ route('backend.employees.index', ['department_id' => $department->id]) }}" aria-label="Xem nhân viên phòng {{ $department->name }}">{{ $department->employee_count }}</a></td>
                         <td><span class="badge {{ $department->status === 'active' ? 'bg-success' : 'bg-secondary' }}">{{ $department->status === 'active' ? 'Đang hoạt động' : 'Ngừng hoạt động' }}</span></td>
                         <td>
-                            <a href="{{ route('backend.departments.edit', $department->id) }}" class="btn btn-sm btn-soft-primary">Sửa</a>
+                            <div class="d-flex gap-1">
+                                <a href="{{ route('backend.departments.edit', $department->id) }}" class="btn btn-sm btn-soft-primary">Sửa</a>
+                                <form action="{{ route('backend.departments.destroy', $department->id) }}" method="POST" onsubmit="return confirm('Bạn có chắc chắn muốn xóa phòng ban này?');" class="m-0">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-sm btn-soft-danger">Xóa</button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                     @empty

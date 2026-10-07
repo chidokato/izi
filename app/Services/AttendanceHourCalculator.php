@@ -34,10 +34,10 @@ class AttendanceHourCalculator
 
         if ($working) {
             if ($breakStart !== null && $breakEnd !== null) {
-                if ($in !== null && $in >= $breakEnd) {
+                if ($in !== null && $in >= $breakStart) {
                     $missedMorning = true;
                 }
-                if ($out !== null && $out <= $breakStart) {
+                if ($out !== null && $out <= $breakEnd) {
                     $missedAfternoon = true;
                 }
             }
