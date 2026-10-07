@@ -1,0 +1,1 @@
+<?php foreach (DB::select("SHOW TABLES") as $table) { $tableName = (array)$table; $tableName = reset($tableName); $columns = Schema::getColumnListing($tableName); if (in_array("employee_id", $columns)) { echo $tableName . PHP_EOL; } }

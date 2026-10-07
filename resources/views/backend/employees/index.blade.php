@@ -10,6 +10,11 @@
     <div class="card-header d-flex flex-wrap gap-2 align-items-center justify-content-between">
         <h5 class="card-title mb-0">Nhân viên <span class="badge bg-primary ms-1">{{ $employees->total() }}</span></h5>
         <div class="d-flex gap-2">
+            @if(request('view_deleted'))
+                <a href="{{ route('backend.employees.index') }}" class="btn btn-info"><i class="ri-eye-line align-bottom me-1"></i> Danh sách hiện tại</a>
+            @else
+                <a href="{{ route('backend.employees.index', ['view_deleted' => 1]) }}" class="btn btn-warning"><i class="ri-eye-off-line align-bottom me-1"></i> Đã xóa / Ẩn</a>
+            @endif
             <button type="button" class="btn btn-secondary" onclick="document.getElementById('import-leave-input').click()"><i class="ri-file-excel-line align-bottom me-1"></i> Up file phép năm</button>
             <a href="{{ route('backend.employees.create') }}" class="btn btn-success"><i class="ri-add-line align-bottom me-1"></i> Thêm nhân viên</a>
             <form id="import-leave-form" action="{{ route('backend.employees.import-leave') }}" method="POST" enctype="multipart/form-data" class="d-none">
@@ -129,12 +134,19 @@
                         </td>
                         <td>
                             <div class="d-flex gap-2">
-                                <a href="{{ route('backend.employees.edit', $employee->id) }}" class="btn btn-sm btn-soft-primary"><i class="ri-pencil-fill"></i> Sửa</a>
-                                <form action="{{ route('backend.employees.destroy', $employee->id) }}" method="POST" class="d-inline-block" onsubmit="return confirm('Bạn có chắc chắn muốn xóa nhân viên này? Dữ liệu không thể khôi phục!');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-soft-danger"><i class="ri-delete-bin-fill"></i> Xóa</button>
-                                </form>
+                                @if($employee->deleted_at)
+                                    <form action="{{ route('backend.employees.restore', $employee->id) }}" method="POST" class="d-inline-block">
+                                        @csrf
+                                        <button type="submit" class="btn btn-sm btn-soft-success"><i class="ri-refresh-line"></i> Khôi phục</button>
+                                    </form>
+                                @else
+                                    <a href="{{ route('backend.employees.edit', $employee->id) }}" class="btn btn-sm btn-soft-primary"><i class="ri-pencil-fill"></i> Sửa</a>
+                                    <form action="{{ route('backend.employees.destroy', $employee->id) }}" method="POST" class="d-inline-block delete-employee-form">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-soft-danger"><i class="ri-delete-bin-fill"></i> Xóa</button>
+                                    </form>
+                                @endif
                             </div>
                         </td>
                     </tr>
@@ -611,6 +623,25 @@
             });
         }
 
+        document.querySelectorAll('.delete-employee-form').forEach(form => {
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+                Swal.fire({
+                    title: 'Bạn có chắc chắn?',
+                    text: 'Bạn có chắc chắn muốn xóa nhân viên này? Dữ liệu không thể khôi phục!',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'Đồng ý xóa',
+                    cancelButtonText: 'Hủy'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.submit();
+                    }
+                });
+            });
+        });
     });
 </script>
 @endpush

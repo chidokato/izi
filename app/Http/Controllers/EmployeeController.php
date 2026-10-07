@@ -17,7 +17,13 @@ class EmployeeController extends Controller
         ]);
         $query = DB::table('employees as e')
             ->leftJoin('departments as d', 'd.id', '=', 'e.department_id')
-            ->select('e.id', 'e.employee_code', 'e.name', 'e.status', 'e.position', 'e.manager_id', 'e.manager_l2_id', 'e.department_id', 'e.annual_leave_balance', 'd.name as department_name');
+            ->select('e.id', 'e.employee_code', 'e.name', 'e.status', 'e.position', 'e.manager_id', 'e.manager_l2_id', 'e.department_id', 'e.annual_leave_balance', 'd.name as department_name', 'e.deleted_at');
+            
+        if ($request->boolean('view_deleted')) {
+            $query->whereNotNull('e.deleted_at');
+        } else {
+            $query->whereNull('e.deleted_at');
+        }
         if ($request->filled('q')) {
             $term = trim($request->input('q'));
             $query->where(function ($q) use ($term) {
@@ -48,12 +54,14 @@ class EmployeeController extends Controller
             'departments' => DB::table('departments')->orderBy('name')->get(['id', 'name']),
             'managers' => DB::table('employees')
                 ->where('status', 'active')
+                ->whereNull('deleted_at')
                 ->whereIn('position', ['team_leader', 'manager', 'director'])
                 ->orderBy('name')
                 ->get(['id', 'name', 'employee_code', 'department_id']),
             'hrs' => DB::table('employees as e')
                 ->join('departments as d', 'd.id', '=', 'e.department_id')
                 ->where('e.status', 'active')
+                ->whereNull('e.deleted_at')
                 ->whereIn('e.position', ['team_leader', 'manager', 'director'])
                 ->orderBy('e.name')
                 ->get(['e.id', 'e.name', 'e.employee_code', 'e.department_id']),
@@ -65,11 +73,13 @@ class EmployeeController extends Controller
         $departments = DB::table('departments')->orderBy('name')->get();
         $managers = DB::table('employees')
             ->where('status', 'active')
+            ->whereNull('deleted_at')
             ->whereIn('position', ['team_leader', 'manager', 'director'])
             ->orderBy('name')
             ->get(['id', 'name', 'employee_code', 'department_id']);
         $hrs = DB::table('employees')
             ->where('status', 'active')
+            ->whereNull('deleted_at')
             ->whereIn('position', ['team_leader', 'manager', 'director'])
             ->orderBy('name')
             ->get(['id', 'name', 'employee_code', 'department_id']);
@@ -134,10 +144,11 @@ class EmployeeController extends Controller
 
     public function edit($id)
     {
-        $employee = \App\Models\Employee::findOrFail($id);
+        $employee = \App\Models\Employee::withTrashed()->findOrFail($id);
         $departments = \Illuminate\Support\Facades\DB::table('departments')->orderBy('name')->get();
         $managers = \Illuminate\Support\Facades\DB::table('employees as e')
                 ->where('e.status', 'active')
+                ->whereNull('e.deleted_at')
                 ->whereIn('e.position', ['team_leader', 'manager', 'director'])
                 ->orderBy('e.name')
                 ->get(['e.id', 'e.name', 'e.employee_code', 'e.department_id']);
@@ -147,7 +158,7 @@ class EmployeeController extends Controller
 
     public function update(Request $request, $id)
     {
-        $employee = \App\Models\Employee::findOrFail($id);
+        $employee = \App\Models\Employee::withTrashed()->findOrFail($id);
 
         $validated = $request->validate([
             'employee_code' => 'required|string|max:50|unique:employees,employee_code,' . $id,
@@ -179,6 +190,14 @@ class EmployeeController extends Controller
         $employee->delete();
         
         return back()->with('success', 'Xóa nhân viên thành công!');
+    }
+
+    public function restore($id)
+    {
+        $employee = \App\Models\Employee::withTrashed()->findOrFail($id);
+        $employee->restore();
+        
+        return back()->with('success', 'Khôi phục nhân viên thành công!');
     }
 
     public function changeStatus(Request $request, $id)
