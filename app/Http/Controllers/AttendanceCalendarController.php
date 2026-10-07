@@ -96,6 +96,7 @@ class AttendanceCalendarController extends Controller
             }
             
             $cong = null;
+            $workedCong = 0;
             $metrics = null;
             if ($entry && $rule && $inMonth) {
                 $metrics = app(\App\Services\AttendanceHourCalculator::class)->calculate($entry, $rule);
@@ -104,6 +105,7 @@ class AttendanceCalendarController extends Controller
                     if ($regular == 8) $cong = 1;
                     elseif ($regular == 4) $cong = 0.5;
                     else $cong = 0;
+                    $workedCong = $cong;
                 }
             }
 
@@ -208,8 +210,13 @@ class AttendanceCalendarController extends Controller
                 }
                 
                 // If it's a paid leave, we also want to display the badge for 'công'
-                if ($paidCong > 0 && $cong === null) {
-                    $cong = $paidCong;
+                if ($paidCong > 0) {
+                    if ($cong === null) {
+                        $cong = $paidCong;
+                    } else {
+                        $maxCong = ($rule && $rule->day_of_week == 6) ? 0.5 : 1;
+                        $cong = min($maxCong, $cong + $paidCong);
+                    }
                 }
             }
 
@@ -218,7 +225,11 @@ class AttendanceCalendarController extends Controller
                 $totals[$status]++;
                 
                 if ($cong !== null) {
-                    $totalCongThucTe += ($req && in_array($req->type, ['paid_leave'])) ? 0 : $cong;
+                    if ($req && in_array($req->type, ['paid_leave'])) {
+                        $totalCongThucTe += $workedCong;
+                    } else {
+                        $totalCongThucTe += $cong;
+                    }
                     $totalCongTinhLuong += $cong;
                 }
             }

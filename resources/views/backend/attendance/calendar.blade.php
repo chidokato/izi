@@ -149,9 +149,9 @@
                                     (Xác nhận: {{ $day['request']->start_session == 'morning' ? 'Vào' : ($day['request']->start_session == 'afternoon' ? 'Ra' : 'Vào/Ra') }})
                                 @elseif($day['request']->type == 'business_trip')
                                     ({{ isset($day['request']->business_hours) && $day['request']->business_hours < 8 ? round($day['request']->business_hours, 1) . ' giờ' : 'Cả ngày' }})
-                                @elseif($day['request']->start_session == 'afternoon' && $day['request']->start_date == $day['date']->toDateString())
+                                @elseif($day['request']->start_session == 'afternoon' && substr($day['request']->start_date, 0, 10) == $day['date']->toDateString())
                                     (Nửa chiều)
-                                @elseif($day['request']->end_session == 'morning' && $day['request']->end_date == $day['date']->toDateString())
+                                @elseif($day['request']->end_session == 'morning' && substr($day['request']->end_date, 0, 10) == $day['date']->toDateString())
                                     (Nửa sáng)
                                 @else
                                     (Cả ngày)

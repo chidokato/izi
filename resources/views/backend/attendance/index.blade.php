@@ -93,10 +93,8 @@
         </div>
     </td>
     <td title="{{ $entry->calculation_note }}"><strong>{{ $hours === null ? '—' : ($hours == floor($hours) ? number_format($hours, 0) : rtrim(rtrim(number_format($hours, 2, ',', '.'), '0'), ',')) }}</strong></td>
-    @php
-        $late = max(0, ($entry->metrics['late_arrival'] ?? 0) - ($entry->grace_period ?? 0));
-        $early = max(0, ($entry->metrics['early_departure'] ?? 0) - ($entry->grace_period ?? 0));
-    @endphp
+    @php($late = max(0, ($entry->metrics['late_arrival'] ?? 0) - ($entry->grace_period ?? 0)))
+    @php($early = max(0, ($entry->metrics['early_departure'] ?? 0) - ($entry->grace_period ?? 0)))
     <td class="{{ $late > 0 ? 'text-danger' : '' }}">{{ $late > 0 ? $late : '—' }}</td>
     <td class="{{ $early > 0 ? 'text-danger' : '' }}">{{ $early > 0 ? $early : '—' }}</td>
     <td>
@@ -107,9 +105,9 @@
                     (Xác nhận: {{ $entry->request->start_session == 'morning' ? 'Vào' : ($entry->request->start_session == 'afternoon' ? 'Ra' : 'Vào/Ra') }})
                 @elseif($entry->request->type == 'business_trip')
                     ({{ isset($entry->business_hours) && $entry->business_hours < 8 ? round($entry->business_hours, 1) . ' giờ' : 'Cả ngày' }})
-                @elseif($entry->request->start_session == 'afternoon' && $entry->request->start_date == $entry->work_date)
+                @elseif($entry->request->start_session == 'afternoon' && substr($entry->request->start_date, 0, 10) == $entry->work_date)
                     (Nửa buổi chiều)
-                @elseif($entry->request->end_session == 'morning' && $entry->request->end_date == $entry->work_date)
+                @elseif($entry->request->end_session == 'morning' && substr($entry->request->end_date, 0, 10) == $entry->work_date)
                     (Nửa buổi sáng)
                 @else
                     (Cả ngày)
