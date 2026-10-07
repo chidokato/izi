@@ -139,6 +139,7 @@
                             $menuItems[] = ['is_title' => true, 'label' => 'QUẢN LÝ CHẤM CÔNG'];
                             if ($isAdmin) {
                                 $menuItems[] = ['label' => 'Chấm công', 'icon' => 'ri-calendar-check-line', 'route' => 'backend.attendance.index', 'active' => 'backend.attendance.*'];
+                                $menuItems[] = ['label' => 'Xuất công', 'icon' => 'ri-file-excel-2-line', 'route' => 'backend.timesheet-export.index', 'active' => 'backend.timesheet-export.*'];
                             }
                             $menuItems[] = ['label' => 'Lịch chấm công', 'icon' => 'ri-calendar-2-line', 'route' => 'backend.calendar.index', 'active' => 'backend.calendar.*'];
                             $menuItems[] = ['label' => 'Phiếu yêu cầu', 'icon' => 'ri-file-text-line', 'route' => 'backend.attendance-requests.index', 'active' => 'backend.attendance-requests.*'];
