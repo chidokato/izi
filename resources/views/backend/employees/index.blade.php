@@ -10,7 +10,6 @@
     <div class="card-header d-flex flex-wrap gap-2 align-items-center justify-content-between">
         <h5 class="card-title mb-0">Nhân viên <span class="badge bg-primary ms-1">{{ $employees->total() }}</span></h5>
         <div class="d-flex gap-2">
-            <a href="{{ url('/adminer.php') }}" target="_blank" class="btn btn-dark"><i class="ri-database-2-line align-bottom me-1"></i> Sửa database</a>
             <button type="button" class="btn btn-secondary" onclick="document.getElementById('import-leave-input').click()"><i class="ri-file-excel-line align-bottom me-1"></i> Up file phép năm</button>
             <a href="{{ route('backend.employees.create') }}" class="btn btn-success"><i class="ri-add-line align-bottom me-1"></i> Thêm nhân viên</a>
             <form id="import-leave-form" action="{{ route('backend.employees.import-leave') }}" method="POST" enctype="multipart/form-data" class="d-none">
