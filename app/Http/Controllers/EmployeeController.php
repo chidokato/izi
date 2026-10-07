@@ -29,7 +29,15 @@ class EmployeeController extends Controller
             $query->where('e.department_id', $request->input('department_id'));
         }
         if ($request->filled('position')) {
-            $query->where('e.position', $request->input('position'));
+            if ($request->input('position') === 'employee') {
+                $query->where(function ($q) {
+                    $q->where('e.position', 'employee')
+                      ->orWhereNull('e.position')
+                      ->orWhere('e.position', '');
+                });
+            } else {
+                $query->where('e.position', $request->input('position'));
+            }
         }
         if ($request->filled('status')) {
             $query->where('e.status', $request->input('status'));
