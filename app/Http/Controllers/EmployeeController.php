@@ -11,7 +11,7 @@ class EmployeeController extends Controller
     {
         $request->validate([
             'q' => 'nullable|string|max:100',
-            'department_id' => 'nullable|integer|exists:departments,id',
+            'department_id' => 'nullable|string',
             'position' => 'nullable|in:employee,team_leader,manager,director',
             'status' => 'nullable|in:active,inactive,resigned,probation',
         ]);
@@ -32,7 +32,11 @@ class EmployeeController extends Controller
             });
         }
         if ($request->filled('department_id')) {
-            $query->where('e.department_id', $request->input('department_id'));
+            if ($request->input('department_id') === 'none') {
+                $query->whereNull('e.department_id');
+            } else {
+                $query->where('e.department_id', $request->input('department_id'));
+            }
         }
         if ($request->filled('position')) {
             if ($request->input('position') === 'employee') {

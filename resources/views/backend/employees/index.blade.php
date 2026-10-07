@@ -6,6 +6,21 @@
 @if($errors->any())
     <div class="alert alert-danger">@foreach($errors->all() as $error)<div>{{ $error }}</div>@endforeach</div>
 @endif
+@push('styles')
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <style>
+        .select2-container .select2-selection--single {
+            height: 38px;
+            border: 1px solid #ced4da;
+            display: flex;
+            align-items: center;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 36px;
+        }
+    </style>
+@endpush
+
 <div class="card">
     <div class="card-header d-flex flex-wrap gap-2 align-items-center justify-content-between">
         <h5 class="card-title mb-0">Nhân viên <span class="badge bg-primary ms-1">{{ $employees->total() }}</span></h5>
@@ -31,8 +46,9 @@
             </div>
             <div class="col-md-2">
                 <label for="employee-department" class="form-label">Phòng ban</label>
-                <select id="employee-department" name="department_id" class="form-select">
+                <select id="employee-department" name="department_id" class="form-select select2">
                     <option value="">Tất cả</option>
+                    <option value="none" @selected(request('department_id') === 'none')>-- Không thuộc phòng nào --</option>
                     @foreach($departments as $department)
                         <option value="{{ $department->id }}" @selected((string)request('department_id') === (string)$department->id)>{{ $department->name }}</option>
                     @endforeach
@@ -642,6 +658,15 @@
                 });
             });
         });
+    });
+</script>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    $(document).ready(function() {
+        if ($.fn.select2) {
+            $('.select2').select2({ width: '100%' });
+        }
     });
 </script>
 @endpush
