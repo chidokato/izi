@@ -64,7 +64,7 @@
         @if($month->format('Y-m') > '1900-01')<a class="btn btn-light" aria-label="Tháng trước" href="{{ route('backend.calendar.index', ['employee_id'=>$employee->id, 'month'=>$month->subMonth()->format('Y-m')]) }}">‹ Trước</a>@endif
         <strong>Kỳ {{ $periodStart->format('d/m') }} - {{ $periodEnd->format('d/m/Y') }}</strong>
         @if($month->format('Y-m') < '2199-12')<a class="btn btn-light" aria-label="Tháng sau" href="{{ route('backend.calendar.index', ['employee_id'=>$employee->id, 'month'=>$month->addMonth()->format('Y-m')]) }}">Sau ›</a>@endif
-        <a class="btn btn-soft-primary" href="{{ route('backend.calendar.index', ['employee_id'=>$employee->id, 'month'=>now('Asia/Ho_Chi_Minh')->format('Y-m')]) }}">Tháng này</a>
+        <a class="btn btn-soft-primary" href="{{ route('backend.calendar.index', ['employee_id'=>$employee->id]) }}">Kỳ này</a>
     </div>
 </div>
 <div class="row g-2 mb-3">

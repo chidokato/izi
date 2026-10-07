@@ -23,12 +23,15 @@ class AttendanceCalendarController extends Controller
         $employee = $employeeId ? DB::table('employees as e')->leftJoin('departments as d', 'd.id', '=', 'e.department_id')
             ->where('e.id', $employeeId)->select('e.*', 'd.name as department_name')->first() : null;
         $latest = $employee ? DB::table('attendance_entries')->where('employee_id', $employee->id)->max('work_date') : null;
-        $month = $request->filled('month')
-            ? CarbonImmutable::createFromFormat('!Y-m', $request->input('month'))
-            : CarbonImmutable::parse($latest ?: now('Asia/Ho_Chi_Minh'))->startOfMonth();
+        if ($request->filled('month')) {
+            $month = CarbonImmutable::createFromFormat('!Y-m', $request->input('month'));
+        } else {
+            $refDate = CarbonImmutable::parse($latest ?: now('Asia/Ho_Chi_Minh'));
+            $month = $refDate->day >= 16 ? $refDate->startOfMonth()->addMonth() : $refDate->startOfMonth();
+        }
             
-        $periodStart = $month->copy()->day(16);
-        $periodEnd = $month->copy()->addMonth()->day(15);
+        $periodStart = $month->copy()->subMonth()->day(16);
+        $periodEnd = $month->copy()->day(15);
         
         $entries = $employee ? DB::table('attendance_entries')->where('employee_id', $employee->id)
             ->whereBetween('work_date', [$periodStart->toDateString(), $periodEnd->toDateString()])->get()->keyBy('work_date') : collect();
