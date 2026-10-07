@@ -47,7 +47,7 @@
     <div class="card-body">
 <form method="get" class="row g-2 mb-3">
     <div class="col-md-3"><label for="attendance-q" class="form-label">Nhân viên</label><input id="attendance-q" name="q" class="form-control" placeholder="Mã hoặc tên nhân viên" value="{{ request('q') }}"></div>
-    <div class="col-md-3"><label for="attendance-department" class="form-label">Phòng ban</label><select id="attendance-department" class="form-select" name="department"><option value="">Tất cả phòng ban</option>@foreach($departments as $department)<option @selected(request('department')===$department)>{{ $department }}</option>@endforeach</select></div>
+    <div class="col-md-3"><label for="attendance-department" class="form-label">Phòng ban</label><select id="attendance-department" class="form-select" name="department"><option value="">Tất cả phòng ban</option>@foreach($departments as $id => $department)<option value="{{ $id }}" @selected(request('department') == $id)>{{ $department }}</option>@endforeach</select></div>
     <div class="col-md-4"><label for="attendance-date-range" class="form-label">Thời gian</label><input id="attendance-date-range" class="form-control" type="text" value="" placeholder="Chọn khoảng thời gian" autocomplete="off"></div>
     <input type="hidden" name="from" id="attendance-from" value="{{ request('from') }}">
     <input type="hidden" name="to" id="attendance-to" value="{{ request('to') }}">

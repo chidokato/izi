@@ -13,14 +13,14 @@ class AttendanceImportController extends Controller
     public function index(Request $request)
     {
         $request->validate(['hours_mode' => 'nullable|in:regular,total', 'schedule_id' => 'nullable|integer|exists:work_schedules,id', 'q' => 'nullable|string|max:100', 'department' => 'nullable|string|max:255', 'from' => 'nullable|date_format:Y-m-d', 'to' => 'nullable|date_format:Y-m-d|after_or_equal:from']);
-        $query = DB::table('attendance_entries as a')->join('employees as e', 'e.id', '=', 'a.employee_id')->select('a.*', 'e.employee_code');
+        $query = DB::table('attendance_entries as a')->join('employees as e', 'e.id', '=', 'a.employee_id')->leftJoin('departments as d', 'a.department_id', '=', 'd.id')->select('a.*', 'e.employee_code', 'd.name as department_name');
         if ($q = $request->input('q')) {
             $query->where(function ($query) use ($q) {
                 $query->where('e.employee_code', 'like', '%'.$q.'%')->orWhere('a.employee_name', 'like', '%'.$q.'%');
             });
         }
         if ($request->filled('department')) {
-            $query->where('a.department_name', $request->input('department'));
+            $query->where('a.department_id', $request->input('department'));
         }
         if ($request->filled('from')) {
             $query->where('a.work_date', '>=', $request->input('from'));
@@ -30,6 +30,8 @@ class AttendanceImportController extends Controller
         }
 
         $entries = $query->orderByDesc('a.work_date')->orderBy('e.employee_code')->paginate(50)->withQueryString();
+
+
         $schedules = DB::table('work_schedules')->orderBy('name')->get(['id', 'name', 'status']);
         $activeSchedules = $schedules->where('status', 'active');
         $selectedSchedule = $request->input('schedule_id');
@@ -135,7 +137,7 @@ class AttendanceImportController extends Controller
             }
         }
 
-        return view('backend.attendance.index', ['entries' => $entries, 'schedules' => $schedules, 'selectedSchedule' => $selectedSchedule, 'departments' => DB::table('attendance_entries')->distinct()->orderBy('department_name')->pluck('department_name'), 'imports' => DB::table('attendance_imports')->where('uploaded_by', $request->user()->id)->orderByDesc('id')->limit(10)->get()]);
+        return view('backend.attendance.index', ['entries' => $entries, 'schedules' => $schedules, 'selectedSchedule' => $selectedSchedule, 'departments' => DB::table('departments')->orderBy('name')->pluck('name', 'id'), 'imports' => DB::table('attendance_imports')->where('uploaded_by', $request->user()->id)->orderByDesc('id')->limit(10)->get()]);
     }
 
     public function preview(Request $request, AttendanceFileReader $reader, AttendanceImporter $importer)

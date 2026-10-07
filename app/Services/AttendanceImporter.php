@@ -19,16 +19,15 @@ class AttendanceImporter
             $employee = DB::table('employees')->where('employee_code', $r['code'])->first();
             $r['new_employee'] = ! $employee;
             if ($employee) {
-                $department = DB::table('departments')->where('id', $employee->department_id)->value('name');
-                if ($employee->name !== $r['name'] || $department !== $r['department']) {
-                    $r['errors'][] = 'Tên/phòng ban không khớp hồ sơ nhân viên. Hãy sửa hồ sơ hoặc file trước.';
+                if ($employee->name !== $r['name']) {
+                    $r['errors'][] = 'Tên không khớp hồ sơ nhân viên. Hãy sửa hồ sơ hoặc file trước.';
                 }
                 if ($employee->status !== 'active') {
                     $r['errors'][] = 'Nhân viên đã ngừng hoạt động.';
                 }
                 $old = DB::table('attendance_entries')->where('employee_id', $employee->id)->where('work_date', $r['date'])->first();
                 $r['old'] = $old ? (array) $old : null;
-                $r['duplicate'] = $old && $old->checkin === $r['in'] && $old->checkout === $r['out'] && $old->employee_name === $r['name'] && $old->department_name === $r['department'];
+                $r['duplicate'] = $old && $old->checkin === $r['in'] && $old->checkout === $r['out'] && $old->employee_name === $r['name'] && $old->department_id === $employee->department_id;
                 if (DB::table('daily_attendances')->where('employee_id', $employee->id)->where('work_date', $r['date'])->where('has_request', true)->exists()) {
                     $r['errors'][] = 'Ngày đã có phiếu điều chỉnh; cần đối soát riêng.';
                 }
@@ -93,36 +92,22 @@ class AttendanceImporter
                 }
                 $now = now();
                 if (! $employee) {
-                    $dept = DB::table('departments')->where('name', $r['department'])->value('id');
-                    if (! $dept) {
-                        $dept = DB::table('departments')->insertGetId(['name' => $r['department'], 'status' => 'active', 'created_at' => $now, 'updated_at' => $now]);
-                    }
-                    $managerId = null;
-                    if ($dept) {
-                        $manager = DB::table('employees')
-                            ->where('department_id', $dept)
-                            ->where('status', 'active')
-                            ->whereIn('position', ['director', 'manager', 'team_leader'])
-                            ->orderByRaw("FIELD(position, 'director', 'manager', 'team_leader')")
-                            ->first();
-                        if ($manager) {
-                            $managerId = $manager->id;
-                        }
-                    }
                     $employeeId = DB::table('employees')->insertGetId([
                         'employee_code' => $r['code'], 
                         'name' => $r['name'], 
-                        'department_id' => $dept, 
-                        'manager_id' => $managerId,
+                        'department_id' => null, 
+                        'manager_id' => null,
                         'status' => 'active', 
                         'created_at' => $now, 
                         'updated_at' => $now
                     ]);
                     $created[$r['code']] = true;
+                    $employeeDeptId = null;
                 } else {
                     $employeeId = $employee->id;
+                    $employeeDeptId = $employee->department_id;
                 }
-                $values = ['employee_name' => $r['name'], 'department_name' => $r['department'], 'checkin' => $r['in'], 'checkout' => $r['out'], 'attendance_import_id' => $id, 'updated_at' => $now];
+                $values = ['employee_name' => $r['name'], 'department_id' => $employeeDeptId, 'checkin' => $r['in'], 'checkout' => $r['out'], 'attendance_import_id' => $id, 'updated_at' => $now];
                 if ($r['old']) {
                     $entryId = $r['old']['id'];
                     DB::table('attendance_entries')->where('id', $entryId)->update($values);
