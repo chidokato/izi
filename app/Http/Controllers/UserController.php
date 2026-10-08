@@ -14,14 +14,28 @@ use Illuminate\View\View;
 
 class UserController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
-        $users = User::query()
-            ->with('employee')
-            ->latest()
-            ->paginate(10);
+        $search = $request->input('search');
 
-        return view('backend.users.index', compact('users'));
+        $users = User::query()
+            ->with(['employee', 'employee.department'])
+            ->when($search, function ($query) use ($search) {
+                $query->where(function($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                      ->orWhere('email', 'like', "%{$search}%")
+                      ->orWhere('phone', 'like', "%{$search}%")
+                      ->orWhereHas('employee', function($q2) use ($search) {
+                          $q2->where('employee_code', 'like', "%{$search}%")
+                             ->orWhere('name', 'like', "%{$search}%");
+                      });
+                });
+            })
+            ->latest()
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('backend.users.index', compact('users', 'search'));
     }
 
     public function create(): View

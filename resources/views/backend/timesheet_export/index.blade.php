@@ -36,10 +36,10 @@
     <div class="card-body">
         <div class="table-responsive" style="max-height: 70vh;">
             <table class="table table-bordered table-nowrap align-middle table-sm" style="font-size: 13px;">
-                <thead class="table-light" style="position: sticky; top: 0; z-index: 1;">
+                <thead class="table-light" style="position: sticky; top: 0; z-index: 10;">
                     <tr>
-                        <th rowspan="2" class="text-center align-middle" style="position: sticky; left: 0; background-color: #f3f6f9; z-index: 2;">Mã NV<br>DXMB</th>
-                        <th rowspan="2" class="text-center align-middle" style="position: sticky; left: 80px; background-color: #f3f6f9; z-index: 2;">HỌ TÊN</th>
+                        <th rowspan="2" class="text-center align-middle" style="position: sticky; left: 0; background-color: #f3f6f9; z-index: 20;">Mã NV<br>DXMB</th>
+                        <th rowspan="2" class="text-center align-middle" style="position: sticky; left: 80px; background-color: #f3f6f9; z-index: 20;">HỌ TÊN</th>
                         <th rowspan="2" class="text-center align-middle">PHÒNG BAN</th>
                         <th rowspan="2" class="text-center align-middle">TÌNH<br>TRẠNG</th>
                         <th rowspan="2" class="text-center align-middle">Ngày vào làm</th>

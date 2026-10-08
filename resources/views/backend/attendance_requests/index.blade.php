@@ -259,71 +259,54 @@ document.addEventListener('DOMContentLoaded', function() {
         select.addEventListener('change', function(e) {
             let id = this.getAttribute('data-id');
             let status = this.value;
-            let actionText = status == 'approved' ? 'duyệt' : (status == 'rejected' ? 'từ chối' : 'chuyển về chờ duyệt');
             
-            Swal.fire({
-                title: 'Xác nhận',
-                text: `Bạn có chắc chắn muốn ${actionText} phiếu này?`,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: status == 'approved' ? '#0ab39c' : (status == 'rejected' ? '#f06548' : '#f7b84b'),
-                cancelButtonColor: '#878a99',
-                confirmButtonText: 'Đồng ý',
-                cancelButtonText: 'Hủy bỏ'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    this.disabled = true;
+            this.disabled = true;
 
-                    fetch('{{ url("admin/attendance-requests") }}/' + id, {
-                        method: 'PUT',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                        },
-                        body: JSON.stringify({
-                            status: status,
-                            step: this.getAttribute('data-step')
-                        })
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        this.disabled = false;
-                        if(data.success) {
-                            // Update border and text colors based on new status
-                            this.classList.remove('border-success', 'text-success', 'border-danger', 'text-danger', 'border-warning', 'text-warning');
-                            if (data.status == 'approved') {
-                                this.classList.add('border-success', 'text-success');
-                            } else if (data.status == 'rejected') {
-                                this.classList.add('border-danger', 'text-danger');
-                            } else if (data.status == 'pending') {
-                                this.classList.add('border-warning', 'text-warning');
-                            }
-                            
-                            Swal.fire({
-                                toast: true,
-                                position: 'bottom-start',
-                                icon: 'success',
-                                title: data.message,
-                                showConfirmButton: false,
-                                timer: 1500
-                            }).then(() => {
-                                window.location.reload();
-                            });
-                        } else {
-                            Swal.fire('Lỗi', 'Có lỗi xảy ra, vui lòng thử lại.', 'error');
-                            this.value = this.dataset.original; // Revert
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        Swal.fire('Lỗi', 'Lỗi kết nối.', 'error');
-                        this.disabled = false;
-                        this.value = this.dataset.original; // Revert
+            fetch('{{ url("admin/attendance-requests") }}/' + id, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({
+                    status: status,
+                    step: this.getAttribute('data-step')
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                this.disabled = false;
+                if(data.success) {
+                    // Update border and text colors based on new status
+                    this.classList.remove('border-success', 'text-success', 'border-danger', 'text-danger', 'border-warning', 'text-warning');
+                    if (status == 'approved') {
+                        this.classList.add('border-success', 'text-success');
+                    } else if (status == 'rejected') {
+                        this.classList.add('border-danger', 'text-danger');
+                    } else if (status == 'pending') {
+                        this.classList.add('border-warning', 'text-warning');
+                    }
+                    
+                    Swal.fire({
+                        toast: true,
+                        position: 'bottom-start',
+                        icon: 'success',
+                        title: data.message,
+                        showConfirmButton: false,
+                        timer: 1500
                     });
+                    this.dataset.original = this.value;
                 } else {
-                    this.value = this.dataset.original; // Revert if cancelled
+                    Swal.fire('Lỗi', 'Có lỗi xảy ra, vui lòng thử lại.', 'error');
+                    this.value = this.dataset.original; // Revert
                 }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire('Lỗi', 'Lỗi kết nối.', 'error');
+                this.disabled = false;
+                this.value = this.dataset.original; // Revert
             });
         });
     });

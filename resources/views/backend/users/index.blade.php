@@ -8,7 +8,18 @@
     <div class="card">
         <div class="card-header d-flex align-items-center justify-content-between">
             <h4 class="card-title mb-0">Danh sach user</h4>
-            <a href="{{ route('backend.users.create') }}" class="btn btn-primary">Them user</a>
+            
+            <div class="d-flex gap-2">
+                <form action="{{ route('backend.users.index') }}" method="GET" class="d-flex position-relative">
+                    <input type="text" name="search" class="form-control" placeholder="Tìm kiếm user..." value="{{ $search ?? '' }}">
+                    @if(isset($search) && $search != '')
+                        <a href="{{ route('backend.users.index') }}" class="position-absolute end-0 top-50 translate-middle-y text-muted me-2 text-decoration-none">
+                            <i class="ri-close-line"></i>
+                        </a>
+                    @endif
+                </form>
+                <a href="{{ route('backend.users.create') }}" class="btn btn-primary text-nowrap">Them user</a>
+            </div>
         </div>
         <div class="card-body">
             <div class="table-responsive">
@@ -18,6 +29,7 @@
                             <th>ID</th>
                             <th>Mã NV</th>
                             <th>Tên NV</th>
+                            <th>Phòng ban</th>
                             <th>Ten User</th>
                             <th>Chuc danh</th>
                             <th>So dien thoai</th>
@@ -34,6 +46,7 @@
                                 <td>{{ $user->id }}</td>
                                 <td>{{ $user->employee ? $user->employee->employee_code : '' }}</td>
                                 <td>{{ $user->employee ? $user->employee->name : '' }}</td>
+                                <td>{{ $user->employee && $user->employee->department ? $user->employee->department->name : '' }}</td>
                                 <td>{{ $user->name }}</td>
                                 <td>{{ $user->job_title }}</td>
                                 <td>{{ $user->phone }}</td>
@@ -60,7 +73,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="11" class="text-center text-muted py-4">Chua co user nao.</td>
+                                <td colspan="12" class="text-center text-muted py-4">Chua co user nao.</td>
                             </tr>
                         @endforelse
                     </tbody>
