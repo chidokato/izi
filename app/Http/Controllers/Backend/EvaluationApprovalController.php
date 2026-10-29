@@ -15,7 +15,7 @@ class EvaluationApprovalController extends Controller
     public function index()
     {
         $user = auth()->user();
-        $query = Evaluation::with('employee');
+        $query = Evaluation::with(['employee.department', 'details']);
 
         if (!$user->employee_id) {
             return redirect()->route('backend.admin.dashboard')->with('error', 'Tài khoản chưa liên kết nhân viên.');
@@ -54,7 +54,7 @@ class EvaluationApprovalController extends Controller
     public function edit($id)
     {
         $user = auth()->user();
-        $evaluation = Evaluation::with(['employee', 'details.criterion.parent'])->findOrFail($id);
+        $evaluation = Evaluation::with(['employee.department', 'details.criterion.parent'])->findOrFail($id);
 
         $directReportIds = Employee::where('manager_id', $user->employee_id)->pluck('id')->toArray();
         $hrReportIds = Employee::where('manager_l2_id', $user->employee_id)->pluck('id')->toArray();

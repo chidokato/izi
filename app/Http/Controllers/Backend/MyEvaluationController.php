@@ -90,7 +90,7 @@ class MyEvaluationController extends Controller
     public function edit($id)
     {
         $user = auth()->user();
-        $evaluation = \App\Models\Evaluation::with(['details.criterion.parent'])->findOrFail($id);
+        $evaluation = \App\Models\Evaluation::with(['employee.department', 'details.criterion.parent'])->findOrFail($id);
         
         if ($evaluation->employee_id != $user->employee_id) {
             abort(403);
