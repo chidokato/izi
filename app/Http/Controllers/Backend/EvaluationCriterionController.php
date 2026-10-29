@@ -8,34 +8,72 @@ use App\Models\EvaluationCriterion;
 
 class EvaluationCriterionController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        // Get only root criteria (parent_id is null) with their children
-        $criteria = EvaluationCriterion::whereNull('parent_id')->with('children')->orderBy('order', 'asc')->get();
-        return view('backend.evaluation_criteria.index', compact('criteria'));
+        $currentType = $request->input('type', 'all');
+        $targetTypes = EvaluationCriterion::getTargetTypes();
+
+        $query = EvaluationCriterion::whereNull('parent_id')
+            ->with(['children' => function ($q) {
+                $q->orderBy('order', 'asc');
+            }])
+            ->orderBy('order', 'asc');
+
+        $allCriteria = $query->get();
+
+        if ($currentType !== 'all') {
+            $criteria = $allCriteria->filter(function ($parent) use ($currentType) {
+                $matchingChildren = $parent->children->filter(fn($child) => $child->appliesTo($currentType));
+                if ($parent->children->isNotEmpty()) {
+                    $parent->setRelation('children', $matchingChildren);
+                    return $matchingChildren->isNotEmpty() || $parent->appliesTo($currentType);
+                }
+                return $parent->appliesTo($currentType);
+            });
+        } else {
+            $criteria = $allCriteria;
+        }
+
+        return view('backend.evaluation_criteria.index', compact('criteria', 'targetTypes', 'currentType'));
     }
 
     public function create()
     {
         $parents = EvaluationCriterion::whereNull('parent_id')->orderBy('order', 'asc')->get();
-        return view('backend.evaluation_criteria.create', compact('parents'));
+        $targetTypes = EvaluationCriterion::getTargetTypes();
+        return view('backend.evaluation_criteria.create', compact('parents', 'targetTypes'));
     }
 
     public function store(Request $request)
     {
+        if ($request->input('parent_id') === '') {
+            $request->merge(['parent_id' => null]);
+        }
+
         $request->validate([
             'parent_id' => 'nullable|exists:evaluation_criteria,id',
-            'name' => 'required|string|max:255',
+            'name' => 'required|string|max:500',
             'max_score' => 'nullable|integer|min:0',
             'order' => 'nullable|integer',
+            'target_types' => 'nullable|array',
         ]);
 
         $data = $request->all();
         $data['is_active'] = $request->has('is_active') ? 1 : 0;
         
-        // If it's a parent (has children later), max_score might be empty/null
         if (empty($data['max_score'])) {
             $data['max_score'] = null;
+        }
+
+        if (empty($data['parent_id'])) {
+            $data['parent_id'] = null;
+        }
+
+        $targets = (array)$request->input('target_types', []);
+        if (empty($targets) || in_array('all', $targets)) {
+            $data['target_types'] = ['all'];
+        } else {
+            $data['target_types'] = array_values($targets);
         }
 
         EvaluationCriterion::create($data);
@@ -47,16 +85,22 @@ class EvaluationCriterionController extends Controller
     {
         $criterion = EvaluationCriterion::findOrFail($id);
         $parents = EvaluationCriterion::whereNull('parent_id')->where('id', '!=', $id)->orderBy('order', 'asc')->get();
-        return view('backend.evaluation_criteria.edit', compact('criterion', 'parents'));
+        $targetTypes = EvaluationCriterion::getTargetTypes();
+        return view('backend.evaluation_criteria.edit', compact('criterion', 'parents', 'targetTypes'));
     }
 
     public function update(Request $request, $id)
     {
+        if ($request->input('parent_id') === '') {
+            $request->merge(['parent_id' => null]);
+        }
+
         $request->validate([
             'parent_id' => 'nullable|exists:evaluation_criteria,id',
-            'name' => 'required|string|max:255',
+            'name' => 'required|string|max:500',
             'max_score' => 'nullable|integer|min:0',
             'order' => 'nullable|integer',
+            'target_types' => 'nullable|array',
         ]);
 
         $criterion = EvaluationCriterion::findOrFail($id);
@@ -67,7 +111,28 @@ class EvaluationCriterionController extends Controller
             $data['max_score'] = null;
         }
 
+        if (empty($data['parent_id'])) {
+            $data['parent_id'] = null;
+        }
+
+        $targets = (array)$request->input('target_types', []);
+        if (empty($targets) || in_array('all', $targets)) {
+            $data['target_types'] = ['all'];
+        } else {
+            $data['target_types'] = array_values($targets);
+        }
+
         $criterion->update($data);
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Cập nhật tiêu chí thành công.',
+                'criterion' => $criterion,
+                'target_types' => $criterion->target_types,
+                'target_type_names' => $criterion->target_type_names,
+            ]);
+        }
 
         return redirect()->route('backend.evaluation-criteria.index')->with('success', 'Cập nhật tiêu chí thành công.');
     }
@@ -99,17 +164,5 @@ class EvaluationCriterionController extends Controller
         }
 
         return redirect()->route('backend.evaluation-criteria.edit', $newCriterion->id)->with('success', 'Đã nhân bản tiêu chí. Bạn đang xem bản sao.');
-    }
-
-    public function quickUpdate(Request $request, $id)
-    {
-        $request->validate([
-            'name' => 'required|string|max:255',
-        ]);
-
-        $criterion = EvaluationCriterion::findOrFail($id);
-        $criterion->update(['name' => $request->name]);
-
-        return response()->json(['success' => true, 'message' => 'Cập nhật thành công']);
     }
 }

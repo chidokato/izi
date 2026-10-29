@@ -68,7 +68,28 @@ class EvaluationApprovalController extends Controller
             abort(403, 'Bạn không có quyền truy cập phiếu này.');
         }
 
-        $criteriaTree = EvaluationCriterion::whereNull('parent_id')->with('children')->where('is_active', 1)->orderBy('order', 'asc')->get();
+        $evalType = $evaluation->evaluation_type ?: ($evaluation->employee->evaluation_type ?? 'office');
+        $detailCriteriaIds = $evaluation->details->pluck('criteria_id')->toArray();
+
+        $criteriaTree = EvaluationCriterion::whereNull('parent_id')
+            ->where('is_active', 1)
+            ->with(['children' => function ($q) {
+                $q->where('is_active', 1)->orderBy('order', 'asc');
+            }])
+            ->orderBy('order', 'asc')
+            ->get()
+            ->filter(function ($parent) use ($evalType, $detailCriteriaIds) {
+                $matchingChildren = $parent->children->filter(function ($child) use ($evalType, $detailCriteriaIds) {
+                    return in_array($child->id, $detailCriteriaIds) || $child->appliesTo($evalType);
+                });
+
+                if ($parent->children->isNotEmpty()) {
+                    $parent->setRelation('children', $matchingChildren);
+                    return $matchingChildren->isNotEmpty();
+                }
+
+                return in_array($parent->id, $detailCriteriaIds) || $parent->appliesTo($evalType);
+            });
         $grades = EvaluationGrade::orderBy('min_score', 'asc')->get();
 
         return view('backend.evaluation_approvals.edit', compact('evaluation', 'criteriaTree', 'grades', 'isHR', 'isManager'));

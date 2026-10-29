@@ -11,6 +11,7 @@ class Evaluation extends Model
 
     protected $fillable = [
         'employee_id',
+        'evaluation_type',
         'month',
         'year',
         'status',

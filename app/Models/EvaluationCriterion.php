@@ -13,9 +13,58 @@ class EvaluationCriterion extends Model
         'parent_id',
         'name',
         'max_score',
+        'target_types',
         'order',
         'is_active',
     ];
+
+    protected $casts = [
+        'target_types' => 'array',
+        'is_active' => 'boolean',
+    ];
+
+    public static function getTargetTypes(): array
+    {
+        return [
+            'manager' => 'Quản lý',
+            'office' => 'Nhân viên văn phòng',
+            'sale' => 'Nhân viên Sale',
+            'collaborator' => 'Cộng tác viên (CTV)',
+        ];
+    }
+
+    public function appliesTo(?string $type): bool
+    {
+        if (empty($type)) {
+            return true;
+        }
+
+        $targets = $this->target_types;
+        if (empty($targets) || in_array('all', $targets)) {
+            return true;
+        }
+
+        return in_array($type, $targets);
+    }
+
+    public function getTargetTypeNamesAttribute(): array
+    {
+        $allTypes = self::getTargetTypes();
+        $targets = $this->target_types;
+
+        if (empty($targets) || in_array('all', $targets)) {
+            return ['all' => 'Tất cả'];
+        }
+
+        $names = [];
+        foreach ($targets as $key) {
+            if (isset($allTypes[$key])) {
+                $names[$key] = $allTypes[$key];
+            }
+        }
+
+        return $names;
+    }
 
     public function parent()
     {

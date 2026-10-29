@@ -83,6 +83,19 @@
                                     </div>
                                     <div class="col-lg-4">
                                         <div class="mb-3">
+                                            <label class="form-label">Loại tiêu chí đánh giá</label>
+                                            <select name="evaluation_type" class="form-select @error('evaluation_type') is-invalid @enderror">
+                                                @foreach(\App\Models\EvaluationCriterion::getTargetTypes() as $val => $label)
+                                                    <option value="{{ $val }}" @selected(old('evaluation_type', $employee->evaluation_type ?? 'office') == $val)>{{ $label }}</option>
+                                                @endforeach
+                                            </select>
+                                            @error('evaluation_type')
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-4">
+                                        <div class="mb-3">
                                             <label class="form-label">Cấp bậc đặc biệt</label>
                                             <select name="level" class="form-select @error('level') is-invalid @enderror">
                                                 <option value="">-- Không có --</option>

@@ -49,16 +49,23 @@ class MyEvaluationController extends Controller
             return redirect()->route('backend.my-evaluations.edit', $exists->id)->with('info', 'Phiếu đánh giá tháng này đã tồn tại.');
         }
 
+        $employee = \App\Models\Employee::find($user->employee_id);
+        $evalType = ($employee && $employee->evaluation_type) ? $employee->evaluation_type : 'office';
+
         $evaluation = \App\Models\Evaluation::create([
             'employee_id' => $user->employee_id,
+            'evaluation_type' => $evalType,
             'month' => $month,
             'year' => $year,
             'status' => 'draft',
         ]);
 
-        // Tạo sẵn các details từ bảng criteria
+        // Tạo sẵn các details từ bảng criteria theo loại đánh giá
         $criteria = \App\Models\EvaluationCriterion::where('is_active', 1)->get();
         foreach ($criteria as $criterion) {
+            if (!$criterion->appliesTo($evalType)) {
+                continue;
+            }
             $hasChildren = $criteria->where('parent_id', $criterion->id)->count() > 0;
             if (!$hasChildren) {
                 \App\Models\EvaluationDetail::create([
@@ -89,8 +96,30 @@ class MyEvaluationController extends Controller
             abort(403);
         }
 
-        // Lấy tất cả criteria để hiển thị dạng cây
-        $criteriaTree = \App\Models\EvaluationCriterion::whereNull('parent_id')->with('children')->where('is_active', 1)->orderBy('order', 'asc')->get();
+        // Lấy tiêu chí áp dụng cho loại nhân sự này
+        $evalType = $evaluation->evaluation_type ?: ($evaluation->employee->evaluation_type ?? 'office');
+        $detailCriteriaIds = $evaluation->details->pluck('criteria_id')->toArray();
+
+        $criteriaTree = \App\Models\EvaluationCriterion::whereNull('parent_id')
+            ->where('is_active', 1)
+            ->with(['children' => function ($q) {
+                $q->where('is_active', 1)->orderBy('order', 'asc');
+            }])
+            ->orderBy('order', 'asc')
+            ->get()
+            ->filter(function ($parent) use ($evalType, $detailCriteriaIds) {
+                // Lọc con: thuộc evaluation_details hoặc appliesTo
+                $matchingChildren = $parent->children->filter(function ($child) use ($evalType, $detailCriteriaIds) {
+                    return in_array($child->id, $detailCriteriaIds) || $child->appliesTo($evalType);
+                });
+
+                if ($parent->children->isNotEmpty()) {
+                    $parent->setRelation('children', $matchingChildren);
+                    return $matchingChildren->isNotEmpty();
+                }
+
+                return in_array($parent->id, $detailCriteriaIds) || $parent->appliesTo($evalType);
+            });
 
         // Lấy danh sách các xếp loại
         $grades = \App\Models\EvaluationGrade::orderBy('min_score', 'asc')->get();

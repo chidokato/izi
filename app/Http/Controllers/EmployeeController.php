@@ -17,7 +17,7 @@ class EmployeeController extends Controller
         ]);
         $query = DB::table('employees as e')
             ->leftJoin('departments as d', 'd.id', '=', 'e.department_id')
-            ->select('e.id', 'e.employee_code', 'e.name', 'e.status', 'e.position', 'e.manager_id', 'e.manager_l2_id', 'e.department_id', 'e.annual_leave_balance', 'd.name as department_name', 'e.deleted_at');
+            ->select('e.id', 'e.employee_code', 'e.name', 'e.status', 'e.position', 'e.evaluation_type', 'e.manager_id', 'e.manager_l2_id', 'e.department_id', 'e.annual_leave_balance', 'd.name as department_name', 'e.deleted_at');
             
         if ($request->boolean('view_deleted')) {
             $query->whereNotNull('e.deleted_at');
@@ -100,6 +100,7 @@ class EmployeeController extends Controller
             'phone' => 'nullable|string|max:30',
             'department_id' => 'nullable|integer|exists:departments,id',
             'position' => 'nullable|string',
+            'evaluation_type' => 'nullable|string|in:manager,office,sale,collaborator',
             'level' => 'nullable|string|max:100',
             'manager_id' => 'nullable|integer|exists:employees,id',
             'manager_l2_id' => 'nullable|integer|exists:employees,id',
@@ -171,6 +172,7 @@ class EmployeeController extends Controller
             'phone' => 'nullable|string|max:30',
             'department_id' => 'nullable|integer|exists:departments,id',
             'position' => 'nullable|string',
+            'evaluation_type' => 'nullable|string|in:manager,office,sale,collaborator',
             'level' => 'nullable|string|max:100',
             'manager_id' => 'nullable|integer|exists:employees,id',
             'manager_l2_id' => 'nullable|integer|exists:employees,id',
@@ -242,6 +244,22 @@ class EmployeeController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Cập nhật chức vụ thành công!'
+        ]);
+    }
+
+    public function changeEvaluationType(Request $request, $id)
+    {
+        $request->validate([
+            'evaluation_type' => 'required|string|in:manager,office,sale,collaborator'
+        ]);
+
+        $employee = \App\Models\Employee::findOrFail($id);
+        $employee->evaluation_type = $request->evaluation_type;
+        $employee->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Cập nhật loại tiêu chí đánh giá thành công!'
         ]);
     }
 

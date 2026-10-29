@@ -31,7 +31,7 @@
 
                     <div class="col-md-6">
                         <label for="name" class="form-label">Tên tiêu chí <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control @error('name') is-invalid @enderror" id="name" name="name" value="{{ old('name', $criterion->name) }}" required>
+                        <textarea class="form-control @error('name') is-invalid @enderror" id="name" name="name" rows="3" required style="min-height: 80px; resize: vertical;" oninput="this.style.height='auto';this.style.height=(this.scrollHeight>80?this.scrollHeight:80)+'px'">{{ old('name', $criterion->name) }}</textarea>
                         @error('name')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
@@ -53,6 +53,27 @@
                         @enderror
                     </div>
 
+                    @php
+                        $currentTargets = $criterion->target_types ?? ['all'];
+                        $isAll = empty($currentTargets) || in_array('all', $currentTargets);
+                    @endphp
+                    <div class="col-md-12">
+                        <label class="form-label d-block fw-semibold">Đối tượng áp dụng</label>
+                        <div class="d-flex flex-wrap gap-3 p-2 border rounded bg-light">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="target_types[]" value="all" id="target_all" {{ $isAll ? 'checked' : '' }}>
+                                <label class="form-check-label fw-bold" for="target_all">Tất cả đối tượng</label>
+                            </div>
+                            @foreach($targetTypes as $tKey => $tLabel)
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="target_types[]" value="{{ $tKey }}" id="target_{{ $tKey }}" {{ (!$isAll && in_array($tKey, $currentTargets)) ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="target_{{ $tKey }}">{{ $tLabel }}</label>
+                                </div>
+                            @endforeach
+                        </div>
+                        <small class="text-muted">Chọn "Tất cả" nếu tiêu chí áp dụng chung, hoặc tích chọn từng đối tượng cụ thể.</small>
+                    </div>
+
                     <div class="col-md-12">
                         <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" id="is_active" name="is_active" value="1" {{ old('is_active', $criterion->is_active) ? 'checked' : '' }}>
@@ -69,3 +90,33 @@
         </div>
     </div>
 @endsection
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const targetAllCheck = document.getElementById('target_all');
+        const itemChecks = document.querySelectorAll('input[name="target_types[]"]:not(#target_all)');
+
+        if (targetAllCheck) {
+            targetAllCheck.addEventListener('change', function() {
+                if (this.checked) {
+                    itemChecks.forEach(cb => cb.checked = false);
+                }
+            });
+        }
+
+        itemChecks.forEach(cb => {
+            cb.addEventListener('change', function() {
+                if (this.checked) {
+                    targetAllCheck.checked = false;
+                } else {
+                    const anyChecked = Array.from(itemChecks).some(c => c.checked);
+                    if (!anyChecked) {
+                        targetAllCheck.checked = true;
+                    }
+                }
+            });
+        });
+    });
+</script>
+@endpush

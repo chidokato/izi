@@ -25,7 +25,14 @@ class Employee extends Model
         'leave_date',
         'status',
         'annual_leave_balance',
+        'evaluation_type',
     ];
+
+    public function getEvaluationTypeNameAttribute(): string
+    {
+        $types = EvaluationCriterion::getTargetTypes();
+        return $types[$this->evaluation_type] ?? 'Nhân viên văn phòng';
+    }
 
     public function requests()
     {

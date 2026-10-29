@@ -90,7 +90,7 @@
                             <input class="form-check-input" type="checkbox" id="checkAll">
                         </div>
                     </th>
-                    <th>STT</th><th>Mã nhân viên</th><th>Họ tên</th><th>Phòng ban</th><th>Chức vụ</th><th>Người duyệt lần 1</th><th>Người duyệt lần 2</th><th>Trạng thái</th><th>Phép năm</th><th>Thao tác</th>
+                    <th>STT</th><th>Mã nhân viên</th><th>Họ tên</th><th>Phòng ban</th><th>Chức vụ</th><th>Loại đánh giá</th><th>Người duyệt lần 1</th><th>Người duyệt lần 2</th><th>Trạng thái</th><th>Phép năm</th><th>Thao tác</th>
                 </tr></thead>
                 <tbody>
                     @forelse($employees as $employee)
@@ -115,6 +115,13 @@
                             <select class="form-select form-select-sm position-select fw-bold {{ $employee->position === 'director' ? 'text-danger' : ($employee->position === 'manager' ? 'text-primary' : ($employee->position === 'team_leader' ? 'text-info' : 'text-secondary')) }}" data-id="{{ $employee->id }}">
                                 @foreach(['employee'=>'Nhân viên','team_leader'=>'Trưởng nhóm','manager'=>'Trưởng phòng','director'=>'Giám đốc'] as $value=>$label)
                                     <option value="{{ $value }}" class="text-body" @selected($employee->position === $value)>{{ $label }}</option>
+                                @endforeach
+                            </select>
+                        </td>
+                        <td>
+                            <select class="form-select form-select-sm evaluation-type-select fw-bold text-primary" data-id="{{ $employee->id }}">
+                                @foreach(\App\Models\EvaluationCriterion::getTargetTypes() as $value => $label)
+                                    <option value="{{ $value }}" @selected(($employee->evaluation_type ?? 'office') === $value)>{{ $label }}</option>
                                 @endforeach
                             </select>
                         </td>
@@ -377,6 +384,44 @@
                         toastMixin.fire({
                             icon: 'error',
                             title: data.message || 'Có lỗi xảy ra!'
+                        });
+                    }
+                })
+                .catch(error => {
+                    toastMixin.fire({
+                        icon: 'error',
+                        title: 'Lỗi máy chủ!'
+                    });
+                });
+            });
+        });
+
+        document.querySelectorAll('.evaluation-type-select').forEach(select => {
+            select.addEventListener('change', function () {
+                const employeeId = this.dataset.id;
+                const evaluationType = this.value;
+                const url = `{{ route('backend.employees.change-evaluation-type', ':id') }}`.replace(':id', employeeId);
+
+                fetch(url, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ evaluation_type: evaluationType })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        toastMixin.fire({
+                            icon: 'success',
+                            title: data.message
+                        });
+                    } else {
+                        toastMixin.fire({
+                            icon: 'error',
+                            title: data.message || 'Cập nhật thất bại!'
                         });
                     }
                 })

@@ -160,6 +160,8 @@ Route::patch('admin/employees/{id}/status', [\App\Http\Controllers\EmployeeContr
     ->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->name('backend.employees.change-status');
 Route::patch('admin/employees/{id}/position', [\App\Http\Controllers\EmployeeController::class, 'changePosition'])
     ->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->name('backend.employees.change-position');
+Route::patch('admin/employees/{id}/evaluation-type', [\App\Http\Controllers\EmployeeController::class, 'changeEvaluationType'])
+    ->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->name('backend.employees.change-evaluation-type');
 Route::patch('admin/employees/{id}/annual-leave', [\App\Http\Controllers\EmployeeController::class, 'changeAnnualLeave'])
     ->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->name('backend.employees.change-annual-leave');
 Route::patch('admin/employees/{id}/department', [\App\Http\Controllers\EmployeeController::class, 'changeDepartment'])
@@ -216,7 +218,6 @@ Route::prefix('admin/evaluation-criteria')->name('backend.evaluation-criteria.')
     Route::get('/{id}/edit', [\App\Http\Controllers\Backend\EvaluationCriterionController::class, 'edit'])->whereNumber('id')->name('edit');
     Route::post('/{id}/duplicate', [\App\Http\Controllers\Backend\EvaluationCriterionController::class, 'duplicate'])->whereNumber('id')->name('duplicate');
     Route::put('/{id}', [\App\Http\Controllers\Backend\EvaluationCriterionController::class, 'update'])->whereNumber('id')->name('update');
-    Route::post('/{id}/quick-update', [\App\Http\Controllers\Backend\EvaluationCriterionController::class, 'quickUpdate'])->whereNumber('id')->name('quick-update');
     Route::delete('/{id}', [\App\Http\Controllers\Backend\EvaluationCriterionController::class, 'destroy'])->whereNumber('id')->name('destroy');
 });
 
