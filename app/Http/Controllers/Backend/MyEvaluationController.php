@@ -140,16 +140,22 @@ class MyEvaluationController extends Controller
             return redirect()->back()->with('error', 'Phiếu đánh giá đã được duyệt, không thể chỉnh sửa.');
         }
 
-        $scores = $request->input('scores', []);
+        $parentChoices = $request->input('parent_choice', []);
+        $singleChoices = $request->input('single_choice', []);
+        $selectedDetailIds = array_map('intval', array_values(array_filter(array_merge((array)$parentChoices, (array)$singleChoices))));
+
+        $details = \App\Models\EvaluationDetail::with('criterion')->where('evaluation_id', $evaluation->id)->get();
         $totalSelfScore = 0;
 
-        $details = \App\Models\EvaluationDetail::where('evaluation_id', $evaluation->id)->get();
         foreach ($details as $detail) {
-            // Nếu có trong mảng scores (tức là được tick), lấy giá trị (chính là max_score). Nếu không thì 0.
-            $score = isset($scores[$detail->id]) ? (int)$scores[$detail->id] : 0;
-            $detail->self_score = $score;
+            $isSelected = in_array((int)$detail->id, $selectedDetailIds, true);
+            $detail->is_self_selected = $isSelected;
+            $detail->self_score = $isSelected ? (int)($detail->criterion->max_score ?? 0) : 0;
             $detail->save();
-            $totalSelfScore += $score;
+
+            if ($isSelected) {
+                $totalSelfScore += $detail->self_score;
+            }
         }
 
         $evaluation->self_total_score = $totalSelfScore;

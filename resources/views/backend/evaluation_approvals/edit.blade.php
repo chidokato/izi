@@ -50,34 +50,88 @@
                             </tr>
                         </thead>
                         <tbody>
+                            @php
+                                $hasAnyManagerSelected = $evaluation->details->where('is_manager_selected', true)->count() > 0;
+                                $hasAnyHrSelected = $evaluation->details->where('is_hr_selected', true)->count() > 0;
+                            @endphp
                             @foreach ($criteriaTree as $parent)
                                 @if($parent->children->isNotEmpty())
-                                    <tr class="table-info">
+                                    @php
+                                        $parentMaxScore = $parent->children->max('max_score') ?? 0;
+                                        
+                                        // NV tự chấm
+                                        $selfChild = $parent->children->first(function($c) use ($evaluation) {
+                                            $d = $evaluation->details->where('criteria_id', $c->id)->first();
+                                            return $d && $d->is_self_selected;
+                                        });
+                                        $selfScoreDisplay = $selfChild ? (int)($selfChild->max_score ?? 0) : '-';
+
+                                        // Quản lý chấm
+                                        $mgrChild = $parent->children->first(function($c) use ($evaluation, $hasAnyManagerSelected) {
+                                            $d = $evaluation->details->where('criteria_id', $c->id)->first();
+                                            if (!$d) return false;
+                                            return $hasAnyManagerSelected ? $d->is_manager_selected : $d->is_self_selected;
+                                        });
+                                        $mgrScoreDisplay = $mgrChild ? (int)($mgrChild->max_score ?? 0) : '-';
+
+                                        // HR chốt
+                                        $hrChild = $parent->children->first(function($c) use ($evaluation, $hasAnyHrSelected, $hasAnyManagerSelected) {
+                                            $d = $evaluation->details->where('criteria_id', $c->id)->first();
+                                            if (!$d) return false;
+                                            if ($hasAnyHrSelected) return $d->is_hr_selected;
+                                            return $hasAnyManagerSelected ? $d->is_manager_selected : $d->is_self_selected;
+                                        });
+                                        $hrScoreDisplay = $hrChild ? (int)($hrChild->max_score ?? 0) : '-';
+                                    @endphp
+                                    <tr class="table-info parent-row" data-parent-id="{{ $parent->id }}">
                                         <td><strong>{{ $parent->order }}. {{ $parent->name }}</strong></td>
-                                        <td class="text-center"><strong>{{ $parent->children->sum('max_score') ?: '-' }}</strong></td>
-                                        <td></td><td></td>@if($isHR || $evaluation->status == 'hr_approved')<td></td>@endif
+                                        <td class="text-center"><strong>{{ $parentMaxScore }}</strong></td>
+                                        <td class="text-center"><strong class="text-primary">{{ $selfScoreDisplay }}</strong></td>
+                                        <td class="text-center"><strong class="parent-mgr-score text-success" id="parent-mgr-score-{{ $parent->id }}">{{ $mgrScoreDisplay }}</strong></td>
+                                        @if($isHR || $evaluation->status == 'hr_approved')
+                                        <td class="text-center"><strong class="parent-hr-score text-danger" id="parent-hr-score-{{ $parent->id }}">{{ $hrScoreDisplay }}</strong></td>
+                                        @endif
                                     </tr>
                                     @foreach($parent->children as $child)
                                         @php
                                             $detail = $evaluation->details->where('criteria_id', $child->id)->first();
-                                            $selfScore = $detail ? $detail->self_score : 0;
-                                            $managerScore = $detail ? $detail->manager_score : 0;
-                                            $hrScore = $detail ? $detail->hr_score : 0;
-                                            if ($actingAs == 'manager' && $managerScore == 0) $managerScore = $selfScore;
-                                            if ($actingAs == 'hr' && in_array($evaluation->status, ['manager_reviewed', 'hr_approved']) && $hrScore == 0) $hrScore = $managerScore;
+                                            $isSelfSelected = $detail ? $detail->is_self_selected : false;
+                                            
+                                            $isMgrSelected = false;
+                                            if ($detail) {
+                                                $isMgrSelected = $hasAnyManagerSelected ? $detail->is_manager_selected : $isSelfSelected;
+                                            }
+
+                                            $isHrSelected = false;
+                                            if ($detail) {
+                                                if ($hasAnyHrSelected) {
+                                                    $isHrSelected = $detail->is_hr_selected;
+                                                } else {
+                                                    $isHrSelected = $hasAnyManagerSelected ? $detail->is_manager_selected : $isSelfSelected;
+                                                }
+                                            }
                                         @endphp
                                         <tr>
                                             <td class="ps-4"> - {{ $child->name }}</td>
-                                            <td class="text-center">{{ $child->max_score }}</td>
-                                            <td class="text-center">{!! $selfScore > 0 ? '<i class="ri-checkbox-circle-fill text-success fs-20"></i>' : '<i class="ri-checkbox-blank-circle-line text-muted fs-20"></i>' !!}</td>
+                                            <td class="text-center">{{ $child->max_score !== null ? $child->max_score : 0 }}</td>
+                                            <td class="text-center">
+                                                {!! $isSelfSelected ? '<i class="ri-checkbox-circle-fill text-primary fs-20"></i>' : '<i class="ri-checkbox-blank-circle-line text-muted fs-20"></i>' !!}
+                                            </td>
                                             
                                             <td class="text-center">
                                                 @if ($actingAs == 'manager')
                                                     <div class="form-check d-flex justify-content-center mb-0">
-                                                        <input class="form-check-input score-checkbox" style="transform: scale(1.5);" type="checkbox" name="scores[{{ $detail ? $detail->id : '' }}]" value="{{ $child->max_score }}" {{ $managerScore > 0 ? 'checked' : '' }}>
+                                                        <input class="form-check-input score-radio mgr-radio" 
+                                                               style="transform: scale(1.4); cursor: pointer;" 
+                                                               type="radio" 
+                                                               name="manager_choice[{{ $parent->id }}]" 
+                                                               value="{{ $detail ? $detail->id : '' }}" 
+                                                               data-parent-id="{{ $parent->id }}"
+                                                               data-score="{{ (int)($child->max_score ?? 0) }}"
+                                                               {{ $isMgrSelected ? 'checked' : '' }}>
                                                     </div>
                                                 @else
-                                                    {!! $managerScore > 0 ? '<i class="ri-checkbox-circle-fill text-success fs-20"></i>' : '<i class="ri-checkbox-blank-circle-line text-muted fs-20"></i>' !!}
+                                                    {!! $isMgrSelected ? '<i class="ri-checkbox-circle-fill text-success fs-20"></i>' : '<i class="ri-checkbox-blank-circle-line text-muted fs-20"></i>' !!}
                                                 @endif
                                             </td>
 
@@ -85,10 +139,17 @@
                                             <td class="text-center">
                                                 @if ($actingAs == 'hr' && in_array($evaluation->status, ['submitted', 'manager_reviewed', 'hr_approved']))
                                                     <div class="form-check d-flex justify-content-center mb-0">
-                                                        <input class="form-check-input score-checkbox" style="transform: scale(1.5);" type="checkbox" name="scores[{{ $detail ? $detail->id : '' }}]" value="{{ $child->max_score }}" {{ $hrScore > 0 ? 'checked' : '' }}>
+                                                        <input class="form-check-input score-radio hr-radio" 
+                                                               style="transform: scale(1.4); cursor: pointer;" 
+                                                               type="radio" 
+                                                               name="hr_choice[{{ $parent->id }}]" 
+                                                               value="{{ $detail ? $detail->id : '' }}" 
+                                                               data-parent-id="{{ $parent->id }}"
+                                                               data-score="{{ (int)($child->max_score ?? 0) }}"
+                                                               {{ $isHrSelected ? 'checked' : '' }}>
                                                     </div>
                                                 @else
-                                                    {!! $hrScore > 0 ? '<i class="ri-checkbox-circle-fill text-success fs-20"></i>' : '<i class="ri-checkbox-blank-circle-line text-muted fs-20"></i>' !!}
+                                                    {!! $isHrSelected ? '<i class="ri-checkbox-circle-fill text-danger fs-20"></i>' : '<i class="ri-checkbox-blank-circle-line text-muted fs-20"></i>' !!}
                                                 @endif
                                             </td>
                                             @endif
@@ -97,24 +158,29 @@
                                 @else
                                     @php
                                         $detail = $evaluation->details->where('criteria_id', $parent->id)->first();
-                                        $selfScore = $detail ? $detail->self_score : 0;
-                                        $managerScore = $detail ? $detail->manager_score : 0;
-                                        $hrScore = $detail ? $detail->hr_score : 0;
-                                        if ($actingAs == 'manager' && $managerScore == 0) $managerScore = $selfScore;
-                                        if ($actingAs == 'hr' && in_array($evaluation->status, ['manager_reviewed', 'hr_approved']) && $hrScore == 0) $hrScore = $managerScore;
+                                        $isSelfSelected = $detail ? $detail->is_self_selected : false;
+                                        $isMgrSelected = $detail ? ($hasAnyManagerSelected ? $detail->is_manager_selected : $isSelfSelected) : false;
+                                        $isHrSelected = $detail ? ($hasAnyHrSelected ? $detail->is_hr_selected : $isMgrSelected) : false;
                                     @endphp
-                                    <tr class="table-warning">
+                                    <tr class="table-warning parent-row" data-parent-id="{{ $parent->id }}">
                                         <td><strong>{{ $parent->order }}. {{ $parent->name }}</strong></td>
                                         <td class="text-center"><strong>{{ $parent->max_score }}</strong></td>
-                                        <td class="text-center">{!! $selfScore > 0 ? '<i class="ri-checkbox-circle-fill text-success fs-20"></i>' : '<i class="ri-checkbox-blank-circle-line text-muted fs-20"></i>' !!}</td>
+                                        <td class="text-center">{!! $isSelfSelected ? '<i class="ri-checkbox-circle-fill text-primary fs-20"></i>' : '<i class="ri-checkbox-blank-circle-line text-muted fs-20"></i>' !!}</td>
                                         
                                         <td class="text-center">
                                             @if ($actingAs == 'manager')
                                                 <div class="form-check d-flex justify-content-center mb-0">
-                                                    <input class="form-check-input score-checkbox" style="transform: scale(1.5);" type="checkbox" name="scores[{{ $detail ? $detail->id : '' }}]" value="{{ $parent->max_score }}" {{ $managerScore > 0 ? 'checked' : '' }}>
+                                                    <input class="form-check-input score-single mgr-radio" 
+                                                           style="transform: scale(1.4); cursor: pointer;" 
+                                                           type="checkbox" 
+                                                           name="single_choice[{{ $parent->id }}]" 
+                                                           value="{{ $detail ? $detail->id : '' }}" 
+                                                           data-parent-id="{{ $parent->id }}"
+                                                           data-score="{{ (int)($parent->max_score ?? 0) }}"
+                                                           {{ $isMgrSelected ? 'checked' : '' }}>
                                                 </div>
                                             @else
-                                                {!! $managerScore > 0 ? '<i class="ri-checkbox-circle-fill text-success fs-20"></i>' : '<i class="ri-checkbox-blank-circle-line text-muted fs-20"></i>' !!}
+                                                {!! $isMgrSelected ? '<i class="ri-checkbox-circle-fill text-success fs-20"></i>' : '<i class="ri-checkbox-blank-circle-line text-muted fs-20"></i>' !!}
                                             @endif
                                         </td>
 
@@ -122,10 +188,17 @@
                                         <td class="text-center">
                                             @if ($actingAs == 'hr' && in_array($evaluation->status, ['submitted', 'manager_reviewed', 'hr_approved']))
                                                 <div class="form-check d-flex justify-content-center mb-0">
-                                                    <input class="form-check-input score-checkbox" style="transform: scale(1.5);" type="checkbox" name="scores[{{ $detail ? $detail->id : '' }}]" value="{{ $parent->max_score }}" {{ $hrScore > 0 ? 'checked' : '' }}>
+                                                    <input class="form-check-input score-single hr-radio" 
+                                                           style="transform: scale(1.4); cursor: pointer;" 
+                                                           type="checkbox" 
+                                                           name="single_choice[{{ $parent->id }}]" 
+                                                           value="{{ $detail ? $detail->id : '' }}" 
+                                                           data-parent-id="{{ $parent->id }}"
+                                                           data-score="{{ (int)($parent->max_score ?? 0) }}"
+                                                           {{ $isHrSelected ? 'checked' : '' }}>
                                                 </div>
                                             @else
-                                                {!! $hrScore > 0 ? '<i class="ri-checkbox-circle-fill text-success fs-20"></i>' : '<i class="ri-checkbox-blank-circle-line text-muted fs-20"></i>' !!}
+                                                {!! $isHrSelected ? '<i class="ri-checkbox-circle-fill text-danger fs-20"></i>' : '<i class="ri-checkbox-blank-circle-line text-muted fs-20"></i>' !!}
                                             @endif
                                         </td>
                                         @endif
@@ -193,22 +266,39 @@
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const checkboxes = document.querySelectorAll('.score-checkbox');
+        const actingAs = '{{ $actingAs }}';
+        const activeRadios = document.querySelectorAll(actingAs === 'hr' ? '.hr-radio' : '.mgr-radio');
         const scoreDisplay = document.getElementById('total-score-display');
         const gradeDisplay = document.getElementById('grade-display');
 
         const grades = @json($grades);
 
         function updateScoreAndGrade() {
-            let total = parseInt(scoreDisplay.textContent) || 0;
+            let total = 0;
 
-            if (checkboxes.length > 0) {
-                total = 0;
-                checkboxes.forEach(cb => {
-                    if (cb.checked) {
-                        total += parseInt(cb.value) || 0;
+            const parentRows = document.querySelectorAll('.parent-row');
+            parentRows.forEach(pRow => {
+                const parentId = pRow.dataset.parentId;
+                const scoreSpan = document.getElementById(actingAs === 'hr' ? `parent-hr-score-${parentId}` : `parent-mgr-score-${parentId}`);
+                const checkedRadio = document.querySelector(`.score-radio[data-parent-id="${parentId}"]:checked`);
+                
+                if (checkedRadio) {
+                    const score = parseInt(checkedRadio.dataset.score, 10) || 0;
+                    if (scoreSpan) {
+                        scoreSpan.textContent = score;
                     }
-                });
+                    total += score;
+                } else if (scoreSpan && (actingAs === 'manager' || actingAs === 'hr')) {
+                    scoreSpan.textContent = '-';
+                }
+            });
+
+            const singles = document.querySelectorAll('.score-single:checked');
+            singles.forEach(chk => {
+                total += parseInt(chk.dataset.score, 10) || 0;
+            });
+
+            if (scoreDisplay) {
                 scoreDisplay.textContent = total;
             }
 
@@ -223,13 +313,33 @@
                 }
             }
 
-            gradeDisplay.textContent = currentGradeName;
-            gradeDisplay.className = 'badge fs-5 ' + currentGradeColor;
+            if (gradeDisplay) {
+                gradeDisplay.textContent = currentGradeName;
+                gradeDisplay.className = 'badge fs-5 ' + currentGradeColor;
+            }
         }
 
-        checkboxes.forEach(cb => {
-            cb.addEventListener('change', updateScoreAndGrade);
+        activeRadios.forEach(radio => {
+            radio.dataset.wasChecked = radio.checked ? 'true' : 'false';
+
+            radio.addEventListener('click', function() {
+                if (this.dataset.wasChecked === 'true') {
+                    this.checked = false;
+                    this.dataset.wasChecked = 'false';
+                } else {
+                    document.querySelectorAll(`.score-radio[name="${this.name}"]`).forEach(r => {
+                        r.dataset.wasChecked = 'false';
+                    });
+                    this.dataset.wasChecked = 'true';
+                }
+                updateScoreAndGrade();
+            });
         });
+
+        document.querySelectorAll('.score-single').forEach(chk => {
+            chk.addEventListener('change', updateScoreAndGrade);
+        });
+
         updateScoreAndGrade();
 
         // Xử lý nút Duyệt bằng SweetAlert2

@@ -124,24 +124,46 @@ class EvaluationApprovalController extends Controller
             abort(403, 'Bạn không thể thao tác trên phiếu này lúc này.');
         }
 
-        $scores = $request->input('scores', []);
+        $details = EvaluationDetail::with('criterion')->where('evaluation_id', $evaluation->id)->get();
         $totalScore = 0;
-        $details = EvaluationDetail::where('evaluation_id', $evaluation->id)->get();
 
-        foreach ($details as $detail) {
-            $score = isset($scores[$detail->id]) ? (int)$scores[$detail->id] : 0;
-            
-            if ($actingAs == 'hr') {
-                $detail->hr_score = $score;
-            } else {
-                $detail->manager_score = $score;
-                if ($request->has('approve')) {
-                    // Khi Quản lý bấm chốt duyệt, copy luôn điểm này sang cột của HR để làm điểm khởi tạo
-                    $detail->hr_score = $score;
+        if ($actingAs == 'hr') {
+            $hrChoices = $request->input('hr_choice', []);
+            $singleChoices = $request->input('single_choice', []);
+            $selectedDetailIds = array_map('intval', array_values(array_filter(array_merge((array)$hrChoices, (array)$singleChoices))));
+
+            foreach ($details as $detail) {
+                $isSelected = in_array((int)$detail->id, $selectedDetailIds, true);
+                $detail->is_hr_selected = $isSelected;
+                $detail->hr_score = $isSelected ? (int)($detail->criterion->max_score ?? 0) : 0;
+                $detail->save();
+
+                if ($isSelected) {
+                    $totalScore += $detail->hr_score;
                 }
             }
-            $detail->save();
-            $totalScore += $score;
+        } else {
+            // Manager
+            $managerChoices = $request->input('manager_choice', []);
+            $singleChoices = $request->input('single_choice', []);
+            $selectedDetailIds = array_map('intval', array_values(array_filter(array_merge((array)$managerChoices, (array)$singleChoices))));
+
+            foreach ($details as $detail) {
+                $isSelected = in_array((int)$detail->id, $selectedDetailIds, true);
+                $detail->is_manager_selected = $isSelected;
+                $detail->manager_score = $isSelected ? (int)($detail->criterion->max_score ?? 0) : 0;
+                
+                if ($request->has('approve')) {
+                    // Khi Quản lý bấm chốt duyệt, copy luôn lựa chọn này sang cột của HR để làm điểm khởi tạo
+                    $detail->is_hr_selected = $isSelected;
+                    $detail->hr_score = $detail->manager_score;
+                }
+                $detail->save();
+
+                if ($isSelected) {
+                    $totalScore += $detail->manager_score;
+                }
+            }
         }
 
         if ($actingAs == 'hr') {

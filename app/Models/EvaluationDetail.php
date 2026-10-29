@@ -13,8 +13,17 @@ class EvaluationDetail extends Model
         'evaluation_id',
         'criteria_id',
         'self_score',
+        'is_self_selected',
         'manager_score',
+        'is_manager_selected',
         'hr_score',
+        'is_hr_selected',
+    ];
+
+    protected $casts = [
+        'is_self_selected' => 'boolean',
+        'is_manager_selected' => 'boolean',
+        'is_hr_selected' => 'boolean',
     ];
 
     public function evaluation()
