@@ -163,7 +163,7 @@ class MyEvaluationController extends Controller
         $evaluation->grade_id = $matchedGrade ? $matchedGrade->id : null;
         $evaluation->self_note = $request->input('self_note');
         
-        if ($request->has('submit_evaluation')) {
+        if ($request->has('submit_evaluation') || $request->has('submit')) {
             $evaluation->status = 'submitted';
         } else {
             $evaluation->status = 'draft';

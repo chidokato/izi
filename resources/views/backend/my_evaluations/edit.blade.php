@@ -617,12 +617,15 @@
                 }).then((result) => {
                     if (result.isConfirmed) {
                         const form = document.getElementById('eval-form');
-                        const input = document.createElement('input');
-                        input.type = 'hidden';
-                        input.name = 'submit';
+                        let input = form.querySelector('input[name="submit_evaluation"]');
+                        if (!input) {
+                            input = document.createElement('input');
+                            input.type = 'hidden';
+                            input.name = 'submit_evaluation';
+                            form.appendChild(input);
+                        }
                         input.value = '1';
-                        form.appendChild(input);
-                        form.submit();
+                        HTMLFormElement.prototype.submit.call(form);
                     }
                 });
             });

@@ -767,12 +767,15 @@
                 }).then((result) => {
                     if (result.isConfirmed) {
                         const form = document.getElementById('approval-form');
-                        const input = document.createElement('input');
-                        input.type = 'hidden';
-                        input.name = 'approve';
+                        let input = form.querySelector('input[name="approve"]');
+                        if (!input) {
+                            input = document.createElement('input');
+                            input.type = 'hidden';
+                            input.name = 'approve';
+                            form.appendChild(input);
+                        }
                         input.value = '1';
-                        form.appendChild(input);
-                        form.submit();
+                        HTMLFormElement.prototype.submit.call(form);
                     }
                 });
             });
