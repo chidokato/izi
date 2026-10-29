@@ -169,12 +169,16 @@ class EvaluationApprovalController extends Controller
         if ($actingAs == 'hr') {
             $evaluation->final_score = $totalScore;
             $evaluation->hr_note = $request->input('note');
+            $matchedGrade = EvaluationGrade::getGradeForScore($totalScore);
+            $evaluation->grade_id = $matchedGrade ? $matchedGrade->id : null;
             
             if ($request->has('approve')) {
                 $evaluation->status = 'hr_approved';
             }
         } else {
             $evaluation->manager_note = $request->input('note');
+            $matchedGrade = EvaluationGrade::getGradeForScore($totalScore);
+            $evaluation->grade_id = $matchedGrade ? $matchedGrade->id : null;
             
             if ($request->has('approve')) {
                 $evaluation->status = 'manager_reviewed';

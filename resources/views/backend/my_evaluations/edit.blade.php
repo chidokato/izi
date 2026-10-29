@@ -156,8 +156,12 @@
 
                 <!-- Hiển thị tổng điểm và xếp loại -->
                 <div class="d-flex align-items-center justify-content-end mb-4 bg-light p-3 rounded border">
+                    @php
+                        $matchedInitialGrade = \App\Models\EvaluationGrade::getGradeForScore($evaluation->self_total_score);
+                        $initialGradeName = $matchedInitialGrade ? $matchedInitialGrade->name : '-';
+                    @endphp
                     <h5 class="mb-0 me-3">Tổng điểm: <span id="total-score-display" class="text-primary fs-4">{{ (float)$evaluation->self_total_score }}</span></h5>
-                    <h5 class="mb-0">Xếp loại: <span id="grade-display" class="badge bg-success fs-5">-</span></h5>
+                    <h5 class="mb-0">Xếp loại: <span id="grade-display" class="badge bg-success fs-5">{{ $initialGradeName }}</span></h5>
                 </div>
 
                 <div class="mb-4">
@@ -228,19 +232,43 @@
                 }
             });
 
+            // Làm tròn điểm về 2 chữ số thập phân để tránh lỗi dấu phẩy động (float precision)
+            total = Math.round(total * 100) / 100;
+
             if (scoreDisplay) {
-                scoreDisplay.textContent = Math.round(total * 100) / 100;
+                scoreDisplay.textContent = total;
             }
 
             let currentGradeName = '-';
             let currentGradeColor = 'bg-secondary';
             
-            // Tìm xếp loại phù hợp
-            for (let i = 0; i < grades.length; i++) {
-                if (total >= grades[i].min_score && total <= grades[i].max_score) {
-                    currentGradeName = grades[i].name;
-                    currentGradeColor = 'bg-success';
-                    break;
+            if (grades && grades.length > 0) {
+                // Sắp xếp các mức xếp loại từ cao xuống thấp theo min_score
+                const sortedGrades = [...grades].map(g => ({
+                    id: g.id,
+                    name: g.name,
+                    min: parseFloat(g.min_score) || 0,
+                    max: parseFloat(g.max_score) || 0
+                })).sort((a, b) => b.min - a.min);
+
+                // 1. Khớp chính xác trong khoảng [min, max] (cho phép dung sai 0.001)
+                for (let g of sortedGrades) {
+                    if (total >= (g.min - 0.001) && total <= (g.max + 0.001)) {
+                        currentGradeName = g.name;
+                        currentGradeColor = 'bg-success';
+                        break;
+                    }
+                }
+
+                // 2. Nếu nằm trong khoảng hở giữa 2 bậc (ví dụ giữa 4.45 và 4.50), lấy bậc tương ứng
+                if (currentGradeName === '-') {
+                    for (let g of sortedGrades) {
+                        if (total >= (g.min - 0.001)) {
+                            currentGradeName = g.name;
+                            currentGradeColor = 'bg-success';
+                            break;
+                        }
+                    }
                 }
             }
 

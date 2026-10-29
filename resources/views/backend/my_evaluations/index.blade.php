@@ -20,14 +20,11 @@
         </div>
         <div class="card-body">
             @php
-                function getGradeName($score, $grades) {
-                    if ($score === null || $score === '') return '-';
-                    foreach ($grades as $g) {
-                        if ($score >= $g->min_score && $score <= $g->max_score) {
-                            return $g->name;
-                        }
+                if (!function_exists('getGradeName')) {
+                    function getGradeName($score, $grades) {
+                        $matched = \App\Models\EvaluationGrade::getGradeForScore($score);
+                        return $matched ? $matched->name : '-';
                     }
-                    return '-';
                 }
             @endphp
             @if(session('success'))

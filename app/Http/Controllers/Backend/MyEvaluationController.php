@@ -159,6 +159,8 @@ class MyEvaluationController extends Controller
         }
 
         $evaluation->self_total_score = $totalSelfScore;
+        $matchedGrade = \App\Models\EvaluationGrade::getGradeForScore($totalSelfScore);
+        $evaluation->grade_id = $matchedGrade ? $matchedGrade->id : null;
         $evaluation->self_note = $request->input('self_note');
         
         if ($request->has('submit_evaluation')) {
