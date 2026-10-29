@@ -65,7 +65,7 @@ class EvaluationCriterionController extends Controller
         $request->validate([
             'parent_id' => 'nullable|exists:evaluation_criteria,id',
             'name' => 'required|string|max:500',
-            'max_score' => 'nullable|integer|min:0',
+            'max_score' => 'nullable|numeric|min:0',
             'order' => 'nullable|integer',
             'target_types' => 'nullable|array',
         ]);
@@ -83,11 +83,11 @@ class EvaluationCriterionController extends Controller
                 $data['target_types'] = array_values($targets);
             }
         } else {
-            // Tiêu chí con: chấp nhận điểm 0, chỉ chuyển thành null khi bỏ trống
+            // Tiêu chí con: chấp nhận số lẻ (float) và điểm 0, chỉ chuyển thành null khi bỏ trống
             if ($data['max_score'] === '' || $data['max_score'] === null) {
                 $data['max_score'] = null;
             } else {
-                $data['max_score'] = (int)$data['max_score'];
+                $data['max_score'] = (float)$data['max_score'];
             }
 
             // Tiêu chí con: CHỈ được chọn các đối tượng có trong tiêu chí cha
@@ -132,7 +132,7 @@ class EvaluationCriterionController extends Controller
         $request->validate([
             'parent_id' => 'nullable|exists:evaluation_criteria,id',
             'name' => 'required|string|max:500',
-            'max_score' => 'nullable|integer|min:0',
+            'max_score' => 'nullable|numeric|min:0',
             'order' => 'nullable|integer',
             'target_types' => 'nullable|array',
         ]);
@@ -151,11 +151,11 @@ class EvaluationCriterionController extends Controller
                 $data['target_types'] = array_values($targets);
             }
         } else {
-            // Tiêu chí con: chấp nhận điểm 0, chỉ chuyển thành null khi bỏ trống
+            // Tiêu chí con: chấp nhận số lẻ (float) và điểm 0, chỉ chuyển thành null khi bỏ trống
             if ($data['max_score'] === '' || $data['max_score'] === null) {
                 $data['max_score'] = null;
             } else {
-                $data['max_score'] = (int)$data['max_score'];
+                $data['max_score'] = (float)$data['max_score'];
             }
 
             // Tiêu chí con: CHỈ được chọn các đối tượng có trong tiêu chí cha

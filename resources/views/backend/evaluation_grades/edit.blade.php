@@ -24,7 +24,7 @@
                     
                     <div class="col-md-3">
                         <label for="min_score" class="form-label">Từ điểm <span class="text-danger">*</span></label>
-                        <input type="number" class="form-control @error('min_score') is-invalid @enderror" id="min_score" name="min_score" value="{{ old('min_score', $grade->min_score) }}" required>
+                        <input type="number" class="form-control @error('min_score') is-invalid @enderror" id="min_score" name="min_score" value="{{ old('min_score', (float)$grade->min_score) }}" step="any" required>
                         @error('min_score')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
@@ -32,7 +32,7 @@
 
                     <div class="col-md-3">
                         <label for="max_score" class="form-label">Đến điểm <span class="text-danger">*</span></label>
-                        <input type="number" class="form-control @error('max_score') is-invalid @enderror" id="max_score" name="max_score" value="{{ old('max_score', $grade->max_score) }}" required>
+                        <input type="number" class="form-control @error('max_score') is-invalid @enderror" id="max_score" name="max_score" value="{{ old('max_score', (float)$grade->max_score) }}" step="any" required>
                         @error('max_score')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror

@@ -150,7 +150,7 @@ class MyEvaluationController extends Controller
         foreach ($details as $detail) {
             $isSelected = in_array((int)$detail->id, $selectedDetailIds, true);
             $detail->is_self_selected = $isSelected;
-            $detail->self_score = $isSelected ? (int)($detail->criterion->max_score ?? 0) : 0;
+            $detail->self_score = $isSelected ? (float)($detail->criterion->max_score ?? 0) : 0;
             $detail->save();
 
             if ($isSelected) {

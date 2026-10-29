@@ -23,8 +23,8 @@ class EvaluationGradeController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'min_score' => 'required|integer',
-            'max_score' => 'required|integer|gte:min_score',
+            'min_score' => 'required|numeric|min:0',
+            'max_score' => 'required|numeric|gte:min_score',
         ]);
 
         EvaluationGrade::create($request->all());
@@ -42,8 +42,8 @@ class EvaluationGradeController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'min_score' => 'required|integer',
-            'max_score' => 'required|integer|gte:min_score',
+            'min_score' => 'required|numeric|min:0',
+            'max_score' => 'required|numeric|gte:min_score',
         ]);
 
         $grade = EvaluationGrade::findOrFail($id);

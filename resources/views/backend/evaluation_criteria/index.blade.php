@@ -107,7 +107,7 @@
                                             @endforeach
                                         @endif
                                     </td>
-                                    <td class="criterion-max-score">{{ $child->max_score !== null ? $child->max_score : '' }}</td>
+                                    <td class="criterion-max-score">{{ $child->max_score !== null ? (float)$child->max_score : '' }}</td>
                                     <td class="criterion-status">
                                         @if ($child->is_active)
                                             <span class="badge bg-success">Hoạt động</span>
@@ -125,7 +125,7 @@
                                             data-id="{{ $child->id }}"
                                             data-name="{{ $child->name }}"
                                             data-parent-id="{{ $child->parent_id }}"
-                                            data-max-score="{{ $child->max_score !== null ? $child->max_score : '' }}"
+                                            data-max-score="{{ $child->max_score !== null ? (float)$child->max_score : '' }}"
                                             data-order="{{ $child->order }}"
                                             data-target-types="{{ json_encode($child->target_types ?? ['all']) }}"
                                             data-is-active="{{ $child->is_active ? 1 : 0 }}"
@@ -208,7 +208,7 @@
                         <div class="row">
                             <div class="col-md-6 mb-3" id="max_score_group">
                                 <label for="edit_max_score" class="form-label">Điểm tối đa</label>
-                                <input type="number" class="form-control" id="edit_max_score" name="max_score" min="0" placeholder="VD: 10">
+                                <input type="number" class="form-control" id="edit_max_score" name="max_score" min="0" step="any" placeholder="VD: 10 hoặc 0.5">
                                 <small class="text-muted" id="score_help_text">Bỏ trống nếu là tiêu chí cha.</small>
                             </div>
 
@@ -562,8 +562,9 @@
                     }
 
                     const scoreCell = row.querySelector('.criterion-max-score');
+                    const parsedScore = (data.criterion.max_score !== null && data.criterion.max_score !== undefined && data.criterion.max_score !== '') ? parseFloat(data.criterion.max_score) : '';
                     if (scoreCell) {
-                        scoreCell.textContent = (data.criterion.max_score !== null && data.criterion.max_score !== undefined) ? data.criterion.max_score : '';
+                        scoreCell.textContent = parsedScore;
                     }
 
                     const statusCell = row.querySelector('.criterion-status');
@@ -578,7 +579,7 @@
                     const editBtn = row.querySelector('.btn-edit-criterion');
                     if (editBtn) {
                         editBtn.setAttribute('data-name', data.criterion.name);
-                        editBtn.setAttribute('data-max-score', (data.criterion.max_score !== null && data.criterion.max_score !== undefined) ? data.criterion.max_score : '');
+                        editBtn.setAttribute('data-max-score', parsedScore);
                         editBtn.setAttribute('data-order', data.criterion.order ?? 0);
                         editBtn.setAttribute('data-is-active', data.criterion.is_active ? '1' : '0');
                         editBtn.setAttribute('data-parent-id', data.criterion.parent_id ?? '');

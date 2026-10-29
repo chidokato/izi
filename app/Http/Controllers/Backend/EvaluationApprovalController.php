@@ -135,7 +135,7 @@ class EvaluationApprovalController extends Controller
             foreach ($details as $detail) {
                 $isSelected = in_array((int)$detail->id, $selectedDetailIds, true);
                 $detail->is_hr_selected = $isSelected;
-                $detail->hr_score = $isSelected ? (int)($detail->criterion->max_score ?? 0) : 0;
+                $detail->hr_score = $isSelected ? (float)($detail->criterion->max_score ?? 0) : 0;
                 $detail->save();
 
                 if ($isSelected) {
@@ -151,7 +151,7 @@ class EvaluationApprovalController extends Controller
             foreach ($details as $detail) {
                 $isSelected = in_array((int)$detail->id, $selectedDetailIds, true);
                 $detail->is_manager_selected = $isSelected;
-                $detail->manager_score = $isSelected ? (int)($detail->criterion->max_score ?? 0) : 0;
+                $detail->manager_score = $isSelected ? (float)($detail->criterion->max_score ?? 0) : 0;
                 
                 if ($request->has('approve')) {
                     // Khi Quản lý bấm chốt duyệt, copy luôn lựa chọn này sang cột của HR để làm điểm khởi tạo

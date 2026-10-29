@@ -50,8 +50,8 @@
                                             $d = $evaluation->details->where('criteria_id', $c->id)->first();
                                             return $d && $d->is_self_selected;
                                         });
-                                        $parentSelfScore = $selectedChild ? (int)($selectedChild->max_score ?? 0) : '-';
-                                        $parentMaxScore = $parent->children->max('max_score') ?? 0;
+                                        $parentSelfScore = $selectedChild ? (float)($selectedChild->max_score ?? 0) : '-';
+                                        $parentMaxScore = (float)($parent->children->max('max_score') ?? 0);
                                     @endphp
                                     <!-- Parent -->
                                     <tr class="table-info parent-row" data-parent-id="{{ $parent->id }}">
@@ -71,8 +71,8 @@
                                                     return $d && $d->is_hr_selected;
                                                 });
                                             @endphp
-                                            <td class="text-center"><strong class="text-success">{{ $mgrChild ? (int)($mgrChild->max_score ?? 0) : '-' }}</strong></td>
-                                            <td class="text-center"><strong class="text-danger">{{ $hrChild ? (int)($hrChild->max_score ?? 0) : '-' }}</strong></td>
+                                            <td class="text-center"><strong class="text-success">{{ $mgrChild ? (float)($mgrChild->max_score ?? 0) : '-' }}</strong></td>
+                                            <td class="text-center"><strong class="text-danger">{{ $hrChild ? (float)($hrChild->max_score ?? 0) : '-' }}</strong></td>
                                         @endif
                                     </tr>
                                     <!-- Children -->
@@ -85,7 +85,7 @@
                                         @endphp
                                         <tr>
                                             <td class="ps-4"> - {{ $child->name }}</td>
-                                            <td class="text-center">{{ $child->max_score !== null ? $child->max_score : 0 }}</td>
+                                            <td class="text-center">{{ $child->max_score !== null ? (float)$child->max_score : 0 }}</td>
                                             <td class="text-center">
                                                 @if (in_array($evaluation->status, ['draft']))
                                                     <div class="form-check d-flex justify-content-center mb-0">
@@ -95,7 +95,7 @@
                                                                name="parent_choice[{{ $parent->id }}]" 
                                                                value="{{ $detail ? $detail->id : '' }}" 
                                                                data-parent-id="{{ $parent->id }}"
-                                                               data-score="{{ (int)($child->max_score ?? 0) }}"
+                                                               data-score="{{ (float)($child->max_score ?? 0) }}"
                                                                {{ $isSelfSelected ? 'checked' : '' }}>
                                                     </div>
                                                 @else
@@ -122,7 +122,7 @@
                                     @endphp
                                     <tr class="table-warning parent-row" data-parent-id="{{ $parent->id }}">
                                         <td><strong>{{ $parent->order }}. {{ $parent->name }}</strong></td>
-                                        <td class="text-center"><strong>{{ $parent->max_score }}</strong></td>
+                                        <td class="text-center"><strong>{{ (float)$parent->max_score }}</strong></td>
                                         <td class="text-center">
                                             @if (in_array($evaluation->status, ['draft']))
                                                 <div class="form-check d-flex justify-content-center mb-0">
@@ -132,7 +132,7 @@
                                                            name="single_choice[{{ $parent->id }}]" 
                                                            value="{{ $detail ? $detail->id : '' }}" 
                                                            data-parent-id="{{ $parent->id }}"
-                                                           data-score="{{ (int)($parent->max_score ?? 0) }}"
+                                                           data-score="{{ (float)($parent->max_score ?? 0) }}"
                                                            {{ $isSelfSelected ? 'checked' : '' }}>
                                                 </div>
                                             @else
@@ -156,7 +156,7 @@
 
                 <!-- Hiển thị tổng điểm và xếp loại -->
                 <div class="d-flex align-items-center justify-content-end mb-4 bg-light p-3 rounded border">
-                    <h5 class="mb-0 me-3">Tổng điểm: <span id="total-score-display" class="text-primary fs-4">{{ $evaluation->self_total_score }}</span></h5>
+                    <h5 class="mb-0 me-3">Tổng điểm: <span id="total-score-display" class="text-primary fs-4">{{ (float)$evaluation->self_total_score }}</span></h5>
                     <h5 class="mb-0">Xếp loại: <span id="grade-display" class="badge bg-success fs-5">-</span></h5>
                 </div>
 
@@ -211,7 +211,7 @@
                 const checkedRadio = document.querySelector(`.score-radio[data-parent-id="${parentId}"]:checked`);
                 
                 if (checkedRadio) {
-                    const score = parseInt(checkedRadio.dataset.score, 10) || 0;
+                    const score = parseFloat(checkedRadio.dataset.score) || 0;
                     if (scoreSpan) {
                         scoreSpan.textContent = score;
                     }
@@ -224,12 +224,12 @@
             // Tính điểm cho các tiêu chí độc lập không có con (nếu có)
             singles.forEach(chk => {
                 if (chk.checked) {
-                    total += parseInt(chk.dataset.score, 10) || 0;
+                    total += parseFloat(chk.dataset.score) || 0;
                 }
             });
 
             if (scoreDisplay) {
-                scoreDisplay.textContent = total;
+                scoreDisplay.textContent = Math.round(total * 100) / 100;
             }
 
             let currentGradeName = '-';

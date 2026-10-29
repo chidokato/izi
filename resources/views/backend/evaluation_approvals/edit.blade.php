@@ -57,14 +57,14 @@
                             @foreach ($criteriaTree as $parent)
                                 @if($parent->children->isNotEmpty())
                                     @php
-                                        $parentMaxScore = $parent->children->max('max_score') ?? 0;
+                                        $parentMaxScore = (float)($parent->children->max('max_score') ?? 0);
                                         
                                         // NV tự chấm
                                         $selfChild = $parent->children->first(function($c) use ($evaluation) {
                                             $d = $evaluation->details->where('criteria_id', $c->id)->first();
                                             return $d && $d->is_self_selected;
                                         });
-                                        $selfScoreDisplay = $selfChild ? (int)($selfChild->max_score ?? 0) : '-';
+                                        $selfScoreDisplay = $selfChild ? (float)($selfChild->max_score ?? 0) : '-';
 
                                         // Quản lý chấm
                                         $mgrChild = $parent->children->first(function($c) use ($evaluation, $hasAnyManagerSelected) {
@@ -72,7 +72,7 @@
                                             if (!$d) return false;
                                             return $hasAnyManagerSelected ? $d->is_manager_selected : $d->is_self_selected;
                                         });
-                                        $mgrScoreDisplay = $mgrChild ? (int)($mgrChild->max_score ?? 0) : '-';
+                                        $mgrScoreDisplay = $mgrChild ? (float)($mgrChild->max_score ?? 0) : '-';
 
                                         // HR chốt
                                         $hrChild = $parent->children->first(function($c) use ($evaluation, $hasAnyHrSelected, $hasAnyManagerSelected) {
@@ -81,7 +81,7 @@
                                             if ($hasAnyHrSelected) return $d->is_hr_selected;
                                             return $hasAnyManagerSelected ? $d->is_manager_selected : $d->is_self_selected;
                                         });
-                                        $hrScoreDisplay = $hrChild ? (int)($hrChild->max_score ?? 0) : '-';
+                                        $hrScoreDisplay = $hrChild ? (float)($hrChild->max_score ?? 0) : '-';
                                     @endphp
                                     <tr class="table-info parent-row" data-parent-id="{{ $parent->id }}">
                                         <td><strong>{{ $parent->order }}. {{ $parent->name }}</strong></td>
@@ -113,7 +113,7 @@
                                         @endphp
                                         <tr>
                                             <td class="ps-4"> - {{ $child->name }}</td>
-                                            <td class="text-center">{{ $child->max_score !== null ? $child->max_score : 0 }}</td>
+                                            <td class="text-center">{{ $child->max_score !== null ? (float)$child->max_score : 0 }}</td>
                                             <td class="text-center">
                                                 {!! $isSelfSelected ? '<i class="ri-checkbox-circle-fill text-primary fs-20"></i>' : '<i class="ri-checkbox-blank-circle-line text-muted fs-20"></i>' !!}
                                             </td>
@@ -127,7 +127,7 @@
                                                                name="manager_choice[{{ $parent->id }}]" 
                                                                value="{{ $detail ? $detail->id : '' }}" 
                                                                data-parent-id="{{ $parent->id }}"
-                                                               data-score="{{ (int)($child->max_score ?? 0) }}"
+                                                               data-score="{{ (float)($child->max_score ?? 0) }}"
                                                                {{ $isMgrSelected ? 'checked' : '' }}>
                                                     </div>
                                                 @else
@@ -145,7 +145,7 @@
                                                                name="hr_choice[{{ $parent->id }}]" 
                                                                value="{{ $detail ? $detail->id : '' }}" 
                                                                data-parent-id="{{ $parent->id }}"
-                                                               data-score="{{ (int)($child->max_score ?? 0) }}"
+                                                               data-score="{{ (float)($child->max_score ?? 0) }}"
                                                                {{ $isHrSelected ? 'checked' : '' }}>
                                                     </div>
                                                 @else
@@ -164,7 +164,7 @@
                                     @endphp
                                     <tr class="table-warning parent-row" data-parent-id="{{ $parent->id }}">
                                         <td><strong>{{ $parent->order }}. {{ $parent->name }}</strong></td>
-                                        <td class="text-center"><strong>{{ $parent->max_score }}</strong></td>
+                                        <td class="text-center"><strong>{{ (float)$parent->max_score }}</strong></td>
                                         <td class="text-center">{!! $isSelfSelected ? '<i class="ri-checkbox-circle-fill text-primary fs-20"></i>' : '<i class="ri-checkbox-blank-circle-line text-muted fs-20"></i>' !!}</td>
                                         
                                         <td class="text-center">
@@ -176,7 +176,7 @@
                                                            name="single_choice[{{ $parent->id }}]" 
                                                            value="{{ $detail ? $detail->id : '' }}" 
                                                            data-parent-id="{{ $parent->id }}"
-                                                           data-score="{{ (int)($parent->max_score ?? 0) }}"
+                                                           data-score="{{ (float)($parent->max_score ?? 0) }}"
                                                            {{ $isMgrSelected ? 'checked' : '' }}>
                                                 </div>
                                             @else
@@ -194,7 +194,7 @@
                                                            name="single_choice[{{ $parent->id }}]" 
                                                            value="{{ $detail ? $detail->id : '' }}" 
                                                            data-parent-id="{{ $parent->id }}"
-                                                           data-score="{{ (int)($parent->max_score ?? 0) }}"
+                                                           data-score="{{ (float)($parent->max_score ?? 0) }}"
                                                            {{ $isHrSelected ? 'checked' : '' }}>
                                                 </div>
                                             @else
@@ -283,7 +283,7 @@
                 const checkedRadio = document.querySelector(`.score-radio[data-parent-id="${parentId}"]:checked`);
                 
                 if (checkedRadio) {
-                    const score = parseInt(checkedRadio.dataset.score, 10) || 0;
+                    const score = parseFloat(checkedRadio.dataset.score) || 0;
                     if (scoreSpan) {
                         scoreSpan.textContent = score;
                     }
@@ -295,11 +295,11 @@
 
             const singles = document.querySelectorAll('.score-single:checked');
             singles.forEach(chk => {
-                total += parseInt(chk.dataset.score, 10) || 0;
+                total += parseFloat(chk.dataset.score) || 0;
             });
 
             if (scoreDisplay) {
-                scoreDisplay.textContent = total;
+                scoreDisplay.textContent = Math.round(total * 100) / 100;
             }
 
             let currentGradeName = '-';

@@ -59,7 +59,7 @@
                     
                     <div class="col-md-3">
                         <label for="max_score" class="form-label">Điểm tối đa <small class="text-muted" id="help_max_score">(Bỏ trống nếu là tiêu chí cha)</small></label>
-                        <input type="number" class="form-control @error('max_score') is-invalid @enderror" id="max_score" name="max_score" value="{{ old('max_score') }}" min="0">
+                        <input type="number" class="form-control @error('max_score') is-invalid @enderror" id="max_score" name="max_score" value="{{ old('max_score') }}" min="0" step="any">
                         @error('max_score')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
