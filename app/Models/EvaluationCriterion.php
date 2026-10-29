@@ -35,8 +35,15 @@ class EvaluationCriterion extends Model
 
     public function appliesTo(?string $type): bool
     {
-        if (empty($type)) {
+        if (empty($type) || $type === 'all') {
             return true;
+        }
+
+        // Tiêu chí con phải nằm trong tiêu chí cha: cha phải áp dụng cho $type
+        if ($this->parent_id && $this->parent) {
+            if (!$this->parent->appliesTo($type)) {
+                return false;
+            }
         }
 
         $targets = $this->target_types;
@@ -53,6 +60,9 @@ class EvaluationCriterion extends Model
         $targets = $this->target_types;
 
         if (empty($targets) || in_array('all', $targets)) {
+            if ($this->parent_id && $this->parent && !empty($this->parent->target_types) && !in_array('all', $this->parent->target_types)) {
+                return $this->parent->target_type_names;
+            }
             return ['all' => 'Tất cả'];
         }
 

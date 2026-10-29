@@ -171,9 +171,9 @@
                         <div class="mb-3" id="parent_select_group">
                             <label for="edit_parent_id" class="form-label">Thuộc tiêu chí cha</label>
                             <select class="form-select" id="edit_parent_id" name="parent_id">
-                                <option value="">-- Không có (Tiêu chí gốc) --</option>
-                                @foreach($criteria as $parent)
-                                    <option value="{{ $parent->id }}">{{ $parent->name }}</option>
+                                <option value="">-- Không có (Tiêu chí gốc / cha) --</option>
+                                @foreach($allParents as $p)
+                                    <option value="{{ $p['id'] }}" data-targets="{{ json_encode($p['target_types']) }}" data-target-names="{{ $p['target_type_names'] }}">{{ $p['name'] }}</option>
                                 @endforeach
                             </select>
                             <small class="text-muted" id="parent_help_text">Để trống nếu là tiêu chí gốc.</small>
@@ -184,21 +184,25 @@
                             <textarea class="form-control" id="edit_name" name="name" rows="3" required placeholder="Nhập tên tiêu chí..." style="min-height: 80px; overflow-y: hidden; resize: vertical;"></textarea>
                         </div>
 
-                        <div class="mb-3">
-                            <label class="form-label d-block fw-semibold">Đối tượng áp dụng</label>
+                        <!-- Đối tượng áp dụng (Cho cả cha và con, con bị giới hạn theo cha) -->
+                        <div class="mb-3" id="target_types_group">
+                            <label class="form-label d-block fw-semibold">
+                                Đối tượng áp dụng
+                                <span id="target_scope_hint" class="badge bg-soft-info text-primary fw-normal ms-2"></span>
+                            </label>
                             <div class="d-flex flex-wrap gap-3 p-2 border rounded bg-light">
-                                <div class="form-check">
+                                <div class="form-check" id="wrap_target_all">
                                     <input class="form-check-input target-type-check" type="checkbox" name="target_types[]" value="all" id="target_all">
                                     <label class="form-check-label fw-bold text-dark" for="target_all">Tất cả đối tượng</label>
                                 </div>
                                 @foreach($targetTypes as $tKey => $tLabel)
-                                    <div class="form-check">
+                                    <div class="form-check wrap-target-item" id="wrap_target_{{ $tKey }}">
                                         <input class="form-check-input target-type-check target-item-check" type="checkbox" name="target_types[]" value="{{ $tKey }}" id="target_{{ $tKey }}">
                                         <label class="form-check-label" for="target_{{ $tKey }}">{{ $tLabel }}</label>
                                     </div>
                                 @endforeach
                             </div>
-                            <small class="text-muted">Chọn "Tất cả" nếu tiêu chí áp dụng chung, hoặc tích chọn từng đối tượng cụ thể.</small>
+                            <small class="text-muted" id="target_types_help">Chọn đối tượng áp dụng.</small>
                         </div>
                         
                         <div class="row">
@@ -241,8 +245,13 @@
         const saveBtn = document.getElementById('btn_save_criterion');
         const spinner = document.getElementById('save_spinner');
         const nameTextarea = document.getElementById('edit_name');
+        const parentSelect = document.getElementById('edit_parent_id');
+        const maxScoreInput = document.getElementById('edit_max_score');
         const targetAllCheck = document.getElementById('target_all');
+        const wrapTargetAll = document.getElementById('wrap_target_all');
         const itemChecks = document.querySelectorAll('.target-item-check');
+        const targetHint = document.getElementById('target_scope_hint');
+        const targetHelp = document.getElementById('target_types_help');
 
         function autoResizeTextarea(textarea) {
             if (!textarea) return;
@@ -257,7 +266,7 @@
             });
         }
 
-        // Logic checkbox đối tượng áp dụng
+        // Logic checkbox
         if (targetAllCheck) {
             targetAllCheck.addEventListener('change', function() {
                 if (this.checked) {
@@ -271,12 +280,91 @@
                 if (this.checked) {
                     targetAllCheck.checked = false;
                 } else {
-                    const anyChecked = Array.from(itemChecks).some(c => c.checked);
-                    if (!anyChecked) {
+                    const anyChecked = Array.from(itemChecks).some(c => c.checked && !c.disabled);
+                    const isAllVisible = !wrapTargetAll.classList.contains('d-none');
+                    if (!anyChecked && isAllVisible) {
                         targetAllCheck.checked = true;
                     }
                 }
             });
+        });
+
+        // Hàm cập nhật phạm vi checkbox đối tượng theo tiêu chí cha
+        function updateTargetScope(isParent, keepValues = false) {
+            if (isParent) {
+                targetHint.textContent = 'Tiêu chí cha';
+                targetHint.className = 'badge bg-soft-primary text-primary fw-normal ms-2';
+                targetHelp.textContent = 'Chọn đối tượng áp dụng cho tiêu chí cha. Các tiêu chí con bên trong sẽ chỉ được chọn trong các đối tượng này.';
+                wrapTargetAll.classList.remove('d-none');
+                targetAllCheck.disabled = false;
+
+                itemChecks.forEach(cb => {
+                    const wrap = document.getElementById(`wrap_target_${cb.value}`);
+                    if (wrap) wrap.classList.remove('d-none');
+                    cb.disabled = false;
+                });
+            } else {
+                const selectedOpt = parentSelect.options[parentSelect.selectedIndex];
+                let parentTargets = ['all'];
+                let parentTargetNames = 'Tất cả đối tượng';
+
+                if (selectedOpt && selectedOpt.dataset.targets) {
+                    try {
+                        parentTargets = JSON.parse(selectedOpt.dataset.targets);
+                    } catch (e) {
+                        parentTargets = ['all'];
+                    }
+                    parentTargetNames = selectedOpt.dataset.targetNames || 'Tất cả đối tượng';
+                }
+
+                targetHint.textContent = 'Giới hạn theo tiêu chí cha';
+                targetHint.className = 'badge bg-soft-warning text-warning fw-normal ms-2';
+                targetHelp.innerHTML = `Tiêu chí con chỉ được chọn trong các đối tượng có trong cha: <strong class="text-primary">${parentTargetNames}</strong>`;
+
+                const parentHasAll = !parentTargets || parentTargets.length === 0 || parentTargets.includes('all');
+
+                if (parentHasAll) {
+                    wrapTargetAll.classList.remove('d-none');
+                    targetAllCheck.disabled = false;
+                    itemChecks.forEach(cb => {
+                        const wrap = document.getElementById(`wrap_target_${cb.value}`);
+                        if (wrap) wrap.classList.remove('d-none');
+                        cb.disabled = false;
+                    });
+                } else {
+                    // Cha có danh sách cụ thể: Ẩn "Tất cả", chỉ cho phép chọn các đối tượng cha có
+                    wrapTargetAll.classList.add('d-none');
+                    targetAllCheck.checked = false;
+                    targetAllCheck.disabled = true;
+
+                    itemChecks.forEach(cb => {
+                        const wrap = document.getElementById(`wrap_target_${cb.value}`);
+                        const isAllowed = parentTargets.includes(cb.value);
+                        if (isAllowed) {
+                            if (wrap) wrap.classList.remove('d-none');
+                            cb.disabled = false;
+                        } else {
+                            cb.checked = false;
+                            cb.disabled = true;
+                            if (wrap) wrap.classList.add('d-none');
+                        }
+                    });
+
+                    // Nếu không có ô nào được chọn thì mặc định chọn ô đầu tiên cho phép
+                    if (!keepValues) {
+                        const anyChecked = Array.from(itemChecks).some(c => c.checked && !c.disabled);
+                        if (!anyChecked) {
+                            const firstAllowed = Array.from(itemChecks).find(c => !c.disabled);
+                            if (firstAllowed) firstAllowed.checked = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        parentSelect.addEventListener('change', function() {
+            const isParentNow = !this.value;
+            updateTargetScope(isParentNow, false);
         });
 
         editModal.addEventListener('shown.bs.modal', function() {
@@ -314,21 +402,7 @@
             document.getElementById('edit_order').value = order;
             document.getElementById('edit_is_active').checked = isActive;
 
-            // Thiết lập checkbox đối tượng
-            if (!Array.isArray(targetTypes) || targetTypes.length === 0 || targetTypes.includes('all')) {
-                targetAllCheck.checked = true;
-                itemChecks.forEach(cb => cb.checked = false);
-            } else {
-                targetAllCheck.checked = false;
-                itemChecks.forEach(cb => {
-                    cb.checked = targetTypes.includes(cb.value);
-                });
-            }
-
-            const parentSelect = document.getElementById('edit_parent_id');
-            const maxScoreInput = document.getElementById('edit_max_score');
-
-            // Reset options visibility
+            // Reset options visibility trong dropdown cha
             Array.from(parentSelect.options).forEach(opt => {
                 opt.disabled = false;
                 if (opt.value == id) {
@@ -343,6 +417,18 @@
                 maxScoreInput.value = '';
                 maxScoreInput.disabled = true;
                 document.getElementById('score_help_text').textContent = 'Tiêu chí cha không nhập điểm (tính theo con).';
+
+                updateTargetScope(true, true);
+
+                if (!Array.isArray(targetTypes) || targetTypes.length === 0 || targetTypes.includes('all')) {
+                    targetAllCheck.checked = true;
+                    itemChecks.forEach(cb => cb.checked = false);
+                } else {
+                    targetAllCheck.checked = false;
+                    itemChecks.forEach(cb => {
+                        cb.checked = targetTypes.includes(cb.value);
+                    });
+                }
             } else {
                 parentSelect.disabled = false;
                 parentSelect.value = parentId;
@@ -350,6 +436,25 @@
                 maxScoreInput.disabled = false;
                 maxScoreInput.value = maxScore;
                 document.getElementById('score_help_text').textContent = 'Điểm tối đa của tiêu chí này.';
+
+                updateTargetScope(false, true);
+
+                if (Array.isArray(targetTypes) && !targetTypes.includes('all')) {
+                    targetAllCheck.checked = false;
+                    itemChecks.forEach(cb => {
+                        cb.checked = !cb.disabled && targetTypes.includes(cb.value);
+                    });
+                } else {
+                    if (!targetAllCheck.disabled) {
+                        targetAllCheck.checked = true;
+                        itemChecks.forEach(cb => cb.checked = false);
+                    } else {
+                        // Nếu cha không có all, check các đối tượng cha có
+                        itemChecks.forEach(cb => {
+                            cb.checked = !cb.disabled;
+                        });
+                    }
+                }
             }
         });
 
@@ -363,7 +468,6 @@
             spinner.classList.remove('d-none');
 
             const formData = new FormData(this);
-            const parentSelect = document.getElementById('edit_parent_id');
             if (parentSelect.disabled || !parentSelect.value) {
                 formData.set('parent_id', '');
             }
@@ -401,33 +505,37 @@
                 saveBtn.disabled = false;
                 spinner.classList.add('d-none');
 
-                // Close modal
                 const bsModal = bootstrap.Modal.getInstance(editModal);
                 if (bsModal) {
                     bsModal.hide();
                 }
 
+                const row = document.getElementById(`criterion-row-${id}`);
+                const isParent = row ? row.classList.contains('table-info') : false;
                 const origParentId = document.getElementById('edit_original_parent_id').value;
                 const newParentId = document.getElementById('edit_parent_id').value;
 
-                // Nếu đổi cha thì reload lại trang
-                if (origParentId !== newParentId) {
+                // Nếu là tiêu chí cha hoặc thay đổi cha: reload để cây tiêu chí luôn đồng bộ
+                if (isParent || origParentId !== newParentId) {
                     window.location.reload();
                     return;
                 }
 
-                // Cập nhật DOM trực tiếp
-                const row = document.getElementById(`criterion-row-${id}`);
-                if (row) {
-                    const isParent = row.classList.contains('table-info');
+                // Nếu đang ở Tab lọc cụ thể và tiêu chí con không còn thuộc tab đó nữa -> reload để loại khỏi view
+                const currentType = '{{ $currentType }}';
+                if (currentType !== 'all') {
+                    const targets = data.target_types || ['all'];
+                    if (!targets.includes('all') && !targets.includes(currentType)) {
+                        window.location.reload();
+                        return;
+                    }
+                }
 
+                // Cập nhật DOM trực tiếp cho tiêu chí con
+                if (row) {
                     const orderCell = row.querySelector('.criterion-order');
                     if (orderCell) {
-                        if (isParent) {
-                            orderCell.innerHTML = `<strong>${data.criterion.order ?? 0}</strong>`;
-                        } else {
-                            orderCell.textContent = data.criterion.order ?? 0;
-                        }
+                        orderCell.textContent = data.criterion.order ?? 0;
                     }
 
                     const nameCell = row.querySelector('.criterion-name');
@@ -437,15 +545,9 @@
                             .replace(/</g, '&lt;')
                             .replace(/>/g, '&gt;')
                             .replace(/\r\n|\r|\n/g, '<br>');
-
-                        if (isParent) {
-                            nameCell.innerHTML = `<strong>${formattedName}</strong>`;
-                        } else {
-                            nameCell.innerHTML = `-- ${formattedName}`;
-                        }
+                        nameCell.innerHTML = `-- ${formattedName}`;
                     }
 
-                    // Cập nhật đối tượng áp dụng
                     const targetCell = row.querySelector('.criterion-target-types');
                     if (targetCell) {
                         let badgesHtml = '';
@@ -460,7 +562,7 @@
                     }
 
                     const scoreCell = row.querySelector('.criterion-max-score');
-                    if (scoreCell && !isParent) {
+                    if (scoreCell) {
                         scoreCell.textContent = data.criterion.max_score ?? '';
                     }
 
