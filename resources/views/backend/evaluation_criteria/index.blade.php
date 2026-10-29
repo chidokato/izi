@@ -107,7 +107,7 @@
                                             @endforeach
                                         @endif
                                     </td>
-                                    <td class="criterion-max-score">{{ $child->max_score }}</td>
+                                    <td class="criterion-max-score">{{ $child->max_score !== null ? $child->max_score : '' }}</td>
                                     <td class="criterion-status">
                                         @if ($child->is_active)
                                             <span class="badge bg-success">Hoạt động</span>
@@ -125,7 +125,7 @@
                                             data-id="{{ $child->id }}"
                                             data-name="{{ $child->name }}"
                                             data-parent-id="{{ $child->parent_id }}"
-                                            data-max-score="{{ $child->max_score }}"
+                                            data-max-score="{{ $child->max_score !== null ? $child->max_score : '' }}"
                                             data-order="{{ $child->order }}"
                                             data-target-types="{{ json_encode($child->target_types ?? ['all']) }}"
                                             data-is-active="{{ $child->is_active ? 1 : 0 }}"
@@ -383,7 +383,7 @@
             const id = button.getAttribute('data-id');
             const name = button.getAttribute('data-name') || '';
             const parentId = button.getAttribute('data-parent-id') || '';
-            const maxScore = button.getAttribute('data-max-score') || '';
+            const maxScore = button.getAttribute('data-max-score');
             const order = button.getAttribute('data-order') || 0;
             const isActive = button.getAttribute('data-is-active') === '1';
             const isParent = button.getAttribute('data-is-parent') === '1';
@@ -434,7 +434,7 @@
                 parentSelect.value = parentId;
                 document.getElementById('parent_help_text').textContent = 'Chọn nhóm tiêu chí cha.';
                 maxScoreInput.disabled = false;
-                maxScoreInput.value = maxScore;
+                maxScoreInput.value = (maxScore !== null && maxScore !== '') ? maxScore : '';
                 document.getElementById('score_help_text').textContent = 'Điểm tối đa của tiêu chí này.';
 
                 updateTargetScope(false, true);
@@ -563,7 +563,7 @@
 
                     const scoreCell = row.querySelector('.criterion-max-score');
                     if (scoreCell) {
-                        scoreCell.textContent = data.criterion.max_score ?? '';
+                        scoreCell.textContent = (data.criterion.max_score !== null && data.criterion.max_score !== undefined) ? data.criterion.max_score : '';
                     }
 
                     const statusCell = row.querySelector('.criterion-status');
@@ -578,7 +578,7 @@
                     const editBtn = row.querySelector('.btn-edit-criterion');
                     if (editBtn) {
                         editBtn.setAttribute('data-name', data.criterion.name);
-                        editBtn.setAttribute('data-max-score', data.criterion.max_score ?? '');
+                        editBtn.setAttribute('data-max-score', (data.criterion.max_score !== null && data.criterion.max_score !== undefined) ? data.criterion.max_score : '');
                         editBtn.setAttribute('data-order', data.criterion.order ?? 0);
                         editBtn.setAttribute('data-is-active', data.criterion.is_active ? '1' : '0');
                         editBtn.setAttribute('data-parent-id', data.criterion.parent_id ?? '');

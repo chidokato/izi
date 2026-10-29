@@ -72,21 +72,24 @@ class EvaluationCriterionController extends Controller
 
         $data = $request->all();
         $data['is_active'] = $request->has('is_active') ? 1 : 0;
-        
-        if (empty($data['max_score'])) {
-            $data['max_score'] = null;
-        }
-
         $targets = (array)$request->input('target_types', []);
 
         if (empty($data['parent_id'])) {
             $data['parent_id'] = null;
+            $data['max_score'] = null; // Tiêu chí cha không nhập điểm trực tiếp
             if (empty($targets) || in_array('all', $targets)) {
                 $data['target_types'] = ['all'];
             } else {
                 $data['target_types'] = array_values($targets);
             }
         } else {
+            // Tiêu chí con: chấp nhận điểm 0, chỉ chuyển thành null khi bỏ trống
+            if ($data['max_score'] === '' || $data['max_score'] === null) {
+                $data['max_score'] = null;
+            } else {
+                $data['max_score'] = (int)$data['max_score'];
+            }
+
             // Tiêu chí con: CHỈ được chọn các đối tượng có trong tiêu chí cha
             $parent = EvaluationCriterion::findOrFail($data['parent_id']);
             $parentTargets = $parent->target_types ?? ['all'];
@@ -137,21 +140,24 @@ class EvaluationCriterionController extends Controller
         $criterion = EvaluationCriterion::findOrFail($id);
         $data = $request->all();
         $data['is_active'] = $request->has('is_active') ? 1 : 0;
-        
-        if (empty($data['max_score'])) {
-            $data['max_score'] = null;
-        }
-
         $targets = (array)$request->input('target_types', []);
 
         if (empty($data['parent_id'])) {
             $data['parent_id'] = null;
+            $data['max_score'] = null; // Tiêu chí cha không nhập điểm trực tiếp
             if (empty($targets) || in_array('all', $targets)) {
                 $data['target_types'] = ['all'];
             } else {
                 $data['target_types'] = array_values($targets);
             }
         } else {
+            // Tiêu chí con: chấp nhận điểm 0, chỉ chuyển thành null khi bỏ trống
+            if ($data['max_score'] === '' || $data['max_score'] === null) {
+                $data['max_score'] = null;
+            } else {
+                $data['max_score'] = (int)$data['max_score'];
+            }
+
             // Tiêu chí con: CHỈ được chọn các đối tượng có trong tiêu chí cha
             $parent = EvaluationCriterion::findOrFail($data['parent_id']);
             $parentTargets = $parent->target_types ?? ['all'];
