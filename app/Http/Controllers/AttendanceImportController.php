@@ -144,7 +144,10 @@ class AttendanceImportController extends Controller
 
     public function preview(Request $request, AttendanceFileReader $reader, AttendanceImporter $importer)
     {
-        $request->validate(['file' => 'required|file|max:5120|mimes:xlsx,xls', 'date_format' => 'required|in:m/d/Y,d/m/Y']);
+        @ini_set('memory_limit', '512M');
+        @set_time_limit(300);
+
+        $request->validate(['file' => 'required|file|max:25600|mimes:xlsx,xls', 'date_format' => 'required|in:m/d/Y,d/m/Y']);
         $file = $request->file('file');
         if (! in_array(strtolower($file->getClientOriginalExtension()), ['xls', 'xlsx'], true)) {
             throw ValidationException::withMessages(['file' => 'Chỉ nhận file XLS hoặc XLSX.']);
@@ -179,6 +182,9 @@ class AttendanceImportController extends Controller
 
     public function confirm(Request $request, int $id, AttendanceImporter $importer)
     {
+        @ini_set('memory_limit', '512M');
+        @set_time_limit(300);
+
         $request->validate(['confirm' => 'accepted', 'create_employees' => 'nullable|boolean', 'replace_existing' => 'nullable|boolean']);
         $result = $importer->commit($id, $request->user()->id, $request->boolean('create_employees'), $request->boolean('replace_existing'));
 

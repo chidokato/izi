@@ -16,7 +16,8 @@ return new class extends Migration
             $t->id();
             $t->foreignId('employee_id')->constrained()->restrictOnDelete();
             $t->string('employee_name');
-            $t->string('department_name');
+            $t->string('department_name')->nullable();
+            $t->foreignId('department_id')->nullable()->constrained('departments')->nullOnDelete();
             $t->date('work_date');
             $t->time('checkin')->nullable();
             $t->time('checkout')->nullable();

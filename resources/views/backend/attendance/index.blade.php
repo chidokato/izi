@@ -15,7 +15,7 @@
       <form action="{{ route('backend.attendance.preview') }}" method="post" enctype="multipart/form-data">
           @csrf
           <div class="modal-body">
-              <p class="text-muted small">Chỉ nhập mã nhân viên, tên, phòng ban, ngày, thứ, giờ vào và giờ ra. Các cột khác được bỏ qua. Tối đa 5 MB và 2.000 dòng dữ liệu.</p>
+              <p class="text-muted small">Chỉ nhập mã nhân viên, tên, phòng ban, ngày, thứ, giờ vào và giờ ra. Các cột khác được bỏ qua. Hỗ trợ tối đa 25 MB và 35.000 dòng dữ liệu.</p>
               <div class="mb-3">
                   <label class="form-label" for="file">File Excel (.xlsx, .xls) <span class="text-danger">*</span></label>
                   <input id="file" class="form-control" type="file" name="file" accept=".xlsx,.xls" required>
@@ -67,7 +67,7 @@
 <div class="table-responsive"><table class="table table-striped table-nowrap"><thead><tr><th>Mã NV</th><th>Tên nhân viên</th><th>Phòng ban</th><th>Ngày</th><th>Thứ</th><th>Giờ vào</th><th>Giờ ra</th><th>Công (giờ)</th><th>Đi muộn (phút)</th><th>Về sớm (phút)</th><th>Kiểm tra</th></tr></thead><tbody>
 @forelse($entries as $entry)
 @php
-    $hours = $entry->metrics['regular_hours'] ?? null;
+    $hours = (request('hours_mode') === 'total') ? ($entry->metrics['total_hours'] ?? null) : ($entry->metrics['regular_hours'] ?? null);
     if (isset($entry->request) && $entry->request->type == 'paid_leave') {
         $isHalfDay = ($entry->request->start_session == 'afternoon' && substr($entry->request->start_date,0,10) == $entry->work_date) || 
                      ($entry->request->end_session == 'morning' && substr($entry->request->end_date,0,10) == $entry->work_date);

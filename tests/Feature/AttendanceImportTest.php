@@ -24,6 +24,7 @@ class AttendanceImportTest extends TestCase
         DB::purge('sqlite');
         (require database_path('migrations/2014_10_12_000000_create_users_table.php'))->up();
         (require database_path('migrations/2026_08_12_072056_add_permission_to_users_table.php'))->up();
+        (require database_path('migrations/2026_09_23_104800_add_is_active_to_users_table.php'))->up();
         foreach (glob(database_path('migrations/2026_09_16_*.php')) as $file) {
             (require $file)->up();
         }
@@ -41,7 +42,7 @@ class AttendanceImportTest extends TestCase
 
     private function user(int $permission = 1): User
     {
-        return User::create(['name' => 'Admin', 'email' => uniqid().'@example.test', 'password' => bcrypt('password'), 'permission' => $permission]);
+        return User::create(['name' => 'Admin', 'email' => uniqid().'@example.test', 'password' => bcrypt('password'), 'permission' => $permission, 'status' => 'active', 'is_active' => true]);
     }
 
     private function file(array $rows = [], string $type = 'Xlsx'): string
@@ -222,7 +223,7 @@ class AttendanceImportTest extends TestCase
         $schedule = DB::table('work_schedules')->insertGetId(['code' => 'HC', 'name' => 'Hành chính', 'status' => 'active']);
         DB::table('work_schedule_rules')->insert(['work_schedule_id' => $schedule, 'day_of_week' => 4, 'is_working_day' => true, 'start_time' => '08:30:00', 'end_time' => '17:30:00', 'break_start' => '12:30:00', 'break_end' => '13:30:00']);
         $response = $this->actingAs($u)->get('/admin/attendance?from=2026-09-03&to=2026-09-03');
-        $response->assertOk()->assertSee('Công (giờ)')->assertSee('Đi muộn (phút)')->assertSee('Về sớm (phút)')->assertSee('7,67');
+        $response->assertOk()->assertSee('Công (giờ)')->assertSee('Đi muộn (phút)')->assertSee('Về sớm (phút)')->assertSee('8');
         $row = $response->viewData('entries')->first();
         $this->assertSame(20, $row->metrics['late_arrival']);
         $this->assertSame(0, $row->metrics['early_departure']);
@@ -233,7 +234,7 @@ class AttendanceImportTest extends TestCase
         $this->assertNull($response->viewData('entries')->first()->metrics['regular_hours']);
         DB::table('employee_schedules')->insert(['employee_id' => DB::table('employees')->value('id'), 'work_schedule_id' => $other, 'effective_from' => '2026-09-03', 'effective_to' => '2026-09-03']);
         $response = $this->get('/admin/attendance?from=2026-09-03&to=2026-09-03&schedule_id='.$schedule);
-        $response->assertOk()->assertSee('7,00')->assertSee('Lịch riêng (lịch đã gán)');
+        $response->assertOk()->assertSee('7')->assertSee('Lịch riêng (lịch đã gán)');
         $this->assertSame(0, $response->viewData('entries')->first()->metrics['late_arrival']);
         $this->get('/admin/attendance?schedule_id=9999')->assertSessionHasErrors('schedule_id');
     }

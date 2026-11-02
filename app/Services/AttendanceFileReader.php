@@ -22,6 +22,9 @@ class AttendanceFileReader
 
     public function read(string $path, string $format): array
     {
+        @ini_set('memory_limit', '512M');
+        @set_time_limit(300);
+
         $zip = new \ZipArchive();
         if ($zip->open($path) === true) {
             try {
@@ -29,21 +32,22 @@ class AttendanceFileReader
                 for ($i = 0; $i < $zip->numFiles; $i++) {
                     $size += $zip->statIndex($i)['size'];
                 }
-                if ($zip->numFiles > 5000 || $size > 50 * 1024 * 1024) {
-                    throw new InvalidArgumentException('File Excel sau giải nén quá lớn (tối đa 50 MB).');
+                if ($zip->numFiles > 10000 || $size > 100 * 1024 * 1024) {
+                    throw new InvalidArgumentException('File Excel sau giải nén quá lớn (tối đa 100 MB).');
                 }
             } finally {
                 $zip->close();
             }
         }
         $reader = IOFactory::createReader(IOFactory::identify($path, ['Xlsx', 'Xls']));
+        $reader->setReadDataOnly(true);
         $info = $reader->listWorksheetInfo($path);
         if (count($info) > 10) {
             throw new InvalidArgumentException('Tối đa 10 sheet mỗi file.');
         }
         foreach ($info as $s) {
-            if ($s['totalRows'] > 5000 || $s['totalColumns'] > 100) {
-                throw new InvalidArgumentException('Mỗi sheet tối đa 5.000 dòng và 100 cột.');
+            if ($s['totalRows'] > 50000 || $s['totalColumns'] > 100) {
+                throw new InvalidArgumentException('Mỗi sheet tối đa 50.000 dòng và 100 cột.');
             }
         }
         $book = $reader->load($path);
@@ -116,8 +120,8 @@ class AttendanceFileReader
                 }
                 $rows[] = $r;
             }
-            if (! $rows || count($rows) > 2000) {
-                throw new InvalidArgumentException('File phải có từ 1 đến 2.000 dòng dữ liệu.');
+            if (! $rows || count($rows) > 35000) {
+                throw new InvalidArgumentException('File phải có từ 1 đến 35.000 dòng dữ liệu.');
             }
             $groups = [];
             $profiles = [];
