@@ -72,10 +72,10 @@ class AttendanceImporter
             $r['new_employee'] = ! $employee;
             if ($employee) {
                 if ($employee->name !== $r['name']) {
-                    $r['errors'][] = 'Tên không khớp hồ sơ nhân viên. Hãy sửa hồ sơ hoặc file trước.';
+                    $r['errors'][] = "Tên trong file ({$r['name']}) không khớp hồ sơ ({$employee->name}).";
                 }
                 if ($employee->status !== 'active') {
-                    $r['errors'][] = 'Nhân viên đã ngừng hoạt động.';
+                    $r['warnings'][] = 'Nhân viên đã ngừng hoạt động (vẫn nhập)';
                 }
                 $key = $employee->id . '_' . $r['date'];
                 $old = $oldEntries[$key] ?? null;
