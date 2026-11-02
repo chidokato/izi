@@ -82,7 +82,7 @@ class TimesheetExportController extends Controller
                 })->get();
         }
             
-        $departments = DB::table('departments')->orderBy('name')->pluck('name', 'id');
+        $departments = DB::table('departments')->where('status', 'active')->orderBy('name')->pluck('name', 'id');
 
         $reportData = [];
         

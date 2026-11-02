@@ -55,7 +55,7 @@ class EmployeeController extends Controller
 
         return view('backend.employees.index', [
             'employees' => $query->orderBy('e.employee_code')->paginate(50)->withQueryString(),
-            'departments' => DB::table('departments')->orderBy('name')->get(['id', 'name']),
+            'departments' => DB::table('departments')->where('status', 'active')->orderBy('name')->get(['id', 'name']),
             'managers' => DB::table('employees')
                 ->where('status', 'active')
                 ->whereNull('deleted_at')
@@ -64,6 +64,7 @@ class EmployeeController extends Controller
                 ->get(['id', 'name', 'employee_code', 'department_id']),
             'hrs' => DB::table('employees as e')
                 ->join('departments as d', 'd.id', '=', 'e.department_id')
+                ->where('d.status', 'active')
                 ->where('e.status', 'active')
                 ->whereNull('e.deleted_at')
                 ->whereIn('e.position', ['team_leader', 'manager', 'director'])
@@ -74,7 +75,7 @@ class EmployeeController extends Controller
 
     public function create()
     {
-        $departments = DB::table('departments')->orderBy('name')->get();
+        $departments = DB::table('departments')->where('status', 'active')->orderBy('name')->get();
         $managers = DB::table('employees')
             ->where('status', 'active')
             ->whereNull('deleted_at')
@@ -150,7 +151,15 @@ class EmployeeController extends Controller
     public function edit($id)
     {
         $employee = \App\Models\Employee::withTrashed()->findOrFail($id);
-        $departments = \Illuminate\Support\Facades\DB::table('departments')->orderBy('name')->get();
+        $departments = \Illuminate\Support\Facades\DB::table('departments')
+            ->where(function($q) use ($employee) {
+                $q->where('status', 'active');
+                if ($employee->department_id) {
+                    $q->orWhere('id', $employee->department_id);
+                }
+            })
+            ->orderBy('name')
+            ->get();
         $managers = \Illuminate\Support\Facades\DB::table('employees as e')
                 ->where('e.status', 'active')
                 ->whereNull('e.deleted_at')

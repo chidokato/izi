@@ -106,6 +106,9 @@
                         <td>
                             <select class="form-select form-select-sm department-select fw-bold text-dark" data-id="{{ $employee->id }}">
                                 <option value="">----</option>
+                                @if($employee->department_id && !$departments->contains('id', $employee->department_id))
+                                    <option value="{{ $employee->department_id }}" selected>{{ $employee->department_name }} (Ngừng hoạt động)</option>
+                                @endif
                                 @foreach($departments as $department)
                                     <option value="{{ $department->id }}" @selected($employee->department_id == $department->id)>{{ $department->name }}</option>
                                 @endforeach

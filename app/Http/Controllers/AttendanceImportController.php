@@ -139,7 +139,7 @@ class AttendanceImportController extends Controller
             }
         }
 
-        return view('backend.attendance.index', ['entries' => $entries, 'schedules' => $schedules, 'selectedSchedule' => $selectedSchedule, 'departments' => DB::table('departments')->orderBy('name')->pluck('name', 'id'), 'imports' => DB::table('attendance_imports')->where('uploaded_by', $request->user()->id)->orderByDesc('id')->limit(10)->get()]);
+        return view('backend.attendance.index', ['entries' => $entries, 'schedules' => $schedules, 'selectedSchedule' => $selectedSchedule, 'departments' => DB::table('departments')->where('status', 'active')->orderBy('name')->pluck('name', 'id'), 'imports' => DB::table('attendance_imports')->where('uploaded_by', $request->user()->id)->orderByDesc('id')->limit(10)->get()]);
     }
 
     public function preview(Request $request, AttendanceFileReader $reader, AttendanceImporter $importer)

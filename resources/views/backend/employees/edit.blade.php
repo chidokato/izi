@@ -59,7 +59,7 @@
                                             <select name="department_id" class="form-select @error('department_id') is-invalid @enderror">
                                                 <option value="">-- Chọn phòng ban --</option>
                                                 @foreach($departments as $dept)
-                                                    <option value="{{ $dept->id }}" @selected(old('department_id', $employee->department_id) == $dept->id)>{{ $dept->name }}</option>
+                                                    <option value="{{ $dept->id }}" @selected(old('department_id', $employee->department_id) == $dept->id)>{{ $dept->name }} {{ isset($dept->status) && $dept->status === 'inactive' ? '(Ngừng hoạt động)' : '' }}</option>
                                                 @endforeach
                                             </select>
                                             @error('department_id')
