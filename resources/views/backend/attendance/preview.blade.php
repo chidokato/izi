@@ -4,6 +4,24 @@
 @section('content')
 @if($errors->any())<div class="alert alert-danger">@foreach($errors->all() as $error)<div>{{ $error }}</div>@endforeach</div>@endif
 @php
+// Nhân viên đã ngừng hoạt động không phải là lỗi, vẫn nhập bình thường:
+foreach ($rows as &$r) {
+    if (!empty($r['errors'])) {
+        $hasInactive = false;
+        $r['errors'] = array_values(array_filter($r['errors'], function($err) use (&$hasInactive) {
+            if (str_contains($err, 'ngừng hoạt động')) {
+                $hasInactive = true;
+                return false;
+            }
+            return true;
+        }));
+        if ($hasInactive) {
+            $r['warnings'][] = 'Nhân viên đã ngừng hoạt động (vẫn nhập)';
+        }
+    }
+}
+unset($r);
+
 $errorCount = count(array_filter($rows, fn($r) => !empty($r['errors'])));
 $duplicates = count(array_filter($rows, fn($r) => empty($r['errors']) && $r['duplicate']));
 $newEmployees = count(array_unique(array_column(array_filter($rows, fn($r) => empty($r['errors']) && $r['new_employee']), 'code')));

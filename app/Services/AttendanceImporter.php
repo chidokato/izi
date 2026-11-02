@@ -168,6 +168,14 @@ class AttendanceImporter
             $auditLogs = [];
             $now = now();
 
+            // Đảm bảo các dòng có cảnh báo "ngừng hoạt động" không bị coi là lỗi kể cả từ preview cũ
+            foreach ($rows as &$item) {
+                if (!empty($item['errors'])) {
+                    $item['errors'] = array_values(array_filter($item['errors'], fn($err) => !str_contains($err, 'ngừng hoạt động')));
+                }
+            }
+            unset($item);
+
             foreach ($rows as $r) {
                 if (!empty($r['errors'])) {
                     $errors++;
