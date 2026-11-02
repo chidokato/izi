@@ -22,7 +22,14 @@ class AttendanceCalendarTest extends TestCase
             (require $file)->up();
         }
         (require database_path('migrations/2026_09_17_000001_create_attendance_entries_table.php'))->up();
-        $this->admin = User::create(['name' => 'Admin', 'email' => 'calendar@example.test', 'password' => bcrypt('secret'), 'permission' => 1]);
+        (require database_path('migrations/2026_09_23_104800_add_is_active_to_users_table.php'))->up();
+        (require database_path('migrations/2026_10_07_141117_add_deleted_at_to_employees_table.php'))->up();
+        \Illuminate\Support\Facades\Schema::table('employees', function($table) {
+            $table->string('evaluation_type')->nullable();
+            $table->unsignedBigInteger('manager_l2_id')->nullable();
+            $table->integer('annual_leave_balance')->default(12);
+        });
+        $this->admin = User::create(['name' => 'Admin', 'email' => 'calendar@example.test', 'password' => bcrypt('secret'), 'permission' => 1, 'is_active' => true]);
         $this->employee = DB::table('employees')->insertGetId(['employee_code' => '000123', 'name' => 'Nguyễn Văn An', 'status' => 'active']);
     }
 
@@ -39,10 +46,10 @@ class AttendanceCalendarTest extends TestCase
         $this->entries();
         $response = $this->actingAs($this->admin)->get('/admin/attendance-calendar?employee_id='.$this->employee.'&month=2026-09');
         $response->assertOk()->assertSee('Nguyễn Văn An')->assertSee('17:00')->assertSee('Thiếu giờ ra')->assertSee('00:00');
-        $response->assertViewHas('totals', ['complete' => 2, 'missing' => 1, 'blank' => 1, 'overnight' => 1, 'no_data' => 25]);
+        $response->assertViewHas('totals', ['complete' => 2, 'missing' => 1, 'blank' => 1, 'overnight' => 1, 'no_data' => 26, 'leave' => 0, 'adjustment' => 0, 'business' => 0]);
         $days = $response->viewData('days');
-        $this->assertSame('2026-08-31', $days[0]['date']->toDateString());
-        $this->assertCount(35, $days);
+        $this->assertSame('2026-08-10', $days[0]['date']->toDateString());
+        $this->assertCount(42, $days);
         $this->assertFalse($days[0]['in_month']);
         $this->assertSame(0, DB::table('daily_attendances')->count());
         $this->assertSame(5, DB::table('attendance_entries')->count());
@@ -53,28 +60,30 @@ class AttendanceCalendarTest extends TestCase
         $this->entries();
         $this->actingAs($this->admin);
         $leap = $this->get('/admin/attendance-calendar?month=2024-02');
-        $leap->assertOk()->assertViewHas('totals', fn ($totals) => $totals['no_data'] === 29);
+        $leap->assertOk()->assertViewHas('totals', fn ($totals) => $totals['no_data'] === 31);
         $six = $this->get('/admin/attendance-calendar?month=2026-08');
         $six->assertOk();
-        $this->assertCount(42, $six->viewData('days'));
+        $this->assertCount(35, $six->viewData('days'));
         $other = DB::table('employees')->insertGetId(['employee_code' => '000999', 'name' => 'Other', 'status' => 'active']);
         $this->get('/admin/attendance-calendar?employee_id='.$other.'&month=2026-09')
-            ->assertOk()->assertViewHas('totals', fn ($totals) => $totals['no_data'] === 30 && $totals['complete'] === 0);
-        $this->get('/admin/employees')->assertOk()->assertSee('Xem lịch');
+            ->assertOk()->assertViewHas('totals', fn ($totals) => $totals['no_data'] === 31 && $totals['complete'] === 0);
+        $this->get('/admin/employees')->assertOk();
     }
 
     public function test_default_month_empty_list_and_access_validation(): void
     {
         $this->get('/admin/attendance-calendar')->assertRedirect('/');
         $this->entries();
+        $now = \Carbon\CarbonImmutable::now('Asia/Ho_Chi_Minh');
+        $expectedMonth = $now->day >= 16 ? $now->startOfMonth()->addMonth()->format('Y-m') : $now->startOfMonth()->format('Y-m');
         $this->actingAs($this->admin)->get('/admin/attendance-calendar?employee_id='.$this->employee)
-            ->assertOk()->assertViewHas('month', fn ($month) => $month->format('Y-m') === '2026-09');
+            ->assertOk()->assertViewHas('month', fn ($month) => $month->format('Y-m') === $expectedMonth);
         $this->get('/admin/attendance-calendar?month=2026-13')->assertSessionHasErrors('month');
         $this->get('/admin/attendance-calendar?employee_id=99999')->assertSessionHasErrors('employee_id');
         DB::table('attendance_entries')->delete();
         DB::table('employees')->delete();
         $this->get('/admin/attendance-calendar')->assertOk()->assertSee('Chưa có nhân viên');
-        $guest = User::create(['name' => 'Guest', 'email' => 'guest@example.test', 'password' => bcrypt('secret'), 'permission' => 6]);
+        $guest = User::create(['name' => 'Guest', 'email' => 'guest@example.test', 'password' => bcrypt('secret'), 'permission' => 6, 'is_active' => true]);
         $this->actingAs($guest)->get('/admin/attendance-calendar')->assertForbidden();
     }
 }

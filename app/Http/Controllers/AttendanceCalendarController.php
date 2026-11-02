@@ -26,7 +26,7 @@ class AttendanceCalendarController extends Controller
         if ($request->filled('month')) {
             $month = CarbonImmutable::createFromFormat('!Y-m', $request->input('month'));
         } else {
-            $refDate = CarbonImmutable::parse($latest ?: now('Asia/Ho_Chi_Minh'));
+            $refDate = CarbonImmutable::now('Asia/Ho_Chi_Minh');
             $month = $refDate->day >= 16 ? $refDate->startOfMonth()->addMonth() : $refDate->startOfMonth();
         }
             
