@@ -58,8 +58,10 @@ class UserController extends Controller
             'avatar_file' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:2048'],
             'remove_avatar' => ['nullable'],
             'permission' => ['required', 'integer', 'in:1,2,3'],
-            'employee_id' => ['nullable', 'exists:employees,id'],
+            'employee_id' => ['nullable', 'exists:employees,id', 'unique:users,employee_id'],
             'password' => ['required', 'string', 'min:6', 'confirmed'],
+        ], [
+            'employee_id.unique' => 'Nhân viên này đã được liên kết với một tài khoản khác.',
         ]);
 
         $avatarPath = null;
@@ -113,8 +115,14 @@ class UserController extends Controller
             'avatar_file' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:2048'],
             'remove_avatar' => ['nullable'],
             'permission' => ['required', 'integer', 'in:1,2,3'],
-            'employee_id' => ['nullable', 'exists:employees,id'],
+            'employee_id' => [
+                'nullable',
+                'exists:employees,id',
+                Rule::unique('users', 'employee_id')->ignore($user->id),
+            ],
             'password' => ['nullable', 'string', 'min:6', 'confirmed'],
+        ], [
+            'employee_id.unique' => 'Nhân viên này đã được liên kết với một tài khoản khác.',
         ]);
 
         $avatarPath = $user->avatar;

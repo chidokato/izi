@@ -49,6 +49,8 @@ class AttendanceRequestController extends Controller
         $canBulkApprove = $user->isAdmin();
         if (!$canBulkApprove && $user->employee_id) {
             $canBulkApprove = Employee::where('manager_id', $user->employee_id)->exists() || 
+                              Employee::where('manager_l2_id', $user->employee_id)->exists() ||
+                              optional($user->employee)->level === 'HR' ||
                               \App\Models\RequestApproval::where('approver_id', $user->id)->exists();
         }
 
@@ -57,10 +59,10 @@ class AttendanceRequestController extends Controller
 
     public function create()
     {
-        $employees = Employee::with('manager')->orderBy('name')->get();
+        $employees = Employee::with(['manager', 'managerL2'])->orderBy('name')->get();
         $currentUserEmployee = null;
         if (auth()->check() && auth()->user()->employee_id) {
-            $currentUserEmployee = Employee::with('manager')->find(auth()->user()->employee_id);
+            $currentUserEmployee = Employee::with(['manager', 'managerL2'])->find(auth()->user()->employee_id);
         }
         return view('backend.attendance_requests.create', compact('employees', 'currentUserEmployee'));
     }

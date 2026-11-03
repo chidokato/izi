@@ -30,7 +30,7 @@
                         <select name="employee_id" class="form-control" required>
                             <option value="">Chọn nhân viên</option>
                             @foreach($employees as $emp)
-                                <option value="{{ $emp->id }}" data-manager="{{ $emp->manager ? $emp->manager->name : 'Ban giám đốc' }}" data-manager-l2="{{ $emp->managerL2 ? $emp->managerL2->name : 'Bỏ qua' }}" {{ old('employee_id', auth()->user()->employee_id) == $emp->id ? 'selected' : '' }}>{{ $emp->name }} ({{ $emp->employee_code }})</option>
+                                <option value="{{ $emp->id }}" data-manager="{{ $emp->manager ? $emp->manager->name : 'Bỏ qua' }}" data-manager-l2="{{ $emp->managerL2 ? $emp->managerL2->name : 'Bỏ qua' }}" {{ old('employee_id', auth()->user()->employee_id) == $emp->id ? 'selected' : '' }}>{{ $emp->name }} ({{ $emp->employee_code }})</option>
                             @endforeach
                         </select>
                     </div>
@@ -195,7 +195,7 @@
                                     <h6 class="text-primary mb-1">
                                         Người duyệt: 
                                         @if(!auth()->user()->isAdmin() && $currentUserEmployee)
-                                            <strong class="text-decoration-underline">{{ $currentUserEmployee->manager ? $currentUserEmployee->manager->name : 'Ban giám đốc' }}</strong>
+                                            <strong class="text-decoration-underline">{{ $currentUserEmployee->manager ? $currentUserEmployee->manager->name : 'Bỏ qua' }}</strong>
                                         @elseif(auth()->user()->isAdmin())
                                             <strong class="text-decoration-underline" id="manager-name-display"></strong>
                                         @endif
@@ -674,7 +674,7 @@
                 const managerDisplay = document.getElementById('manager-name-display');
                 const managerL2Display = document.getElementById('manager-l2-name-display');
                 if (managerDisplay && selectedOption && selectedOption.value) {
-                    managerDisplay.textContent = selectedOption.getAttribute('data-manager') || 'Ban giám đốc';
+                    managerDisplay.textContent = selectedOption.getAttribute('data-manager') || 'Bỏ qua';
                 } else if (managerDisplay) {
                     managerDisplay.textContent = '';
                 }
