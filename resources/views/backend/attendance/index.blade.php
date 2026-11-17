@@ -67,15 +67,22 @@
 <div class="table-responsive"><table class="table table-striped table-nowrap"><thead><tr><th>Mã NV</th><th>Tên nhân viên</th><th>Phòng ban</th><th>Ngày</th><th>Thứ</th><th>Giờ vào</th><th>Giờ ra</th><th>Công (giờ)</th><th>Đi muộn (phút)</th><th>Về sớm (phút)</th><th>Kiểm tra</th></tr></thead><tbody>
 @forelse($entries as $entry)
 @php
+    $dayOfWeek = \Carbon\Carbon::parse($entry->work_date)->dayOfWeek;
     $hours = (request('hours_mode') === 'total') ? ($entry->metrics['total_hours'] ?? null) : ($entry->metrics['regular_hours'] ?? null);
-    if (isset($entry->request) && $entry->request->type == 'paid_leave') {
-        $isHalfDay = ($entry->request->start_session == 'afternoon' && substr($entry->request->start_date,0,10) == $entry->work_date) || 
-                     ($entry->request->end_session == 'morning' && substr($entry->request->end_date,0,10) == $entry->work_date);
-        $hours = ($hours ?? 0) + ($isHalfDay ? 4 : 8);
-        if ($hours > 8) $hours = 8;
-    } elseif (isset($entry->request) && $entry->request->type == 'business_trip') {
-        $hours = ($entry->metrics['total_hours'] ?? 0) + ($entry->business_hours ?? 0);
-        if ($hours > 8) $hours = 8;
+    if ($dayOfWeek == 0) {
+        $hours = null;
+    } else {
+        if (isset($entry->request) && $entry->request->type == 'paid_leave') {
+            $isHalfDay = ($entry->request->start_session == 'afternoon' && substr($entry->request->start_date,0,10) == $entry->work_date) || 
+                         ($entry->request->end_session == 'morning' && substr($entry->request->end_date,0,10) == $entry->work_date);
+            $maxH = $dayOfWeek == 6 ? 4 : 8;
+            $hours = ($hours ?? 0) + ($isHalfDay ? 4 : $maxH);
+            if ($hours > $maxH) $hours = $maxH;
+        } elseif (isset($entry->request) && $entry->request->type == 'business_trip') {
+            $hours = ($entry->metrics['total_hours'] ?? 0) + ($entry->business_hours ?? 0);
+            $maxH = $dayOfWeek == 6 ? 4 : 8;
+            if ($hours > $maxH) $hours = $maxH;
+        }
     }
 @endphp
 @php($rowClass = isset($entry->request) ? ($entry->request->type == 'attendance_adjustment' ? 'table-danger' : (($entry->request->type == 'paid_leave' || $entry->request->type == 'unpaid_leave') ? 'table-info' : ($entry->request->type == 'business_trip' ? 'table-warning' : ''))) : '')
@@ -104,7 +111,11 @@
                 @if($entry->request->type == 'attendance_adjustment')
                     (Xác nhận: {{ $entry->request->start_session == 'morning' ? 'Vào' : ($entry->request->start_session == 'afternoon' ? 'Ra' : 'Vào/Ra') }})
                 @elseif($entry->request->type == 'business_trip')
-                    ({{ isset($entry->business_hours) && $entry->business_hours < 8 ? round($entry->business_hours, 1) . ' giờ' : 'Cả ngày' }})
+                    @if(\Carbon\Carbon::parse($entry->work_date)->dayOfWeek == 0)
+                        (Nghỉ)
+                    @else
+                        ({{ isset($entry->business_hours) && $entry->business_hours < 8 ? round($entry->business_hours, 1) . ' giờ' : 'Cả ngày' }})
+                    @endif
                 @elseif($entry->request->start_session == 'afternoon' && substr($entry->request->start_date, 0, 10) == $entry->work_date)
                     (Nửa buổi chiều)
                 @elseif($entry->request->end_session == 'morning' && substr($entry->request->end_date, 0, 10) == $entry->work_date)

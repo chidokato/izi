@@ -48,4 +48,56 @@ class AttendanceHourCalculatorTest extends TestCase
         $this->assertEquals(4, $r['total_hours']);
         $this->assertNull($r['early_arrival']);
     }
+
+    public function test_new_cong_calculation_rules(): void
+    {
+        // 1. Ngày thường: >= 6 tiếng = 1 công
+        $r1 = $this->calculate('08:30:00', '17:30:00'); // 8h
+        $this->assertEquals(8, $r1['regular_hours']);
+        $this->assertEquals(1, $r1['cong']);
+
+        $r2 = $this->calculate('08:30:00', '15:30:00'); // 6h (7h trừ 1h nghỉ)
+        $this->assertEquals(6, $r2['regular_hours']);
+        $this->assertEquals(1, $r2['cong']);
+
+        // 2. Ngày thường: >= 2 tiếng và < 6 tiếng = 0.5 công
+        $r3 = $this->calculate('08:30:00', '14:30:00'); // 5h
+        $this->assertEquals(5, $r3['regular_hours']);
+        $this->assertEquals(0.5, $r3['cong']);
+
+        $r4 = $this->calculate('08:30:00', '12:30:00'); // 4h
+        $this->assertEquals(4, $r4['regular_hours']);
+        $this->assertEquals(0.5, $r4['cong']);
+
+        $r5 = $this->calculate('08:30:00', '10:30:00'); // 2h
+        $this->assertEquals(2, $r5['regular_hours']);
+        $this->assertEquals(0.5, $r5['cong']);
+
+        // 3. Ngày thường: < 2 tiếng = 0 công
+        $r6 = $this->calculate('08:30:00', '10:29:00'); // 1.98h < 2h
+        $this->assertEquals(0, $r6['cong']);
+
+        $r7 = $this->calculate('08:30:00', '09:30:00'); // 1h < 2h
+        $this->assertEquals(1, $r7['regular_hours']);
+        $this->assertEquals(0, $r7['cong']);
+
+        // 4. Thứ 7: tiêu chuẩn 4 tiếng. Hơn 2h = 0.5 công, còn lại 0 công
+        $satRule = ['day_of_week' => 6, 'start_time' => '08:30:00', 'end_time' => '12:30:00', 'break_start' => null, 'break_end' => null, 'required_minutes' => 240];
+        
+        $s1 = $this->calculate('08:30:00', '12:30:00', $satRule); // 4h > 2h
+        $this->assertEquals(4, $s1['regular_hours']);
+        $this->assertEquals(0.5, $s1['cong']);
+
+        $s2 = $this->calculate('08:30:00', '11:00:00', $satRule); // 2.5h > 2h
+        $this->assertEquals(2.5, $s2['regular_hours']);
+        $this->assertEquals(0.5, $s2['cong']);
+
+        $s3 = $this->calculate('08:30:00', '10:30:00', $satRule); // 2.0h (không hơn 2h)
+        $this->assertEquals(2, $s3['regular_hours']);
+        $this->assertEquals(0, $s3['cong']);
+
+        $s4 = $this->calculate('08:30:00', '10:00:00', $satRule); // 1.5h <= 2h
+        $this->assertEquals(1.5, $s4['regular_hours']);
+        $this->assertEquals(0, $s4['cong']);
+    }
 }

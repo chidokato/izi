@@ -6,7 +6,7 @@ class AttendanceHourCalculator
 {
     public function calculate(object $entry, ?object $rule): array
     {
-        $result = ['regular_hours' => null, 'total_hours' => null, 'early_arrival' => null, 'late_arrival' => null, 'early_departure' => null, 'late_departure' => null, 'note' => null];
+        $result = ['regular_hours' => null, 'total_hours' => null, 'cong' => null, 'early_arrival' => null, 'late_arrival' => null, 'early_departure' => null, 'late_departure' => null, 'note' => null];
         if (! $rule) {
             return $result;
         }
@@ -52,52 +52,53 @@ class AttendanceHourCalculator
             }
             if ($out !== null) {
                 $result['late_departure'] = (int) floor(max(0, $out - $end) / 60);
-                if ($missedAfternoon) {
-                    $result['early_departure'] = (int) floor(max(0, $breakStart - $out) / 60);
-                } else {
-                    $result['early_departure'] = (int) floor(max(0, $end - $out) / 60);
-                }
+                $result['early_departure'] = (int) floor(max(0, $end - $out) / 60);
             }
         }
         if ($in === null || $out === null) {
-            if ($working) {
-                $result['regular_hours'] = 0;
-            }
+            $result['regular_hours'] = null;
+            $result['cong'] = $working ? 0 : null;
             return $result;
         }
         $overlap = fn ($a, $b, $c, $d) => max(0, min($b, $d) - max($a, $c));
-        $breakStart = $working && $rule->break_start !== null ? $seconds($rule->break_start) : null;
-        $breakEnd = $working && $rule->break_end !== null ? $seconds($rule->break_end) : null;
         $breakSeconds = $breakStart !== null && $breakEnd !== null ? $overlap($in, $out, $breakStart, $breakEnd) : 0;
         $result['total_hours'] = round(max(0, $out - $in - $breakSeconds) / 3600, 2);
-        
-        $baseHours = $working && isset($rule->required_minutes) && $rule->required_minutes > 0 ? round($rule->required_minutes / 60, 2) : ($working ? 8 : 0);
-        $lostMins = ($result['late_arrival'] ?? 0) + ($result['early_departure'] ?? 0);
-        
-        $penaltyHours = 0;
-        
-        if ($missedMorning) {
-            $penaltyHours += $baseHours / 2;
-        }
-        if ($missedAfternoon) {
-            $penaltyHours += $baseHours / 2;
+
+        if (! $working) {
+            $result['regular_hours'] = 0;
+            $result['cong'] = null;
+            return $result;
         }
 
-        if (isset($rule->day_of_week) && $rule->day_of_week == 6) {
-            // Thứ 7: trên 120p = 0, còn không là 4 (mặc định)
-            if ($lostMins > 120) {
-                $penaltyHours = $baseHours; 
-            }
+        // Tính tổng thời gian làm việc trong giờ làm tính theo lịch làm việc
+        $workOverlap = $overlap($in, $out, $start, $end);
+        $scheduleBreakOverlap = ($breakStart !== null && $breakEnd !== null) ? $overlap($in, $out, $breakStart, $breakEnd) : 0;
+        $workedSeconds = max(0, $workOverlap - $scheduleBreakOverlap);
+        $workedHours = round($workedSeconds / 3600, 2);
+
+        $isSaturday = isset($rule->day_of_week) && $rule->day_of_week == 6;
+        $baseHours = $isSaturday ? 4.0 : 8.0;
+        if (isset($rule->required_minutes) && $rule->required_minutes > 0) {
+            $baseHours = min($baseHours, round($rule->required_minutes / 60, 2));
+        }
+
+        $regularHours = min($baseHours, $workedHours);
+        $result['regular_hours'] = $regularHours;
+
+        // Quy tắc tính công mới:
+        // - Thứ 7: tổng thời gian hơn 2h tính nửa công (0.5), còn lại 0 công
+        // - Ngày thường: >= 6 tiếng tính 1 công, < 2 tiếng tính 0 công, từ 2h đến < 6h tính 0.5 công
+        if ($isSaturday) {
+            $result['cong'] = ($regularHours > 2) ? 0.5 : 0;
         } else {
-            if ($lostMins >= 250) { // muộn 250phuts mất 1 ngày công
-                $penaltyHours = 8;
-            } elseif ($lostMins > 100) { // đi muộn về sớm >100 phút mất nửa công
-                $penaltyHours += 4;
+            if ($regularHours >= 6) {
+                $result['cong'] = 1;
+            } elseif ($regularHours >= 2) {
+                $result['cong'] = 0.5;
+            } else {
+                $result['cong'] = 0;
             }
         }
-
-        // Apply penalty, ensuring we don't drop below 0
-        $result['regular_hours'] = max(0, $baseHours - $penaltyHours);
 
         return $result;
     }

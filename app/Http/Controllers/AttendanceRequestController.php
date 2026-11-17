@@ -211,7 +211,11 @@ class AttendanceRequestController extends Controller
         $deadline = \Carbon\Carbon::create($cycleYear, $cycleMonth, 22, 23, 59, 59);
         
         if (now() > $deadline) {
-            return back()->withInput()->withErrors(['time' => 'Đã quá hạn chốt công. Các phiếu của kỳ công tháng ' . $cycleMonth . '/' . $cycleYear . ' (từ 16/' . ($cycleMonth == 1 ? 12 : $cycleMonth - 1) . ' đến 15/' . $cycleMonth . ') chỉ được tạo trước ngày 23 tháng ' . $cycleMonth . '.']);
+            $msg = 'Đã quá hạn chốt công. Các phiếu của kỳ công tháng ' . $cycleMonth . '/' . $cycleYear . ' (từ 16/' . ($cycleMonth == 1 ? 12 : $cycleMonth - 1) . ' đến 15/' . $cycleMonth . ') chỉ được tạo trước ngày 23 tháng ' . $cycleMonth . '.';
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['message' => $msg, 'errors' => ['time' => [$msg]]], 422);
+            }
+            return back()->withInput()->withErrors(['time' => $msg]);
         }
 
         $existingRequests = AttendanceRequest::where('employee_id', $request->employee_id)
@@ -230,7 +234,11 @@ class AttendanceRequestController extends Controller
             }
 
             if ($newStart <= $existingEnd && $newEnd >= $existingStart) {
-                return back()->withInput()->withErrors(['time' => 'Thời gian này đã bị trùng với một phiếu khác đã tạo. Vui lòng chọn khoảng thời gian khác.']);
+                $msg = 'Thời gian này đã bị trùng với một phiếu khác đã tạo. Vui lòng chọn khoảng thời gian khác.';
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json(['message' => $msg, 'errors' => ['time' => [$msg]]], 422);
+                }
+                return back()->withInput()->withErrors(['time' => $msg]);
             }
         }
 
@@ -244,7 +252,11 @@ class AttendanceRequestController extends Controller
                 ->count();
             
             if ($count >= 3) {
-                return back()->withInput()->withErrors(['type' => 'Nhân viên này đã sử dụng hết 3 phiếu bổ sung công trong tháng ' . $startDate->month . '.']);
+                $msg = 'Nhân viên này đã sử dụng hết 3 phiếu bổ sung công trong tháng ' . $startDate->month . '.';
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json(['message' => $msg, 'errors' => ['type' => [$msg]]], 422);
+                }
+                return back()->withInput()->withErrors(['type' => $msg]);
             }
         }
 
@@ -281,6 +293,13 @@ class AttendanceRequestController extends Controller
                 'approver_id' => $hrUser ? $hrUser->id : ($adminUser->id ?? 1),
                 'step' => 3,
                 'status' => 'pending',
+            ]);
+        }
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Đã tạo phiếu thành công.'
             ]);
         }
 

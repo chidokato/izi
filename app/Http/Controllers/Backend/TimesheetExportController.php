@@ -126,18 +126,21 @@ class TimesheetExportController extends Controller
                     $hours = 0;
                 }
                 
-                if ($req) {
+                $isNonWorkingDay = ($dayOfWeek == 0) || (!$rule || !$rule->is_working_day);
+
+                if ($req && !$isNonWorkingDay) {
                     if ($req->type == 'paid_leave') {
                         $isHalfDay = ($req->start_session == 'afternoon' && substr($req->start_date,0,10) == $dateStr) || 
                                      ($req->end_session == 'morning' && substr($req->end_date,0,10) == $dateStr);
-                        $hours = ($hours ?? 0) + ($isHalfDay ? 4 : 8);
-                        if ($hours > 8) $hours = 8;
-                        $displayVal = $hours == 8 ? 'P' : ($hours > 0 ? $hours . ' (P)' : 'P');
+                        $maxH = ($dayOfWeek == 6 ? 4 : 8);
+                        $hours = ($hours ?? 0) + ($isHalfDay ? 4 : $maxH);
+                        if ($hours > $maxH) $hours = $maxH;
+                        $displayVal = $hours == $maxH ? 'P' : ($hours > 0 ? $hours . ' (P)' : 'P');
                     } elseif ($req->type == 'unpaid_leave') {
                         $displayVal = '0';
                     } elseif ($req->type == 'business_trip') {
-                        $hours = 8;
-                        $displayVal = 8;
+                        $hours = ($dayOfWeek == 6 ? 4 : 8);
+                        $displayVal = $hours;
                     }
                 }
                 
@@ -147,7 +150,8 @@ class TimesheetExportController extends Controller
                     $displayVal = $displayVal == floor($displayVal) ? number_format($displayVal, 0) : rtrim(rtrim(number_format($displayVal, 2, '.', ''), '0'), '.');
                 }
                 
-                if (!$rule || !$rule->is_working_day) {
+                if ($isNonWorkingDay) {
+                    $hours = 0;
                     if ($displayVal === '0' || $displayVal === '') {
                         $displayVal = ''; 
                     }

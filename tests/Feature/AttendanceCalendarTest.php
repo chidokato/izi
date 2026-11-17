@@ -23,6 +23,7 @@ class AttendanceCalendarTest extends TestCase
         }
         (require database_path('migrations/2026_09_17_000001_create_attendance_entries_table.php'))->up();
         (require database_path('migrations/2026_09_23_104800_add_is_active_to_users_table.php'))->up();
+        (require database_path('migrations/2026_10_02_171115_add_grace_period_to_work_schedules_table.php'))->up();
         (require database_path('migrations/2026_10_07_141117_add_deleted_at_to_employees_table.php'))->up();
         \Illuminate\Support\Facades\Schema::table('employees', function($table) {
             $table->string('evaluation_type')->nullable();
@@ -85,5 +86,89 @@ class AttendanceCalendarTest extends TestCase
         $this->get('/admin/attendance-calendar')->assertOk()->assertSee('Chưa có nhân viên');
         $guest = User::create(['name' => 'Guest', 'email' => 'guest@example.test', 'password' => bcrypt('secret'), 'permission' => 6, 'is_active' => true]);
         $this->actingAs($guest)->get('/admin/attendance-calendar')->assertForbidden();
+    }
+
+    public function test_sunday_and_non_working_days_do_not_calculate_cong_for_multi_day_requests(): void
+    {
+        $schedId = DB::table('work_schedules')->insertGetId([
+            'name' => 'Lịch chuẩn',
+            'code' => 'STD',
+            'status' => 'active',
+            'grace_period' => 10,
+        ]);
+
+        for ($dow = 1; $dow <= 5; $dow++) {
+            DB::table('work_schedule_rules')->insert([
+                'work_schedule_id' => $schedId,
+                'day_of_week' => $dow,
+                'is_working_day' => 1,
+                'start_time' => '08:30:00',
+                'end_time' => '17:30:00',
+                'break_start' => '12:00:00',
+                'break_end' => '13:00:00',
+            ]);
+        }
+        DB::table('work_schedule_rules')->insert([
+            'work_schedule_id' => $schedId,
+            'day_of_week' => 6,
+            'is_working_day' => 1,
+            'start_time' => '08:30:00',
+            'end_time' => '12:30:00',
+            'break_start' => null,
+            'break_end' => null,
+        ]);
+        DB::table('work_schedule_rules')->insert([
+            'work_schedule_id' => $schedId,
+            'day_of_week' => 0,
+            'is_working_day' => 0,
+            'start_time' => null,
+            'end_time' => null,
+        ]);
+
+        DB::table('employee_schedules')->insert([
+            'employee_id' => $this->employee,
+            'work_schedule_id' => $schedId,
+            'effective_from' => '2026-01-01',
+        ]);
+
+        // Insert business trip covering 16/10/2026 to 14/11/2026
+        DB::table('attendance_requests')->insert([
+            'code' => 'REQ-BT-001',
+            'employee_id' => $this->employee,
+            'type' => 'business_trip',
+            'start_date' => '2026-10-16 08:30:00',
+            'end_date' => '2026-11-14 17:30:00',
+            'status' => 'approved',
+            'reason' => 'Công tác cả tháng',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $response = $this->actingAs($this->admin)->get('/admin/attendance-calendar?employee_id='.$this->employee.'&month=2026-11');
+        $response->assertOk();
+
+        // Total valid công should be 23.5 (21 weekdays * 1 + 5 saturdays * 0.5 = 23.5; 4 sundays = 0 công)
+        $this->assertEquals(23.5, $response->viewData('totalCongTinhLuong'));
+
+        $days = collect($response->viewData('days'))->keyBy(fn ($d) => $d['date']->toDateString());
+
+        // Check Sundays: cong must be null, business_hours must be 0
+        foreach (['2026-10-18', '2026-10-25', '2026-11-01', '2026-11-08'] as $sunday) {
+            $this->assertTrue($days->has($sunday));
+            $this->assertNull($days[$sunday]['cong'], "Sunday {$sunday} must have null cong");
+            $this->assertTrue($days[$sunday]['is_non_working_day']);
+        }
+
+        // Check Saturday: cong must be 0.5
+        $this->assertEquals(0.5, $days['2026-10-17']['cong']);
+        $this->assertEquals(4, $days['2026-10-17']['request']->business_hours);
+
+        // Check Weekday: cong must be 1.0
+        $this->assertEquals(1.0, $days['2026-10-19']['cong']);
+        $this->assertEquals(8, $days['2026-10-19']['request']->business_hours);
+
+        // Verify HTML does not show "1 công" badge on Sunday
+        $content = $response->getContent();
+        $this->assertStringContainsString('(Nghỉ)', $content);
     }
 }

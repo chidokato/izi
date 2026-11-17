@@ -90,7 +90,8 @@ class AttendanceImportController extends Controller
                 } elseif ($req->type == 'business_trip') {
                     $entry->calculation_note = 'Công tác';
                     $entry->business_hours = 0;
-                    if ($rule && $rule->is_working_day) {
+                    $isSunday = \Carbon\Carbon::parse($entry->work_date)->dayOfWeek == 0;
+                    if ($rule && $rule->is_working_day && !$isSunday) {
                         $seconds = fn ($time) => (int) substr($time, 0, 2) * 3600 + (int) substr($time, 3, 2) * 60 + (int) substr($time, 6, 2);
                         
                         $rStart = $seconds($rule->start_time);
@@ -117,7 +118,7 @@ class AttendanceImportController extends Controller
                             
                             $entry->business_hours = ($workOverlap - $breakOverlap) / 3600;
                         }
-                    } else {
+                    } elseif (!$rule && !$isSunday) {
                         $dayStartStr = $entry->work_date . ' 00:00:00';
                         $dayEndStr = $entry->work_date . ' 23:59:59';
                         $reqStartStr = $req->start_date instanceof \Carbon\Carbon ? $req->start_date->format('Y-m-d H:i:s') : (string)$req->start_date;
@@ -128,6 +129,8 @@ class AttendanceImportController extends Controller
                             $entry->business_hours = (\Carbon\Carbon::parse($actEnd)->diffInMinutes(\Carbon\Carbon::parse($actStart))) / 60;
                             if ($entry->business_hours > 8) $entry->business_hours = 8;
                         }
+                    } else {
+                        $entry->business_hours = 0;
                     }
                 }
             }

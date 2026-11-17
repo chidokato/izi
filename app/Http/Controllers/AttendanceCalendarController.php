@@ -14,7 +14,7 @@ class AttendanceCalendarController extends Controller
             'employee_id' => 'nullable|integer|exists:employees,id',
             'month' => ['nullable', 'date_format:Y-m', 'regex:/^(19|20|21)\d{2}-(0[1-9]|1[0-2])$/'],
         ]);
-        $employees = DB::table('employees')->orderBy('name')->orderBy('employee_code')->get(['id', 'name', 'employee_code']);
+        $employees = \App\Models\Employee::with(['manager', 'managerL2'])->orderBy('name')->orderBy('employee_code')->get();
         if (auth()->check() && !auth()->user()->isAdmin()) {
             $employeeId = auth()->user()->employee_id;
         } else {
@@ -82,7 +82,9 @@ class AttendanceCalendarController extends Controller
             $schedule = $schedules->firstWhere('id', $scheduleId);
             $gracePeriod = $schedule ? ($schedule->grace_period ?? 0) : 0;
             
-            if ($req && $req->type === 'attendance_adjustment' && $inMonth && $rule) {
+            $isNonWorkingDay = ($date->dayOfWeek == 0) || ($rule && !$rule->is_working_day);
+
+            if ($req && $req->type === 'attendance_adjustment' && $inMonth && $rule && !$isNonWorkingDay) {
                 if (!$entry) $entry = (object)['checkin' => null, 'checkout' => null];
                 
                 $adjSession = $req->start_session;
@@ -100,11 +102,8 @@ class AttendanceCalendarController extends Controller
             $metrics = null;
             if ($entry && $rule && $inMonth) {
                 $metrics = app(\App\Services\AttendanceHourCalculator::class)->calculate($entry, $rule);
-                $regular = $metrics['regular_hours'] ?? null;
-                if ($regular !== null) {
-                    if ($regular == 8) $cong = 1;
-                    elseif ($regular == 4) $cong = 0.5;
-                    else $cong = 0;
+                if ($rule->is_working_day && !$isNonWorkingDay) {
+                    $cong = $metrics['cong'] ?? 0;
                     $workedCong = $cong;
                 }
             }
@@ -123,34 +122,38 @@ class AttendanceCalendarController extends Controller
             }
             
             $paidCong = 0;
+            $dayReq = $req ? clone $req : null;
+
             // Override status with request if it exists
-            if ($req && $inMonth) {
-                if ($req->type === 'paid_leave' || $req->type === 'unpaid_leave') {
+            if ($dayReq && $inMonth) {
+                if ($dayReq->type === 'paid_leave' || $dayReq->type === 'unpaid_leave') {
                     $status = 'leave';
                     $label = 'Nghỉ phép';
-                    if ($req->type === 'paid_leave') {
+                    if ($dayReq->type === 'paid_leave' && !$isNonWorkingDay) {
                         if ($rule && $rule->is_working_day) {
                             if ($date->dayOfWeek == 6) {
                                 $paidCong = 0.5;
-                                if ($req->start_session === 'afternoon' && substr($req->start_date, 0, 10) == $dateStr) {
+                                if ($dayReq->start_session === 'afternoon' && substr($dayReq->start_date, 0, 10) == $dateStr) {
                                     $paidCong = 0;
                                 }
                             } else {
                                 $paidCong = 1;
-                                if (($req->start_session === 'afternoon' && substr($req->start_date, 0, 10) == $dateStr) || ($req->end_session === 'morning' && substr($req->end_date, 0, 10) == $dateStr)) {
+                                if (($dayReq->start_session === 'afternoon' && substr($dayReq->start_date, 0, 10) == $dateStr) || ($dayReq->end_session === 'morning' && substr($dayReq->end_date, 0, 10) == $dateStr)) {
                                     $paidCong = 0.5;
                                 }
                             }
                         }
                     }
-                } elseif ($req->type === 'attendance_adjustment') {
-                    $status = 'adjustment';
-                    $label = 'Bổ sung công';
-                } elseif ($req->type === 'business_trip') {
+                } elseif ($dayReq->type === 'attendance_adjustment') {
+                    if (!$isNonWorkingDay) {
+                        $status = 'adjustment';
+                        $label = 'Bổ sung công';
+                    }
+                } elseif ($dayReq->type === 'business_trip') {
                     $status = 'business';
                     $label = 'Công tác';
                     
-                    if ($rule && $rule->is_working_day) {
+                    if ($rule && $rule->is_working_day && !$isNonWorkingDay) {
                         $seconds = fn ($time) => (int) substr($time, 0, 2) * 3600 + (int) substr($time, 3, 2) * 60 + (int) substr($time, 6, 2);
                         
                         $rStart = $seconds($rule->start_time);
@@ -161,8 +164,8 @@ class AttendanceCalendarController extends Controller
                         $dayStartStr = $dateStr . ' 00:00:00';
                         $dayEndStr = $dateStr . ' 23:59:59';
                         
-                        $reqStartStr = $req->start_date instanceof \Carbon\Carbon ? $req->start_date->format('Y-m-d H:i:s') : (string)$req->start_date;
-                        $reqEndStr = $req->end_date instanceof \Carbon\Carbon ? $req->end_date->format('Y-m-d H:i:s') : (string)$req->end_date;
+                        $reqStartStr = $dayReq->start_date instanceof \Carbon\Carbon ? $dayReq->start_date->format('Y-m-d H:i:s') : (string)$dayReq->start_date;
+                        $reqEndStr = $dayReq->end_date instanceof \Carbon\Carbon ? $dayReq->end_date->format('Y-m-d H:i:s') : (string)$dayReq->end_date;
                         
                         $actStart = max($reqStartStr, $dayStartStr);
                         $actEnd = min($reqEndStr, $dayEndStr);
@@ -179,24 +182,27 @@ class AttendanceCalendarController extends Controller
                             $bHours = ($workOverlap - $breakOverlap) / 3600;
                         }
                         
-                        $totalWorked = ($metrics && isset($metrics['total_hours'])) ? $metrics['total_hours'] : 0;
+                        $totalWorked = ($metrics && isset($metrics['regular_hours'])) ? $metrics['regular_hours'] : 0;
                         $combined = $totalWorked + $bHours;
                         
-                        $targetHours = ($rule->required_minutes ?? ($rule->day_of_week == 6 ? 240 : 480)) / 60;
-                        
-                        if ($combined >= $targetHours - 0.1) {
-                            $cong = ($targetHours <= 4) ? 0.5 : 1;
-                        } elseif ($combined >= ($targetHours / 2) - 0.1) {
-                            $cong = 0.5;
+                        if ($date->dayOfWeek == 6) {
+                            $cong = ($combined > 2) ? 0.5 : 0;
                         } else {
-                            $cong = 0;
+                            if ($combined >= 6) {
+                                $cong = 1;
+                            } elseif ($combined >= 2) {
+                                $cong = 0.5;
+                            } else {
+                                $cong = 0;
+                            }
                         }
-                    } else {
+                        $dayReq->business_hours = $bHours;
+                    } elseif (!$isNonWorkingDay) {
                         // Fallback if no rule
                         $dayStartStr = $dateStr . ' 00:00:00';
                         $dayEndStr = $dateStr . ' 23:59:59';
-                        $reqStartStr = $req->start_date instanceof \Carbon\Carbon ? $req->start_date->format('Y-m-d H:i:s') : (string)$req->start_date;
-                        $reqEndStr = $req->end_date instanceof \Carbon\Carbon ? $req->end_date->format('Y-m-d H:i:s') : (string)$req->end_date;
+                        $reqStartStr = $dayReq->start_date instanceof \Carbon\Carbon ? $dayReq->start_date->format('Y-m-d H:i:s') : (string)$dayReq->start_date;
+                        $reqEndStr = $dayReq->end_date instanceof \Carbon\Carbon ? $dayReq->end_date->format('Y-m-d H:i:s') : (string)$dayReq->end_date;
                         $actStart = max($reqStartStr, $dayStartStr);
                         $actEnd = min($reqEndStr, $dayEndStr);
                         $bHours = 0;
@@ -205,12 +211,17 @@ class AttendanceCalendarController extends Controller
                             if ($bHours > 8) $bHours = 8;
                         }
                         $cong = 1;
+                        $dayReq->business_hours = $bHours;
+                    } else {
+                        // Sunday or non-working day: 0 hours, no cong
+                        $bHours = 0;
+                        $cong = null;
+                        $dayReq->business_hours = 0;
                     }
-                    $req->business_hours = $bHours ?? 8;
                 }
                 
                 // If it's a paid leave, we also want to display the badge for 'công'
-                if ($paidCong > 0) {
+                if ($paidCong > 0 && !$isNonWorkingDay) {
                     if ($cong === null) {
                         $cong = $paidCong;
                     } else {
@@ -218,6 +229,10 @@ class AttendanceCalendarController extends Controller
                         $cong = min($maxCong, $cong + $paidCong);
                     }
                 }
+            }
+
+            if ($isNonWorkingDay) {
+                $cong = null;
             }
 
             if ($inMonth) {
@@ -240,14 +255,20 @@ class AttendanceCalendarController extends Controller
                 'entry' => $entry,
                 'status' => $status,
                 'label' => $label,
-                'request' => $inMonth ? $req : null,
+                'request' => $inMonth ? $dayReq : null,
                 'cong' => $cong,
                 'metrics' => $metrics,
                 'grace_period' => $gracePeriod,
+                'is_non_working_day' => $isNonWorkingDay,
             ];
         }
 
-        return view('backend.attendance.calendar', compact('employees', 'employee', 'month', 'periodStart', 'periodEnd', 'days', 'totals', 'labels', 'latest', 'totalCongThucTe', 'totalCongTinhLuong'));
+        $currentUserEmployee = null;
+        if (auth()->check() && auth()->user()->employee_id) {
+            $currentUserEmployee = \App\Models\Employee::with(['manager', 'managerL2'])->find(auth()->user()->employee_id);
+        }
+
+        return view('backend.attendance.calendar', compact('employees', 'employee', 'currentUserEmployee', 'month', 'periodStart', 'periodEnd', 'days', 'totals', 'labels', 'latest', 'totalCongThucTe', 'totalCongTinhLuong'));
     }
 
     public function swapPunch(Request $request)
