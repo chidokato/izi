@@ -26,10 +26,10 @@ class EvaluationCriterion extends Model
     public static function getTargetTypes(): array
     {
         return [
-            'manager' => 'Quản lý',
-            'office' => 'Nhân viên văn phòng',
-            'sale' => 'Nhân viên Sale',
-            'collaborator' => 'Cộng tác viên (CTV)',
+            'manager' => 'Q.lý',
+            'sale' => 'Sale',
+            'office' => 'Back',
+            'collaborator' => 'CTV',
         ];
     }
 

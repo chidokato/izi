@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', function () {
             icon: icon,
             title: title,
             text: text,
-            timer: 2200,
+            timer: text && text.length > 40 ? 5000 : 2500,
             timerProgressBar: true,
             showConfirmButton: false,
             showCloseButton: true
@@ -26,15 +26,15 @@ document.addEventListener('DOMContentLoaded', function () {
     window.showBackendToast = showToast;
 
     if (config && config.dataset.successMessage) {
-        showToast('success', 'Thanh cong', config.dataset.successMessage);
+        showToast('success', 'Thành công', config.dataset.successMessage);
     }
 
     if (config && config.dataset.errorMessage) {
-        showToast('error', 'Co loi xay ra', config.dataset.errorMessage);
+        showToast('error', 'Có lỗi xảy ra', config.dataset.errorMessage);
     }
 
     if (config && config.dataset.validationMessage) {
-        showToast('warning', 'Vui long kiem tra du lieu', config.dataset.validationMessage);
+        showToast('warning', 'Vui lòng kiểm tra lại dữ liệu', config.dataset.validationMessage);
     }
 
     document.querySelectorAll('[data-confirm-delete]').forEach(function (form) {

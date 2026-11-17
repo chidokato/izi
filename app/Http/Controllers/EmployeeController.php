@@ -94,8 +94,18 @@ class EmployeeController extends Controller
 
     public function store(Request $request)
     {
+        $existing = \App\Models\Employee::withTrashed()->where('employee_code', $request->employee_code)->first();
+        if ($existing) {
+            if ($existing->trashed()) {
+                $errorMsg = "Mã nhân viên '{$request->employee_code}' đã tồn tại trong danh sách 'Đã xóa / Ẩn' (Nhân viên: {$existing->name}). Vui lòng vào mục 'Đã xóa / Ẩn' để khôi phục thay vì tạo mới.";
+            } else {
+                $errorMsg = "Mã nhân viên '{$request->employee_code}' đã tồn tại trong hệ thống (Nhân viên: {$existing->name}).";
+            }
+            return back()->withInput()->withErrors(['employee_code' => $errorMsg]);
+        }
+
         $validated = $request->validate([
-            'employee_code' => 'required|string|max:50|unique:employees,employee_code',
+            'employee_code' => 'required|string|max:50',
             'name' => 'required|string|max:255',
             'email' => 'nullable|email|max:255',
             'phone' => 'nullable|string|max:30',
@@ -108,6 +118,11 @@ class EmployeeController extends Controller
             'join_date' => 'nullable|date',
             'leave_date' => 'nullable|date',
             'status' => 'required|in:active,inactive,resigned,probation'
+        ], [
+            'employee_code.required' => 'Vui lòng nhập mã nhân viên.',
+            'name.required' => 'Vui lòng nhập họ tên nhân viên.',
+            'email.email' => 'Địa chỉ email không đúng định dạng.',
+            'status.required' => 'Vui lòng chọn trạng thái làm việc.',
         ]);
 
         \App\Models\Employee::create($validated);
@@ -174,8 +189,21 @@ class EmployeeController extends Controller
     {
         $employee = \App\Models\Employee::withTrashed()->findOrFail($id);
 
+        $existing = \App\Models\Employee::withTrashed()
+            ->where('employee_code', $request->employee_code)
+            ->where('id', '!=', $id)
+            ->first();
+        if ($existing) {
+            if ($existing->trashed()) {
+                $errorMsg = "Mã nhân viên '{$request->employee_code}' đã tồn tại trong danh sách 'Đã xóa / Ẩn' (Nhân viên: {$existing->name}).";
+            } else {
+                $errorMsg = "Mã nhân viên '{$request->employee_code}' đã tồn tại trong hệ thống (Nhân viên: {$existing->name}).";
+            }
+            return back()->withInput()->withErrors(['employee_code' => $errorMsg]);
+        }
+
         $validated = $request->validate([
-            'employee_code' => 'required|string|max:50|unique:employees,employee_code,' . $id,
+            'employee_code' => 'required|string|max:50',
             'name' => 'required|string|max:255',
             'email' => 'nullable|email|max:255',
             'phone' => 'nullable|string|max:30',
@@ -188,10 +216,15 @@ class EmployeeController extends Controller
             'join_date' => 'nullable|date',
             'leave_date' => 'nullable|date',
             'status' => 'required|in:active,inactive,resigned,probation'
+        ], [
+            'employee_code.required' => 'Vui lòng nhập mã nhân viên.',
+            'name.required' => 'Vui lòng nhập họ tên nhân viên.',
+            'email.email' => 'Địa chỉ email không đúng định dạng.',
+            'status.required' => 'Vui lòng chọn trạng thái làm việc.',
         ]);
 
         if ($request->manager_id == $id || $request->manager_l2_id == $id) {
-            return back()->withInput()->withErrors(['manager_id' => 'Không thể chọn chính mình.']);
+            return back()->withInput()->withErrors(['manager_id' => 'Không thể chọn chính mình làm người duyệt.']);
         }
 
         $employee->update($validated);
@@ -356,11 +389,13 @@ class EmployeeController extends Controller
             'employee_ids' => 'required|array',
             'employee_ids.*' => 'integer|exists:employees,id',
             'department_id' => 'nullable|integer|exists:departments,id',
+            'evaluation_type' => 'nullable|string|in:manager,office,sale,collaborator',
             'manager_id' => 'nullable|integer|exists:employees,id',
             'manager_l2_id' => 'nullable|integer|exists:employees,id'
         ]);
 
         $departmentId = $request->department_id;
+        $evaluationType = $request->evaluation_type;
         $managerId = $request->manager_id;
         $hrId = $request->manager_l2_id;
         $employeeIds = $request->employee_ids;
@@ -380,10 +415,8 @@ class EmployeeController extends Controller
         }
 
         $dataToUpdate = [];
-        // Only update the fields if they are explicitly sent in request? 
-        // Wait, the modal might send both. So we update both if the request has them.
-        // Actually, let's just update both to what's provided (can be null).
         if ($request->has('department_id')) $dataToUpdate['department_id'] = $departmentId;
+        if ($request->has('evaluation_type')) $dataToUpdate['evaluation_type'] = $evaluationType;
         if ($request->has('manager_id')) $dataToUpdate['manager_id'] = $managerId;
         if ($request->has('manager_l2_id')) $dataToUpdate['manager_l2_id'] = $hrId;
 

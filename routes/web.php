@@ -51,6 +51,13 @@ Route::post('/admin/login', [AdminController::class, 'authenticate'])
 Route::post('/admin/first-time-setup', [AdminController::class, 'firstTimeSetup'])
     ->name('backend.admin.first_time_setup');
 
+Route::get('/forgot-password', [AdminController::class, 'showForgotPassword'])->name('password.request');
+Route::post('/forgot-password', [AdminController::class, 'sendResetPassword'])
+    ->middleware('throttle:5,1')->name('password.email');
+Route::get('/admin/forgot-password', [AdminController::class, 'showForgotPassword']);
+Route::post('/admin/forgot-password', [AdminController::class, 'sendResetPassword'])
+    ->middleware('throttle:5,1');
+
 Route::prefix('admin')->name('backend.')->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->group(function () {
     Route::controller(AdminController::class)->name('admin.')->group(function () {
         Route::get('/', 'dashboard')->name('dashboard');

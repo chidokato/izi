@@ -31,7 +31,7 @@ class Employee extends Model
     public function getEvaluationTypeNameAttribute(): string
     {
         $types = EvaluationCriterion::getTargetTypes();
-        return $types[$this->evaluation_type] ?? 'Nhân viên văn phòng';
+        return $types[$this->evaluation_type] ?? 'Back';
     }
 
     public function requests()

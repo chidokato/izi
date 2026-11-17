@@ -198,6 +198,15 @@
         </select>
     </div>
     <div class="mb-3 text-start">
+        <label class="form-label">Loại đánh giá</label>
+        <select id="swal-bulk-evaluation-type" class="form-select">
+            <option value="no_change">-- Giữ nguyên --</option>
+            @foreach(\App\Models\EvaluationCriterion::getTargetTypes() as $val => $label)
+                <option value="{{ $val }}">{{ $label }}</option>
+            @endforeach
+        </select>
+    </div>
+    <div class="mb-3 text-start">
         <label class="form-label">Người duyệt lần 1</label>
         <select id="swal-bulk-manager" class="form-select">
             <option value="no_change">-- Giữ nguyên --</option>
@@ -645,6 +654,7 @@
                     preConfirm: () => {
                         return {
                             department_id: document.getElementById('swal-bulk-department').value,
+                            evaluation_type: document.getElementById('swal-bulk-evaluation-type').value,
                             manager_id: document.getElementById('swal-bulk-manager').value,
                             manager_l2_id: document.getElementById('swal-bulk-hr').value
                         };
@@ -653,6 +663,7 @@
                     if (result.isConfirmed) {
                         let payload = { employee_ids: checkedIds };
                         if (result.value.department_id !== 'no_change') payload.department_id = result.value.department_id;
+                        if (result.value.evaluation_type !== 'no_change') payload.evaluation_type = result.value.evaluation_type;
                         if (result.value.manager_id !== 'no_change') payload.manager_id = result.value.manager_id;
                         if (result.value.manager_l2_id !== 'no_change') payload.manager_l2_id = result.value.manager_l2_id;
                         

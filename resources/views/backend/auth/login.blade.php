@@ -181,6 +181,22 @@
                                             
                                             
 
+                                            @if (session('status'))
+                                                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                                    <i class="ri-check-double-line me-2 align-middle fs-5"></i>
+                                                    {{ session('status') }}
+                                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                                </div>
+                                            @endif
+
+                                            @if (session('forgot_error') || $errors->has('email'))
+                                                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                                    <i class="ri-error-warning-line me-2 align-middle fs-5"></i>
+                                                    {{ session('forgot_error') ?? $errors->first('email') }}
+                                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                                </div>
+                                            @endif
+
                                             <form action="{{ route('backend.admin.authenticate') }}" method="POST">
                                                 @csrf
                                                 <div class="mb-3">
@@ -193,7 +209,7 @@
 
                                                 <div class="mb-3">
                                                     <div class="float-end">
-                                                        <a href="#" class="text-muted">Quên mật khẩu?</a>
+                                                        <a href="{{ route('password.request') }}" data-bs-toggle="modal" data-bs-target="#forgotPasswordModal" class="text-muted">Quên mật khẩu?</a>
                                                     </div>
                                                     <label class="form-label" for="password-input">Mật khẩu</label>
                                                     <div class="position-relative auth-pass-inputgroup mb-3">
@@ -244,6 +260,43 @@
             </div>
         </div>
 
+        
+    <!-- Modal Quên mật khẩu -->
+    <div class="modal fade" id="forgotPasswordModal" tabindex="-1" aria-labelledby="forgotPasswordModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-light">
+                    <h5 class="modal-title fw-bold text-primary" id="forgotPasswordModalLabel">
+                        <i class="ri-lock-unlock-line align-middle me-1"></i> Quên mật khẩu?
+                    </h5>
+                    <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form action="{{ route('password.email') }}" method="POST">
+                    @csrf
+                    <div class="modal-body p-4">
+                        <p class="text-muted mb-3">
+                            Nhập địa chỉ email của bạn đã đăng ký trên hệ thống. Hệ thống sẽ tự động tạo một mật khẩu mới ngẫu nhiên và gửi về hộp thư cho bạn.
+                        </p>
+                        
+                        <div class="mb-3">
+                            <label for="forgot_email" class="form-label fw-semibold">Địa chỉ Email <span class="text-danger">*</span></label>
+                            <input type="email" class="form-control @error('email') is-invalid @enderror" id="forgot_email" name="email" value="{{ old('email') }}" placeholder="Nhập email của bạn..." required>
+                            @error('email')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="ri-mail-send-line align-middle me-1"></i> Gửi mật khẩu mới
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
         <footer class="footer border-0">
             <div class="container">
                 <div class="row">
@@ -274,6 +327,32 @@
                 icon: 'error',
                 title: 'Từ chối truy cập',
                 text: '{{ $errors->first("auth_error") }}',
+                confirmButtonText: 'Đóng'
+            });
+        });
+    </script>
+    @endif
+
+    @if (session('status'))
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            Swal.fire({
+                icon: 'success',
+                title: 'Thành công!',
+                text: '{{ session("status") }}',
+                confirmButtonText: 'Đã hiểu'
+            });
+        });
+    </script>
+    @endif
+
+    @if (session('forgot_error'))
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            Swal.fire({
+                icon: 'error',
+                title: 'Không thể cấp lại mật khẩu',
+                text: '{{ session("forgot_error") }}',
                 confirmButtonText: 'Đóng'
             });
         });
