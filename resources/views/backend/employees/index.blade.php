@@ -21,6 +21,66 @@
     </style>
 @endpush
 
+@if(session('import_leave_result'))
+    @php
+        $res = session('import_leave_result');
+    @endphp
+    @if(isset($res['success']) && !$res['success'])
+        <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
+            <i class="ri-error-warning-line me-2 fs-16 align-middle"></i> <strong>Lỗi đọc file:</strong> {{ $res['message'] }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @else
+        <div class="card border border-{{ $res['error_count'] > 0 ? 'warning' : 'success' }} mb-3 shadow-sm">
+            <div class="card-header bg-{{ $res['error_count'] > 0 ? 'warning' : 'success' }}-subtle d-flex flex-wrap justify-content-between align-items-center py-2">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="ri-{{ $res['error_count'] > 0 ? 'alert-fill text-warning' : 'checkbox-circle-fill text-success' }} fs-20"></i>
+                    <h6 class="card-title mb-0 fw-bold">Kết quả đồng bộ phép năm từ file</h6>
+                </div>
+                <div class="d-flex flex-wrap gap-2 align-items-center">
+                    <span class="badge bg-success fs-13 px-2 py-1"><i class="ri-check-line me-1"></i> Thành công: {{ $res['success_count'] }} nhân viên</span>
+                    @if($res['error_count'] > 0)
+                        <span class="badge bg-danger fs-13 px-2 py-1"><i class="ri-close-line me-1"></i> Lỗi: {{ $res['error_count'] }} dòng</span>
+                    @endif
+                    <span class="badge bg-secondary fs-13 px-2 py-1">Tổng: {{ $res['total'] }} dòng</span>
+                </div>
+            </div>
+            @if($res['error_count'] > 0)
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <strong class="text-danger"><i class="ri-error-warning-line me-1"></i> Danh sách chi tiết các dòng gặp lỗi ({{ $res['error_count'] }} dòng):</strong>
+                        <span class="text-muted fs-12">Vui lòng kiểm tra lại file Excel theo số dòng tương ứng bên dưới</span>
+                    </div>
+                    <div class="table-responsive" style="max-height: 280px; overflow-y: auto;">
+                        <table class="table table-sm table-bordered table-striped mb-0 align-middle">
+                            <thead class="table-light sticky-top">
+                                <tr>
+                                    <th style="width: 100px;" class="text-center">Dòng Excel</th>
+                                    <th style="width: 160px;">Mã nhân viên</th>
+                                    <th>Họ và tên</th>
+                                    <th style="width: 130px;" class="text-center">Số phép nhập</th>
+                                    <th>Lý do lỗi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($res['errors'] as $err)
+                                    <tr>
+                                        <td class="text-center fw-bold">Dòng {{ $err['row'] }}</td>
+                                        <td><code>{{ $err['code'] }}</code></td>
+                                        <td>{{ $err['name'] }}</td>
+                                        <td class="text-center fw-bold text-danger">{{ $err['balance'] }}</td>
+                                        <td class="text-danger fw-semibold"><i class="ri-close-circle-fill me-1"></i> {{ $err['reason'] }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            @endif
+        </div>
+    @endif
+@endif
+
 <div class="card">
     <div class="card-header d-flex flex-wrap gap-2 align-items-center justify-content-between">
         <h5 class="card-title mb-0">Nhân viên <span class="badge bg-primary ms-1">{{ $employees->total() }}</span></h5>
@@ -728,4 +788,34 @@
         }
     });
 </script>
+@if(session('import_leave_result'))
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        @php $res = session('import_leave_result'); @endphp
+        @if(isset($res['success']) && !$res['success'])
+            Swal.fire({
+                icon: 'error',
+                title: 'Lỗi tải file',
+                text: '{{ $res['message'] }}',
+                confirmButtonText: 'Đóng'
+            });
+        @else
+            Swal.fire({
+                icon: {{ $res['error_count'] > 0 ? ($res['success_count'] > 0 ? "'warning'" : "'error'") : "'success'" }},
+                title: 'Kết quả đồng bộ phép năm',
+                html: `
+                    <div class="text-start fs-14">
+                        <div class="mb-2 text-success"><i class="ri-checkbox-circle-fill me-1"></i> <strong>Đồng bộ thành công:</strong> {{ $res['success_count'] }} nhân viên</div>
+                        @if($res['error_count'] > 0)
+                            <div class="mb-2 text-danger"><i class="ri-close-circle-fill me-1"></i> <strong>Bị lỗi:</strong> {{ $res['error_count'] }} dòng (đã hiển thị chi tiết trên bảng)</div>
+                        @endif
+                        <div class="text-muted"><i class="ri-file-list-3-fill me-1"></i> <strong>Tổng số dòng đọc được:</strong> {{ $res['total'] }} dòng</div>
+                    </div>
+                `,
+                confirmButtonText: 'Đã hiểu'
+            });
+        @endif
+    });
+</script>
+@endif
 @endpush

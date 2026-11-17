@@ -133,33 +133,251 @@ class EmployeeController extends Controller
     public function importLeave(Request $request)
     {
         $request->validate([
-            'file' => 'required|file|mimes:xlsx,xls,csv,txt|max:5120'
+            'file' => 'required|file|max:5120'
+        ], [
+            'file.required' => 'Vui lòng chọn file Excel hoặc CSV để tải lên.',
+            'file.max' => 'Dung lượng file tối đa là 5MB.',
         ]);
 
+        $file = $request->file('file');
+        $ext = strtolower($file->getClientOriginalExtension());
+        if (!in_array($ext, ['xlsx', 'xls', 'csv', 'txt'])) {
+            return back()->with('import_leave_result', [
+                'success' => false,
+                'message' => 'Định dạng file không hợp lệ. Vui lòng tải lên file .xlsx, .xls hoặc .csv.'
+            ]);
+        }
+
         try {
-            $file = $request->file('file');
             $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file->getRealPath());
             $worksheet = $spreadsheet->getActiveSheet();
-            $rows = $worksheet->toArray();
+            $rows = $worksheet->toArray(null, true, false, false);
             
-            $updatedCount = 0;
-            // Bỏ qua dòng tiêu đề, duyệt từ dòng thứ 2
-            foreach (array_slice($rows, 1) as $row) {
-                $employeeCode = trim((string)($row[0] ?? ''));
-                $leaveBalance = trim((string)($row[1] ?? ''));
-                
-                if ($employeeCode !== '' && is_numeric($leaveBalance)) {
-                    $affected = \Illuminate\Support\Facades\DB::table('employees')
-                        ->where('employee_code', $employeeCode)
-                        ->update(['annual_leave_balance' => (float) $leaveBalance]);
-                    if ($affected) {
-                        $updatedCount++;
+            if (empty($rows)) {
+                return back()->with('import_leave_result', [
+                    'success' => false,
+                    'message' => 'File tải lên không có dữ liệu.'
+                ]);
+            }
+
+            // Detect headers from the first 5 rows
+            $headerRowIndex = null;
+            $codeCol = null;
+            $balanceCol = null;
+            $nameCol = null;
+
+            $codeAliases = ['code', 'macc', 'machamcong', 'id', 'idnv'];
+            $balanceAliases = ['phepnam', 'sophep', 'phepton', 'tonphep', 'phepconlai', 'phep', 'annualleave', 'leavebalance', 'balance', 'songayphep', 'sophepton', 'phepnamton', 'ngayphep', 'tonphepnam', 'sophepdunoiden'];
+
+            foreach (array_slice($rows, 0, 5, true) as $rIdx => $row) {
+                $foundCode = null;
+                $foundBalance = null;
+                $foundName = null;
+
+                foreach ($row as $cIdx => $cellVal) {
+                    if ($cellVal === null || trim((string)$cellVal) === '') continue;
+                    $clean = preg_replace('/[^a-z0-9]/', '', strtolower(\Illuminate\Support\Str::ascii(trim((string)$cellVal))));
+                    if ($clean === '') continue;
+
+                    // Match employee code column
+                    if ($foundCode === null) {
+                        if (in_array($clean, $codeAliases, true) 
+                            || str_contains($clean, 'manv') 
+                            || str_contains($clean, 'manhanvien') 
+                            || (str_contains($clean, 'ma') && (str_contains($clean, 'nv') || str_contains($clean, 'nhanvien') || str_contains($clean, 'cc')))) {
+                            $foundCode = $cIdx;
+                        }
+                    }
+
+                    // Match leave balance column
+                    if ($foundBalance === null) {
+                        if (in_array($clean, $balanceAliases, true) 
+                            || str_contains($clean, 'phep') 
+                            || str_contains($clean, 'leave')) {
+                            $foundBalance = $cIdx;
+                        }
+                    }
+
+                    // Match name column
+                    if ($foundName === null) {
+                        if (str_contains($clean, 'hoten') 
+                            || str_contains($clean, 'hovaten') 
+                            || str_contains($clean, 'tennhanvien') 
+                            || str_contains($clean, 'tennv') 
+                            || in_array($clean, ['name', 'fullname', 'ten'], true)) {
+                            $foundName = $cIdx;
+                        }
                     }
                 }
+
+                if ($foundCode !== null && $foundBalance !== null) {
+                    $headerRowIndex = $rIdx;
+                    $codeCol = $foundCode;
+                    $balanceCol = $foundBalance;
+                    $nameCol = $foundName;
+                    break;
+                }
             }
-            return back()->with('success', "Đã đồng bộ thành công phép năm cho {$updatedCount} nhân viên!");
-        } catch (\Exception $e) {
-            return back()->withErrors(['file' => 'Lỗi khi đọc file: ' . $e->getMessage()]);
+
+            // Fallback column detection if no clear header was found
+            if ($codeCol === null || $balanceCol === null) {
+                $firstRowVal1 = str_replace([' ', ','], ['', '.'], (string)($rows[0][1] ?? ''));
+                $startRow = is_numeric($firstRowVal1) ? 0 : 1;
+
+                $allEmployeeCodes = \Illuminate\Support\Facades\DB::table('employees')->pluck('employee_code')->map(fn($c) => trim((string)$c))->flip()->toArray();
+
+                $sampleCodeCol1 = trim((string)($rows[$startRow][1] ?? ''));
+
+                if (isset($allEmployeeCodes[$sampleCodeCol1])) {
+                    $codeCol = 1;
+                    $balanceCol = 2;
+                } else {
+                    $codeCol = 0;
+                    $balanceCol = 1;
+                }
+                $dataRows = array_slice($rows, $startRow, null, true);
+            } else {
+                $dataRows = array_slice($rows, $headerRowIndex + 1, null, true);
+            }
+
+            // Cache all employees: employee_code => Employee object
+            $allEmployees = \Illuminate\Support\Facades\DB::table('employees')
+                ->select('id', 'employee_code', 'name', 'annual_leave_balance', 'deleted_at')
+                ->get()
+                ->keyBy(function($item) {
+                    return trim((string)$item->employee_code);
+                });
+
+            $successList = [];
+            $errorList = [];
+            $totalProcessed = 0;
+
+            foreach ($dataRows as $rIdx => $row) {
+                $excelRowNum = $rIdx + 1; // 1-based index in Excel file
+
+                // Skip completely empty rows
+                $allEmpty = true;
+                foreach ($row as $cell) {
+                    if ($cell !== null && trim((string)$cell) !== '') {
+                        $allEmpty = false;
+                        break;
+                    }
+                }
+                if ($allEmpty) {
+                    continue;
+                }
+
+                $totalProcessed++;
+
+                $rawCode = trim((string)($row[$codeCol] ?? ''));
+                $rawBalance = trim((string)($row[$balanceCol] ?? ''));
+                $empName = ($nameCol !== null) ? trim((string)($row[$nameCol] ?? '')) : '';
+
+                // Check empty code
+                if ($rawCode === '') {
+                    $errorList[] = [
+                        'row' => $excelRowNum,
+                        'code' => '---',
+                        'name' => $empName ?: '---',
+                        'balance' => $rawBalance !== '' ? $rawBalance : '---',
+                        'reason' => 'Mã nhân viên để trống'
+                    ];
+                    continue;
+                }
+
+                // Check empty balance
+                if ($rawBalance === '') {
+                    $emp = $allEmployees->get($rawCode);
+                    $errorList[] = [
+                        'row' => $excelRowNum,
+                        'code' => $rawCode,
+                        'name' => $empName ?: ($emp->name ?? '---'),
+                        'balance' => '---',
+                        'reason' => 'Số phép năm để trống'
+                    ];
+                    continue;
+                }
+
+                // Clean balance (replace comma with dot)
+                $cleanBalance = str_replace([' ', ','], ['', '.'], $rawBalance);
+
+                if (!is_numeric($cleanBalance)) {
+                    $emp = $allEmployees->get($rawCode);
+                    $errorList[] = [
+                        'row' => $excelRowNum,
+                        'code' => $rawCode,
+                        'name' => $empName ?: ($emp->name ?? '---'),
+                        'balance' => $rawBalance,
+                        'reason' => "Số phép năm '{$rawBalance}' không hợp lệ (phải là số)"
+                    ];
+                    continue;
+                }
+
+                $leaveBalanceVal = (float)$cleanBalance;
+                if ($leaveBalanceVal < 0) {
+                    $emp = $allEmployees->get($rawCode);
+                    $errorList[] = [
+                        'row' => $excelRowNum,
+                        'code' => $rawCode,
+                        'name' => $empName ?: ($emp->name ?? '---'),
+                        'balance' => $rawBalance,
+                        'reason' => 'Số phép năm không được nhỏ hơn 0'
+                    ];
+                    continue;
+                }
+
+                // Match employee
+                $emp = $allEmployees->get($rawCode);
+                if (!$emp) {
+                    // Try without leading zeros
+                    $trimmedCode = ltrim($rawCode, '0');
+                    if ($trimmedCode !== '' && $allEmployees->has($trimmedCode)) {
+                        $emp = $allEmployees->get($trimmedCode);
+                    }
+                }
+
+                if (!$emp) {
+                    $errorList[] = [
+                        'row' => $excelRowNum,
+                        'code' => $rawCode,
+                        'name' => $empName ?: '---',
+                        'balance' => $leaveBalanceVal,
+                        'reason' => 'Mã nhân viên không tồn tại trong hệ thống'
+                    ];
+                    continue;
+                }
+
+                // Update employee annual leave balance
+                \Illuminate\Support\Facades\DB::table('employees')
+                    ->where('id', $emp->id)
+                    ->update([
+                        'annual_leave_balance' => $leaveBalanceVal,
+                        'updated_at' => now(),
+                    ]);
+
+                $successList[] = [
+                    'row' => $excelRowNum,
+                    'code' => $emp->employee_code,
+                    'name' => $emp->name,
+                    'balance' => $leaveBalanceVal,
+                ];
+            }
+
+            $successCount = count($successList);
+            $errorCount = count($errorList);
+
+            return back()->with('import_leave_result', [
+                'success' => true,
+                'total' => $totalProcessed,
+                'success_count' => $successCount,
+                'error_count' => $errorCount,
+                'errors' => $errorList,
+            ]);
+        } catch (\Throwable $e) {
+            return back()->with('import_leave_result', [
+                'success' => false,
+                'message' => 'Lỗi khi đọc file Excel: ' . $e->getMessage()
+            ]);
         }
     }
 
