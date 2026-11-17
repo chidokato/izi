@@ -44,31 +44,24 @@
     align-items: center;
     justify-content: center;
     border-radius: 6px;
-    background: #eef0f7;
-    color: #405189;
-    border: 1px solid #c9d2ea;
-    font-size: 13px;
-    opacity: 0;
-    visibility: hidden;
-    transform: scale(0.85);
-    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease, background 0.2s, color 0.2s;
-    cursor: pointer;
-    z-index: 5;
-}
-.attendance-day:hover .btn-quick-request {
-    opacity: 1;
-    visibility: visible;
-    transform: scale(1);
-}
-.btn-quick-request:hover {
     background: #405189;
     color: #ffffff;
-    border-color: #405189;
-    box-shadow: 0 2px 6px rgba(64, 81, 137, 0.35);
+    border: 1px solid #405189;
+    font-size: 13px;
+    cursor: pointer;
+    z-index: 5;
+    box-shadow: 0 1px 3px rgba(64, 81, 137, 0.25);
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+}
+.btn-quick-request:hover {
+    background: #364473;
+    border-color: #364473;
+    color: #ffffff;
+    box-shadow: 0 2px 6px rgba(64, 81, 137, 0.4);
     transform: scale(1.1);
 }
 .btn-quick-request:active {
-    transform: scale(0.9) !important;
+    transform: scale(0.92) !important;
 }
 
 /* Offcanvas custom styling & hiệu ứng trượt mượt mà (smooth cubic-bezier transition) */
