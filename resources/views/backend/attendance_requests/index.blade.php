@@ -12,10 +12,34 @@
 <div class="row">
     <div class="col-lg-12">
         <div class="card">
-            <div class="card-header border-0">
-                <div class="d-flex align-items-center">
-                    <h5 class="card-title mb-0 flex-grow-1">Danh sách phiếu</h5>
-                    <div class="flex-shrink-0">
+            <div class="card-header border-0 pb-0">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <div class="d-flex align-items-center flex-wrap gap-3">
+                        <h5 class="card-title mb-0 fs-15">Danh sách phiếu</h5>
+                        <ul class="nav nav-tabs nav-tabs-custom border-bottom-0" role="tablist">
+                            <li class="nav-item">
+                                <a class="nav-link fw-semibold {{ !request()->filled('status') ? 'active' : '' }}" href="{{ route('backend.attendance-requests.index', request()->except(['status', 'page'])) }}">
+                                    Tất cả <span class="badge {{ !request()->filled('status') ? 'bg-primary' : 'bg-light text-muted' }} rounded-pill align-middle ms-1">{{ $counts['all'] ?? 0 }}</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link fw-semibold {{ request('status') === 'pending' ? 'active' : '' }}" href="{{ route('backend.attendance-requests.index', array_merge(request()->except('page'), ['status' => 'pending'])) }}">
+                                    Chưa duyệt <span class="badge {{ request('status') === 'pending' ? 'bg-warning text-dark' : 'bg-warning-subtle text-warning' }} rounded-pill align-middle ms-1">{{ $counts['pending'] ?? 0 }}</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link fw-semibold {{ request('status') === 'approved' ? 'active' : '' }}" href="{{ route('backend.attendance-requests.index', array_merge(request()->except('page'), ['status' => 'approved'])) }}">
+                                    Đã duyệt <span class="badge {{ request('status') === 'approved' ? 'bg-success' : 'bg-success-subtle text-success' }} rounded-pill align-middle ms-1">{{ $counts['approved'] ?? 0 }}</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link fw-semibold {{ request('status') === 'rejected' ? 'active' : '' }}" href="{{ route('backend.attendance-requests.index', array_merge(request()->except('page'), ['status' => 'rejected'])) }}">
+                                    Từ chối <span class="badge {{ request('status') === 'rejected' ? 'bg-danger' : 'bg-danger-subtle text-danger' }} rounded-pill align-middle ms-1">{{ $counts['rejected'] ?? 0 }}</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="flex-shrink-0 d-flex gap-2 mb-2">
                         @if(isset($canBulkApprove) && $canBulkApprove)
                         <button type="button" class="btn btn-success d-none" id="btn-bulk-approve"><i class="ri-check-double-line align-bottom me-1"></i> Duyệt hàng loạt</button>
                         @endif
@@ -24,12 +48,15 @@
                 </div>
             </div>
             <div class="card-body border border-dashed border-end-0 border-start-0">
-                <form>
+                <form method="GET" action="{{ route('backend.attendance-requests.index') }}">
+                    @if(request()->filled('status'))
+                        <input type="hidden" name="status" value="{{ request('status') }}">
+                    @endif
                     <div class="row g-3">
-                        <div class="col-xxl-3 col-sm-4">
+                        <div class="col-xxl-5 col-sm-5">
                             <input type="text" class="form-control" name="search_employee" placeholder="Nhập mã hoặc tên NV" value="{{ request('search_employee') }}">
                         </div>
-                        <div class="col-xxl-3 col-sm-4">
+                        <div class="col-xxl-5 col-sm-5">
                             <select class="form-control" name="type">
                                 <option value="">Tất cả loại phiếu</option>
                                 <option value="paid_leave" {{ request('type') == 'paid_leave' ? 'selected' : '' }}>Nghỉ phép có lương</option>
@@ -39,19 +66,16 @@
                                 <option value="overtime" {{ request('type') == 'overtime' ? 'selected' : '' }}>Làm tăng ca</option>
                             </select>
                         </div>
-                        <div class="col-xxl-3 col-sm-4">
-                            <select class="form-control" name="status">
-                                <option value="">Tất cả trạng thái</option>
-                                <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Chờ duyệt</option>
-                                <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Đã duyệt</option>
-                                <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Từ chối</option>
-                            </select>
-                        </div>
-                        <div class="col-xxl-1 col-sm-4">
-                            <div>
-                                <button type="submit" class="btn btn-primary w-100">
+                        <div class="col-xxl-2 col-sm-2">
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-primary flex-grow-1">
                                     <i class="ri-search-line me-1 align-bottom"></i> Lọc
                                 </button>
+                                @if(request()->filled('search_employee') || request()->filled('type'))
+                                <a href="{{ route('backend.attendance-requests.index', request()->filled('status') ? ['status' => request('status')] : []) }}" class="btn btn-light" title="Xóa bộ lọc">
+                                    <i class="ri-refresh-line"></i>
+                                </a>
+                                @endif
                             </div>
                         </div>
                     </div>

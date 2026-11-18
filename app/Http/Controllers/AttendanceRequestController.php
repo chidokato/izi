@@ -12,11 +12,11 @@ class AttendanceRequestController extends Controller
 {
     public function index(Request $request)
     {
-        $query = AttendanceRequest::with(['employee', 'requestApprovals'])->latest();
+        $baseQuery = AttendanceRequest::latest();
 
         $user = auth()->user();
         if ($user && !$user->isAdmin() && optional($user->employee)->level !== 'HR') {
-            $query->where(function($q) use ($user) {
+            $baseQuery->where(function($q) use ($user) {
                 $q->where('employee_id', $user->employee_id)
                   ->orWhereHas('requestApprovals', function($q2) use ($user) {
                       $q2->where('approver_id', $user->id);
@@ -28,23 +28,32 @@ class AttendanceRequestController extends Controller
             });
         }
 
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-
         if ($request->filled('type')) {
-            $query->where('type', $request->type);
+            $baseQuery->where('type', $request->type);
         }
 
         if ($request->filled('search_employee')) {
             $keyword = $request->search_employee;
-            $query->whereHas('employee', function($q) use ($keyword) {
+            $baseQuery->whereHas('employee', function($q) use ($keyword) {
                 $q->where('name', 'like', "%{$keyword}%")
                   ->orWhere('employee_code', 'like', "%{$keyword}%");
             });
         }
 
-        $requests = $query->paginate(20);
+        $counts = [
+            'all' => (clone $baseQuery)->count(),
+            'pending' => (clone $baseQuery)->where('status', 'pending')->count(),
+            'approved' => (clone $baseQuery)->where('status', 'approved')->count(),
+            'rejected' => (clone $baseQuery)->where('status', 'rejected')->count(),
+        ];
+
+        $query = (clone $baseQuery)->with(['employee.department', 'employee.manager', 'employee.managerL2', 'requestApprovals.approver']);
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        $requests = $query->paginate(20)->withQueryString();
 
         $canBulkApprove = $user->isAdmin();
         if (!$canBulkApprove && $user->employee_id) {
@@ -54,7 +63,7 @@ class AttendanceRequestController extends Controller
                               \App\Models\RequestApproval::where('approver_id', $user->id)->exists();
         }
 
-        return view('backend.attendance_requests.index', compact('requests', 'canBulkApprove'));
+        return view('backend.attendance_requests.index', compact('requests', 'canBulkApprove', 'counts'));
     }
 
     public function create()
