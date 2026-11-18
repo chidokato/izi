@@ -18,23 +18,23 @@
                         <h5 class="card-title mb-0 fs-15">Danh sách phiếu</h5>
                         <ul class="nav nav-tabs nav-tabs-custom border-bottom-0" role="tablist">
                             <li class="nav-item">
-                                <a class="nav-link fw-semibold {{ !request()->filled('status') ? 'active' : '' }}" href="{{ route('backend.attendance-requests.index', request()->except(['status', 'page'])) }}">
-                                    Tất cả <span class="badge {{ !request()->filled('status') ? 'bg-primary' : 'bg-light text-muted' }} rounded-pill align-middle ms-1">{{ $counts['all'] ?? 0 }}</span>
+                                <a class="nav-link fw-semibold {{ $currentStatus === 'pending' ? 'active' : '' }}" href="{{ route('backend.attendance-requests.index', array_merge(request()->except('page'), ['status' => 'pending'])) }}">
+                                    Chưa duyệt <span class="badge {{ $currentStatus === 'pending' ? 'bg-warning text-dark' : 'bg-warning-subtle text-warning' }} rounded-pill align-middle ms-1">{{ $counts['pending'] ?? 0 }}</span>
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link fw-semibold {{ request('status') === 'pending' ? 'active' : '' }}" href="{{ route('backend.attendance-requests.index', array_merge(request()->except('page'), ['status' => 'pending'])) }}">
-                                    Chưa duyệt <span class="badge {{ request('status') === 'pending' ? 'bg-warning text-dark' : 'bg-warning-subtle text-warning' }} rounded-pill align-middle ms-1">{{ $counts['pending'] ?? 0 }}</span>
+                                <a class="nav-link fw-semibold {{ $currentStatus === 'approved' ? 'active' : '' }}" href="{{ route('backend.attendance-requests.index', array_merge(request()->except('page'), ['status' => 'approved'])) }}">
+                                    Đã duyệt <span class="badge {{ $currentStatus === 'approved' ? 'bg-success' : 'bg-success-subtle text-success' }} rounded-pill align-middle ms-1">{{ $counts['approved'] ?? 0 }}</span>
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link fw-semibold {{ request('status') === 'approved' ? 'active' : '' }}" href="{{ route('backend.attendance-requests.index', array_merge(request()->except('page'), ['status' => 'approved'])) }}">
-                                    Đã duyệt <span class="badge {{ request('status') === 'approved' ? 'bg-success' : 'bg-success-subtle text-success' }} rounded-pill align-middle ms-1">{{ $counts['approved'] ?? 0 }}</span>
+                                <a class="nav-link fw-semibold {{ $currentStatus === 'rejected' ? 'active' : '' }}" href="{{ route('backend.attendance-requests.index', array_merge(request()->except('page'), ['status' => 'rejected'])) }}">
+                                    Từ chối <span class="badge {{ $currentStatus === 'rejected' ? 'bg-danger' : 'bg-danger-subtle text-danger' }} rounded-pill align-middle ms-1">{{ $counts['rejected'] ?? 0 }}</span>
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link fw-semibold {{ request('status') === 'rejected' ? 'active' : '' }}" href="{{ route('backend.attendance-requests.index', array_merge(request()->except('page'), ['status' => 'rejected'])) }}">
-                                    Từ chối <span class="badge {{ request('status') === 'rejected' ? 'bg-danger' : 'bg-danger-subtle text-danger' }} rounded-pill align-middle ms-1">{{ $counts['rejected'] ?? 0 }}</span>
+                                <a class="nav-link fw-semibold {{ $currentStatus === 'all' ? 'active' : '' }}" href="{{ route('backend.attendance-requests.index', array_merge(request()->except('page'), ['status' => 'all'])) }}">
+                                    Tất cả <span class="badge {{ $currentStatus === 'all' ? 'bg-primary' : 'bg-light text-muted' }} rounded-pill align-middle ms-1">{{ $counts['all'] ?? 0 }}</span>
                                 </a>
                             </li>
                         </ul>
@@ -49,15 +49,21 @@
             </div>
             <div class="card-body border border-dashed border-end-0 border-start-0">
                 <form method="GET" action="{{ route('backend.attendance-requests.index') }}">
-                    @if(request()->filled('status'))
-                        <input type="hidden" name="status" value="{{ request('status') }}">
-                    @endif
-                    <div class="row g-3">
-                        <div class="col-xxl-5 col-sm-5">
+                    <input type="hidden" name="status" value="{{ $currentStatus }}">
+                    <div class="row g-2">
+                        <div class="col-xxl-3 col-md-3 col-sm-6">
                             <input type="text" class="form-control" name="search_employee" placeholder="Nhập mã hoặc tên NV" value="{{ request('search_employee') }}">
                         </div>
-                        <div class="col-xxl-5 col-sm-5">
-                            <select class="form-control" name="type">
+                        <div class="col-xxl-2 col-md-3 col-sm-6">
+                            <select class="form-select" name="department_id">
+                                <option value="">Tất cả phòng ban</option>
+                                @foreach($departments as $dept)
+                                    <option value="{{ $dept->id }}" {{ request('department_id') == $dept->id ? 'selected' : '' }}>{{ $dept->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-xxl-2 col-md-2 col-sm-6">
+                            <select class="form-select" name="type">
                                 <option value="">Tất cả loại phiếu</option>
                                 <option value="paid_leave" {{ request('type') == 'paid_leave' ? 'selected' : '' }}>Nghỉ phép có lương</option>
                                 <option value="unpaid_leave" {{ request('type') == 'unpaid_leave' ? 'selected' : '' }}>Nghỉ không lương</option>
@@ -66,13 +72,19 @@
                                 <option value="overtime" {{ request('type') == 'overtime' ? 'selected' : '' }}>Làm tăng ca</option>
                             </select>
                         </div>
-                        <div class="col-xxl-2 col-sm-2">
+                        <div class="col-xxl-3 col-md-2 col-sm-6">
+                            <div class="input-group">
+                                <input type="text" class="form-control date-range-picker" name="date" placeholder="Chọn ngày..." value="{{ request('date') }}">
+                                <span class="input-group-text"><i class="ri-calendar-event-line"></i></span>
+                            </div>
+                        </div>
+                        <div class="col-xxl-2 col-md-2 col-sm-12">
                             <div class="d-flex gap-2">
                                 <button type="submit" class="btn btn-primary flex-grow-1">
                                     <i class="ri-search-line me-1 align-bottom"></i> Lọc
                                 </button>
-                                @if(request()->filled('search_employee') || request()->filled('type'))
-                                <a href="{{ route('backend.attendance-requests.index', request()->filled('status') ? ['status' => request('status')] : []) }}" class="btn btn-light" title="Xóa bộ lọc">
+                                @if(request()->filled('search_employee') || request()->filled('department_id') || request()->filled('type') || request()->filled('date'))
+                                <a href="{{ route('backend.attendance-requests.index', ['status' => $currentStatus]) }}" class="btn btn-light" title="Xóa bộ lọc">
                                     <i class="ri-refresh-line"></i>
                                 </a>
                                 @endif
@@ -273,9 +285,30 @@
 </div>
 @endsection
 
+@push('styles')
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<style>
+    .flatpickr-calendar {
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1) !important;
+        border: 0 !important;
+        border-radius: 8px !important;
+    }
+</style>
+@endpush
+
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/vn.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    flatpickr(".date-range-picker", {
+        mode: "range",
+        dateFormat: "Y-m-d",
+        altInput: true,
+        altFormat: "d/m/Y",
+        locale: "vn",
+        allowInput: true
+    });
     document.querySelectorAll('.btn-quick-approve-select').forEach(function(select) {
         // Save original value to revert if cancelled or failed
         select.dataset.original = select.value;

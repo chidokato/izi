@@ -6,6 +6,7 @@ use App\Models\AttendanceRequest;
 use App\Models\Employee;
 use App\Models\User;
 use App\Models\RequestApproval;
+use App\Models\Department;
 use Illuminate\Http\Request;
 
 class AttendanceRequestController extends Controller
@@ -32,12 +33,55 @@ class AttendanceRequestController extends Controller
             $baseQuery->where('type', $request->type);
         }
 
+        if ($request->filled('department_id')) {
+            $baseQuery->whereHas('employee', function($q) use ($request) {
+                $q->where('department_id', $request->department_id);
+            });
+        }
+
         if ($request->filled('search_employee')) {
             $keyword = $request->search_employee;
             $baseQuery->whereHas('employee', function($q) use ($keyword) {
                 $q->where('name', 'like', "%{$keyword}%")
                   ->orWhere('employee_code', 'like', "%{$keyword}%");
             });
+        }
+
+        if ($request->filled('date')) {
+            $dateInput = trim($request->date);
+            if (str_contains($dateInput, ' to ')) {
+                $parts = explode(' to ', $dateInput);
+                $startRaw = trim($parts[0]);
+                $endRaw = trim($parts[1] ?? $parts[0]);
+                
+                try {
+                    $startDate = \Carbon\Carbon::parse($startRaw)->toDateString();
+                    $endDate = \Carbon\Carbon::parse($endRaw)->toDateString();
+                } catch (\Exception $e) {
+                    $startDate = $startRaw;
+                    $endDate = $endRaw;
+                }
+                
+                $baseQuery->where(function($q) use ($startDate, $endDate) {
+                    $q->where(function($sub) use ($startDate, $endDate) {
+                        $sub->where('start_date', '<=', $endDate)
+                            ->where('end_date', '>=', $startDate);
+                    })->orWhereBetween(\Illuminate\Support\Facades\DB::raw('DATE(created_at)'), [$startDate, $endDate]);
+                });
+            } else {
+                try {
+                    $searchDate = \Carbon\Carbon::parse($dateInput)->toDateString();
+                } catch (\Exception $e) {
+                    $searchDate = $dateInput;
+                }
+                
+                $baseQuery->where(function($q) use ($searchDate) {
+                    $q->where(function($sub) use ($searchDate) {
+                        $sub->where('start_date', '<=', $searchDate)
+                            ->where('end_date', '>=', $searchDate);
+                    })->orWhereDate('created_at', $searchDate);
+                });
+            }
         }
 
         $counts = [
@@ -47,10 +91,12 @@ class AttendanceRequestController extends Controller
             'rejected' => (clone $baseQuery)->where('status', 'rejected')->count(),
         ];
 
+        $currentStatus = $request->input('status', 'pending');
+
         $query = (clone $baseQuery)->with(['employee.department', 'employee.manager', 'employee.managerL2', 'requestApprovals.approver']);
 
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
+        if ($currentStatus !== 'all') {
+            $query->where('status', $currentStatus);
         }
 
         $requests = $query->paginate(20)->withQueryString();
@@ -63,7 +109,9 @@ class AttendanceRequestController extends Controller
                               \App\Models\RequestApproval::where('approver_id', $user->id)->exists();
         }
 
-        return view('backend.attendance_requests.index', compact('requests', 'canBulkApprove', 'counts'));
+        $departments = Department::orderBy('name')->get();
+
+        return view('backend.attendance_requests.index', compact('requests', 'canBulkApprove', 'counts', 'currentStatus', 'departments'));
     }
 
     public function create()
