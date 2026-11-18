@@ -57,7 +57,7 @@ class EmployeeController extends Controller
             'employees' => $query->orderBy('e.employee_code')->paginate(50)->withQueryString(),
             'departments' => DB::table('departments')->where('status', 'active')->orderBy('name')->get(['id', 'name']),
             'managers' => DB::table('employees')
-                ->where('status', 'active')
+                ->whereIn('status', ['active', 'probation'])
                 ->whereNull('deleted_at')
                 ->whereIn('position', ['team_leader', 'manager', 'director'])
                 ->orderBy('name')
@@ -65,7 +65,7 @@ class EmployeeController extends Controller
             'hrs' => DB::table('employees as e')
                 ->join('departments as d', 'd.id', '=', 'e.department_id')
                 ->where('d.status', 'active')
-                ->where('e.status', 'active')
+                ->whereIn('e.status', ['active', 'probation'])
                 ->whereNull('e.deleted_at')
                 ->whereIn('e.position', ['team_leader', 'manager', 'director'])
                 ->orderBy('e.name')
@@ -77,13 +77,13 @@ class EmployeeController extends Controller
     {
         $departments = DB::table('departments')->where('status', 'active')->orderBy('name')->get();
         $managers = DB::table('employees')
-            ->where('status', 'active')
+            ->whereIn('status', ['active', 'probation'])
             ->whereNull('deleted_at')
             ->whereIn('position', ['team_leader', 'manager', 'director'])
             ->orderBy('name')
             ->get(['id', 'name', 'employee_code', 'department_id']);
         $hrs = DB::table('employees')
-            ->where('status', 'active')
+            ->whereIn('status', ['active', 'probation'])
             ->whereNull('deleted_at')
             ->whereIn('position', ['team_leader', 'manager', 'director'])
             ->orderBy('name')
@@ -394,7 +394,7 @@ class EmployeeController extends Controller
             ->orderBy('name')
             ->get();
         $managers = \Illuminate\Support\Facades\DB::table('employees as e')
-                ->where('e.status', 'active')
+                ->whereIn('e.status', ['active', 'probation'])
                 ->whereNull('e.deleted_at')
                 ->whereIn('e.position', ['team_leader', 'manager', 'director'])
                 ->orderBy('e.name')
