@@ -37,28 +37,34 @@
     position: absolute;
     bottom: 8px;
     right: 8px;
-    width: 24px;
-    height: 24px;
+    width: 22px;
+    height: 22px;
     padding: 0;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border-radius: 6px;
-    background: #405189;
-    color: #ffffff;
-    border: 1px solid #405189;
-    font-size: 13px;
+    border-radius: 5px;
+    background: rgba(64, 81, 137, 0.08);
+    color: #405189;
+    border: 1px solid rgba(64, 81, 137, 0.18);
+    font-size: 12px;
     cursor: pointer;
     z-index: 5;
-    box-shadow: 0 1px 3px rgba(64, 81, 137, 0.25);
-    transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+    opacity: 0.45;
+    transition: opacity 0.2s ease, background 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+}
+.attendance-day:hover .btn-quick-request {
+    opacity: 0.85;
+    background: rgba(64, 81, 137, 0.14);
+    border-color: rgba(64, 81, 137, 0.3);
 }
 .btn-quick-request:hover {
-    background: #364473;
-    border-color: #364473;
-    color: #ffffff;
-    box-shadow: 0 2px 6px rgba(64, 81, 137, 0.4);
-    transform: scale(1.1);
+    opacity: 1 !important;
+    background: #405189 !important;
+    border-color: #405189 !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 6px rgba(64, 81, 137, 0.35);
+    transform: scale(1.12);
 }
 .btn-quick-request:active {
     transform: scale(0.92) !important;
