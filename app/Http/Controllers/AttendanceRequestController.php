@@ -691,13 +691,22 @@ class AttendanceRequestController extends Controller
 
         $employee = \App\Models\Employee::find($employeeId);
         $leaveBalance = $employee ? $employee->annual_leave_balance : 0;
+        
+        // Trừ đi các phiếu đang chờ duyệt (pending)
+        $pendingLeaveDays = AttendanceRequest::where('employee_id', $employeeId)
+            ->where('type', 'paid_leave')
+            ->where('status', 'pending')
+            ->get()
+            ->sum(fn($r) => $this->calculateLeaveDays($r));
+            
+        $remainingBalance = max(0, $leaveBalance - $pendingLeaveDays);
 
         return response()->json([
             'used' => $count,
             'remaining' => $remaining,
             'total' => 3,
             'month' => $date->month,
-            'leave_balance' => $leaveBalance
+            'leave_balance' => $remainingBalance
         ]);
     }
 

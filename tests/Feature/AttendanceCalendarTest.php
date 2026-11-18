@@ -46,7 +46,7 @@ class AttendanceCalendarTest extends TestCase
     {
         $this->entries();
         $response = $this->actingAs($this->admin)->get('/admin/attendance-calendar?employee_id='.$this->employee.'&month=2026-09');
-        $response->assertOk()->assertSee('Nguyễn Văn An')->assertSee('17:00')->assertSee('Thiếu giờ ra')->assertSee('00:00');
+        $response->assertOk()->assertSee('Nguyễn Văn An')->assertSee('17:00')->assertSee('Thiếu ra')->assertSee('00:00');
         $response->assertViewHas('totals', ['complete' => 2, 'missing' => 1, 'blank' => 1, 'overnight' => 1, 'no_data' => 26, 'leave' => 0, 'adjustment' => 0, 'business' => 0]);
         $days = $response->viewData('days');
         $this->assertSame('2026-08-10', $days[0]['date']->toDateString());

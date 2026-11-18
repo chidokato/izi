@@ -53,7 +53,7 @@ class AttendanceCalendarController extends Controller
 
         $labels = [
             'complete' => 'Hợp lệ', 'missing' => 'Thiếu một giờ chấm',
-            'blank' => 'Chưa có giờ chấm', 'overnight' => 'Kiểm tra ca qua đêm', 'no_data' => '',
+            'blank' => 'Vắng', 'overnight' => 'Kiểm tra ca qua đêm', 'no_data' => '',
             'leave' => 'Phép năm/thường', 'adjustment' => 'B.sung công', 'business' => 'Công tác'
         ];
         $totals = array_fill_keys(array_keys($labels), 0);
@@ -120,7 +120,7 @@ class AttendanceCalendarController extends Controller
                 } else {
                     $status = 'complete';
                 }
-                $label = $status === 'missing' ? ($entry->checkin === null ? 'Thiếu giờ vào' : 'Thiếu giờ ra') : $labels[$status];
+                $label = $status === 'missing' ? ($entry->checkin === null ? 'Thiếu vào' : 'Thiếu ra') : $labels[$status];
             }
             
             $paidCong = 0;
