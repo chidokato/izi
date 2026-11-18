@@ -38,7 +38,6 @@ class AttendanceCalendarController extends Controller
             
         $requests = $employee ? DB::table('attendance_requests')
             ->where('employee_id', $employee->id)
-            ->where('status', 'approved')
             ->where(function($q) use ($periodStart, $periodEnd) {
                 $q->whereBetween('start_date', [$periodStart->toDateString(), $periodEnd->toDateString()])
                   ->orWhereBetween('end_date', [$periodStart->toDateString(), $periodEnd->toDateString()]);
@@ -53,9 +52,9 @@ class AttendanceCalendarController extends Controller
             ->keyBy(fn ($rule) => $rule->work_schedule_id.':'.$rule->day_of_week);
 
         $labels = [
-            'complete' => 'Đủ giờ vào/ra', 'missing' => 'Thiếu một giờ chấm',
-            'blank' => 'Chưa có giờ chấm', 'overnight' => 'Kiểm tra ca qua đêm', 'no_data' => 'Chưa có dữ liệu',
-            'leave' => 'Nghỉ phép', 'adjustment' => 'Bổ sung công', 'business' => 'Công tác'
+            'complete' => 'Hợp lệ', 'missing' => 'Thiếu một giờ chấm',
+            'blank' => 'Chưa có giờ chấm', 'overnight' => 'Kiểm tra ca qua đêm', 'no_data' => '',
+            'leave' => 'Phép năm/thường', 'adjustment' => 'B.sung công', 'business' => 'Công tác'
         ];
         $totals = array_fill_keys(array_keys($labels), 0);
         $days = [];
@@ -76,6 +75,9 @@ class AttendanceCalendarController extends Controller
                 return $dateStr >= substr($r->start_date, 0, 10) && $dateStr <= substr($r->end_date, 0, 10);
             });
 
+            // Chỉ tính phiếu đã duyệt (hoặc dùng để hiển thị ký hiệu)
+            $isApprovedReq = $req && $req->status === 'approved';
+            
             $matches = $assignments->filter(fn ($a) => $a->effective_from <= $dateStr && ($a->effective_to === null || $a->effective_to >= $dateStr));
             $scheduleId = $matches->first() ? $matches->first()->work_schedule_id : $selectedSchedule;
             $rule = $matches->count() > 1 ? null : $rules->get($scheduleId.':'.$date->dayOfWeek);
@@ -84,7 +86,7 @@ class AttendanceCalendarController extends Controller
             
             $isNonWorkingDay = ($date->dayOfWeek == 0) || ($rule && !$rule->is_working_day);
 
-            if ($req && $req->type === 'attendance_adjustment' && $inMonth && $rule && !$isNonWorkingDay) {
+            if ($req && $isApprovedReq && $req->type === 'attendance_adjustment' && $inMonth && $rule && !$isNonWorkingDay) {
                 if (!$entry) $entry = (object)['checkin' => null, 'checkout' => null];
                 
                 $adjSession = $req->start_session;
@@ -125,10 +127,10 @@ class AttendanceCalendarController extends Controller
             $dayReq = $req ? clone $req : null;
 
             // Override status with request if it exists
-            if ($dayReq && $inMonth) {
+            if ($dayReq && $inMonth && $isApprovedReq) {
                 if ($dayReq->type === 'paid_leave' || $dayReq->type === 'unpaid_leave') {
                     $status = 'leave';
-                    $label = 'Nghỉ phép';
+                    $label = ($dayReq->type === 'paid_leave') ? 'Phép năm' : 'Phép thường';
                     if ($dayReq->type === 'paid_leave' && !$isNonWorkingDay) {
                         if ($rule && $rule->is_working_day) {
                             if ($date->dayOfWeek == 6) {
@@ -147,7 +149,7 @@ class AttendanceCalendarController extends Controller
                 } elseif ($dayReq->type === 'attendance_adjustment') {
                     if (!$isNonWorkingDay) {
                         $status = 'adjustment';
-                        $label = 'Bổ sung công';
+                        $label = 'B.sung công';
                     }
                 } elseif ($dayReq->type === 'business_trip') {
                     $status = 'business';

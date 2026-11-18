@@ -109,7 +109,11 @@ class AttendanceRequestController extends Controller
                               \App\Models\RequestApproval::where('approver_id', $user->id)->exists();
         }
 
-        $departments = Department::orderBy('name')->get();
+        $departments = Department::where('status', 'active');
+        if ($request->filled('department_id')) {
+            $departments->orWhere('id', $request->department_id);
+        }
+        $departments = $departments->orderBy('name')->get();
 
         return view('backend.attendance_requests.index', compact('requests', 'canBulkApprove', 'counts', 'currentStatus', 'departments'));
     }

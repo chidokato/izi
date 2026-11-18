@@ -199,7 +199,21 @@
         <div class="attendance-calendar" aria-label="Lịch chấm công tháng {{ $month->format('m/Y') }}">
             @foreach(['Thứ Hai','Thứ Ba','Thứ Tư','Thứ Năm','Thứ Sáu','Thứ Bảy','Chủ nhật'] as $weekday)<div class="weekday">{{ $weekday }}</div>@endforeach
             @foreach($days as $day)
-            <section class="attendance-day {{ $day['in_month'] ? $day['status'] : 'outside' }} {{ $day['today'] ? 'is-today' : '' }}" aria-label="{{ $day['date']->format('d/m/Y') }}{{ $day['in_month'] ? ': '.$day['label'] : '' }}">
+                @php
+                    $requestColor = '';
+                    if (isset($day['request'])) {
+                        switch ($day['request']->type) {
+                            case 'paid_leave': $requestColor = '#bae6fd'; break; // light blue
+                            case 'unpaid_leave': $requestColor = '#e5e7eb'; break; // light gray
+                            case 'business_trip': $requestColor = '#fed7aa'; break; // light orange
+                            case 'attendance_adjustment': $requestColor = '#fbcfe8'; break; // light pink
+                            default: $requestColor = '#e3e7ed'; // default gray
+                        }
+                    }
+                @endphp
+            <section class="attendance-day {{ $day['in_month'] ? $day['status'] : 'outside' }} {{ $day['today'] ? 'is-today' : '' }}" 
+                     style="{{ $requestColor ? 'border-bottom: 4px solid '.$requestColor : '' }}"
+                     aria-label="{{ $day['date']->format('d/m/Y') }}{{ $day['in_month'] ? ': '.$day['label'] : '' }}">
                 <div class="d-flex justify-content-between align-items-center">
                     <span class="day-number">{{ $day['date']->day == 1 ? $day['date']->format('d/m') : $day['date']->day }}</span>
                     <div>
@@ -252,9 +266,9 @@
                                 @if(!empty($day['is_non_working_day']) || $day['date']->dayOfWeek == 0)
                                     (Nghỉ)
                                 @elseif($day['request']->type == 'attendance_adjustment')
-                                    (Xác nhận: {{ $day['request']->start_session == 'morning' ? 'Vào' : ($day['request']->start_session == 'afternoon' ? 'Ra' : 'Vào/Ra') }})
+                                    (XN: {{ $day['request']->start_session == 'morning' ? 'Vào' : ($day['request']->start_session == 'afternoon' ? 'Ra' : 'Vào/Ra') }})
                                 @elseif($day['request']->type == 'business_trip')
-                                    ({{ isset($day['request']->business_hours) && $day['request']->business_hours < 8 ? round($day['request']->business_hours, 1) . ' giờ' : 'Cả ngày' }})
+                                    ({{ isset($day['request']->business_hours) && $day['request']->business_hours < 8 ? round($day['request']->business_hours, 1) . 'h' : 'Cả ngày' }})
                                 @elseif($day['request']->start_session == 'afternoon' && substr($day['request']->start_date, 0, 10) == $day['date']->toDateString())
                                     (Nửa chiều)
                                 @elseif($day['request']->end_session == 'morning' && substr($day['request']->end_date, 0, 10) == $day['date']->toDateString())
