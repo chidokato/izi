@@ -61,6 +61,7 @@ class AttendanceCalendarController extends Controller
         $today = CarbonImmutable::now('Asia/Ho_Chi_Minh')->toDateString();
         $totalCongThucTe = 0;
         $totalCongTinhLuong = 0;
+        $totalCongChuan = 0;
 
         for ($date = $periodStart->copy()->startOfWeek(); $date->lte($periodEnd->copy()->endOfWeek()); $date = $date->addDay()) {
             $inMonth = $date->between($periodStart, $periodEnd);
@@ -238,6 +239,14 @@ class AttendanceCalendarController extends Controller
             }
 
             if ($inMonth) {
+                if (!$isNonWorkingDay) {
+                    if ($date->dayOfWeek == 6) {
+                        $totalCongChuan += 0.5;
+                    } else {
+                        $totalCongChuan += 1.0;
+                    }
+                }
+
                 if (!isset($totals[$status])) $totals[$status] = 0;
                 $totals[$status]++;
                 
@@ -270,7 +279,7 @@ class AttendanceCalendarController extends Controller
             $currentUserEmployee = \App\Models\Employee::with(['manager', 'managerL2'])->find(auth()->user()->employee_id);
         }
 
-        return view('backend.attendance.calendar', compact('employees', 'employee', 'currentUserEmployee', 'month', 'periodStart', 'periodEnd', 'days', 'totals', 'labels', 'latest', 'totalCongThucTe', 'totalCongTinhLuong'));
+        return view('backend.attendance.calendar', compact('employees', 'employee', 'currentUserEmployee', 'month', 'periodStart', 'periodEnd', 'days', 'totals', 'labels', 'latest', 'totalCongThucTe', 'totalCongTinhLuong', 'totalCongChuan'));
     }
 
     public function swapPunch(Request $request)

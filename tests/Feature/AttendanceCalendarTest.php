@@ -149,6 +149,9 @@ class AttendanceCalendarTest extends TestCase
 
         // Total valid công should be 23.5 (21 weekdays * 1 + 5 saturdays * 0.5 = 23.5; 4 sundays = 0 công)
         $this->assertEquals(23.5, $response->viewData('totalCongTinhLuong'));
+        $this->assertEquals(23.5, $response->viewData('totalCongChuan'));
+        $response->assertSee('23,5/23,5');
+        $response->assertSee('Công đi làm / Công chuẩn');
 
         $days = collect($response->viewData('days'))->keyBy(fn ($d) => $d['date']->toDateString());
 
