@@ -35,10 +35,16 @@
             </div>
 
             <!-- TABS PHÂN LOẠI: Chờ duyệt, Chưa duyệt, Đã duyệt, Tất cả -->
+            @php
+                $tabParams = array_merge(request()->except(['page']), [
+                    'month' => $selectedMonth,
+                    'year' => $selectedYear,
+                ]);
+            @endphp
             <ul class="nav nav-tabs nav-tabs-custom border-bottom-0 mt-2" role="tablist">
                 <li class="nav-item">
                     <a class="nav-link fw-semibold {{ $currentStatus === 'waiting' ? 'active' : '' }}" 
-                       href="{{ route('backend.evaluation-approvals.index', array_merge(request()->except(['page']), ['status' => 'waiting'])) }}"
+                       href="{{ route('backend.evaluation-approvals.index', array_merge($tabParams, ['status' => 'waiting'])) }}"
                        title="Các phiếu đang chờ bạn duyệt">
                         <i class="ri-time-line me-1 align-bottom text-warning"></i> Chờ duyệt 
                         <span class="badge {{ $currentStatus === 'waiting' ? 'bg-warning text-dark' : 'bg-warning-subtle text-warning' }} rounded-pill align-middle ms-1">
@@ -48,7 +54,7 @@
                 </li>
                 <li class="nav-item">
                     <a class="nav-link fw-semibold {{ $currentStatus === 'pending' ? 'active' : '' }}" 
-                       href="{{ route('backend.evaluation-approvals.index', array_merge(request()->except(['page']), ['status' => 'pending'])) }}"
+                       href="{{ route('backend.evaluation-approvals.index', array_merge($tabParams, ['status' => 'pending'])) }}"
                        title="Các phiếu chưa hoàn thành phê duyệt">
                         <i class="ri-hourglass-2-line me-1 align-bottom text-info"></i> Chưa duyệt 
                         <span class="badge {{ $currentStatus === 'pending' ? 'bg-info text-white' : 'bg-info-subtle text-info' }} rounded-pill align-middle ms-1">
@@ -58,7 +64,7 @@
                 </li>
                 <li class="nav-item">
                     <a class="nav-link fw-semibold {{ $currentStatus === 'approved' ? 'active' : '' }}" 
-                       href="{{ route('backend.evaluation-approvals.index', array_merge(request()->except(['page']), ['status' => 'approved'])) }}"
+                       href="{{ route('backend.evaluation-approvals.index', array_merge($tabParams, ['status' => 'approved'])) }}"
                        title="Các phiếu đã được phê duyệt">
                         <i class="ri-checkbox-circle-line me-1 align-bottom text-success"></i> Đã duyệt 
                         <span class="badge {{ $currentStatus === 'approved' ? 'bg-success text-white' : 'bg-success-subtle text-success' }} rounded-pill align-middle ms-1">
@@ -68,7 +74,7 @@
                 </li>
                 <li class="nav-item">
                     <a class="nav-link fw-semibold {{ $currentStatus === 'all' ? 'active' : '' }}" 
-                       href="{{ route('backend.evaluation-approvals.index', array_merge(request()->except(['page']), ['status' => 'all'])) }}"
+                       href="{{ route('backend.evaluation-approvals.index', array_merge($tabParams, ['status' => 'all'])) }}"
                        title="Tất cả phiếu đánh giá">
                         <i class="ri-apps-line me-1 align-bottom text-primary"></i> Tất cả 
                         <span class="badge {{ $currentStatus === 'all' ? 'bg-primary text-white' : 'bg-light text-muted border' }} rounded-pill align-middle ms-1">
@@ -92,26 +98,28 @@
                     </div>
                     <div class="col-xxl-3 col-md-3 col-sm-6">
                         <select class="form-select form-select-sm" name="department_id">
-                            <option value="">Tất cả phòng ban</option>
+                            @if($departments->count() > 1 || $departments->isEmpty())
+                                <option value="">Tất cả phòng ban</option>
+                            @endif
                             @foreach($departments as $dept)
-                                <option value="{{ $dept->id }}" {{ request('department_id') == $dept->id ? 'selected' : '' }}>{{ $dept->name }}</option>
+                                <option value="{{ $dept->id }}" {{ (request('department_id') == $dept->id || $departments->count() == 1) ? 'selected' : '' }}>{{ $dept->name }}</option>
                             @endforeach
                         </select>
                     </div>
                     <div class="col-xxl-2 col-md-2 col-sm-4">
                         <select class="form-select form-select-sm" name="month">
-                            <option value="">Tất cả tháng</option>
+                            <option value="all" {{ ($selectedMonth === 'all' || $selectedMonth === '') ? 'selected' : '' }}>Tất cả tháng</option>
                             @for($m = 1; $m <= 12; $m++)
-                                <option value="{{ $m }}" {{ request('month') == $m ? 'selected' : '' }}>Tháng {{ $m }}</option>
+                                <option value="{{ $m }}" {{ (string)$selectedMonth === (string)$m ? 'selected' : '' }}>Tháng {{ $m }}</option>
                             @endfor
                         </select>
                     </div>
                     <div class="col-xxl-2 col-md-2 col-sm-4">
                         <select class="form-select form-select-sm" name="year">
-                            <option value="">Tất cả năm</option>
+                            <option value="all" {{ ($selectedYear === 'all' || $selectedYear === '') ? 'selected' : '' }}>Tất cả năm</option>
                             @php $currYear = (int)date('Y'); @endphp
-                            @for($y = $currYear; $y >= $currYear - 2; $y--)
-                                <option value="{{ $y }}" {{ request('year') == $y ? 'selected' : '' }}>Năm {{ $y }}</option>
+                            @for($y = $currYear + 1; $y >= $currYear - 3; $y--)
+                                <option value="{{ $y }}" {{ (string)$selectedYear === (string)$y ? 'selected' : '' }}>Năm {{ $y }}</option>
                             @endfor
                         </select>
                     </div>
@@ -119,8 +127,8 @@
                         <button type="submit" class="btn btn-primary btn-sm flex-fill" title="Lọc">
                             <i class="ri-filter-2-line"></i>
                         </button>
-                        @if(request()->filled('search') || request()->filled('department_id') || request()->filled('month') || request()->filled('year'))
-                            <a href="{{ route('backend.evaluation-approvals.index', ['status' => $currentStatus]) }}" class="btn btn-light btn-sm border" title="Xóa bộ lọc">
+                        @if(request()->filled('search') || request()->filled('department_id') || (request()->has('month') && request('month') != date('n')) || (request()->has('year') && request('year') != date('Y')))
+                            <a href="{{ route('backend.evaluation-approvals.index', ['status' => $currentStatus]) }}" class="btn btn-light btn-sm border" title="Đặt lại bộ lọc">
                                 <i class="ri-refresh-line"></i>
                             </a>
                         @endif

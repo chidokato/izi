@@ -117,12 +117,15 @@ class EvaluationApprovalController extends Controller
         // Chỉ hiện các phiếu đã gửi duyệt trở đi
         $baseQuery->whereIn('status', ['submitted', 'manager_reviewed', 'hr_approved']);
 
-        // Bộ lọc theo tháng, năm nếu có
-        if ($request->filled('month')) {
-            $baseQuery->where('month', (int)$request->month);
+        // Bộ lọc theo tháng, năm (Mặc định chọn tháng và năm hiện tại nếu chưa chọn)
+        $selectedMonth = $request->has('month') ? $request->input('month') : (int)date('n');
+        $selectedYear = $request->has('year') ? $request->input('year') : (int)date('Y');
+
+        if ($selectedMonth !== 'all' && $selectedMonth !== '' && $selectedMonth !== null) {
+            $baseQuery->where('month', (int)$selectedMonth);
         }
-        if ($request->filled('year')) {
-            $baseQuery->where('year', (int)$request->year);
+        if ($selectedYear !== 'all' && $selectedYear !== '' && $selectedYear !== null) {
+            $baseQuery->where('year', (int)$selectedYear);
         }
 
         // Bộ lọc theo phòng ban nếu có
@@ -238,9 +241,26 @@ class EvaluationApprovalController extends Controller
             ->withQueryString();
 
         $grades = EvaluationGrade::orderBy('min_score', 'asc')->get();
-        $departments = \App\Models\Department::orderBy('name')->get();
 
-        return view('backend.evaluation_approvals.index', compact('evaluations', 'grades', 'counts', 'currentStatus', 'departments'));
+        if ($isHR) {
+            $departments = \App\Models\Department::orderBy('name')->get();
+        } else {
+            $managerDeptIds = [];
+            if ($user->employee && $user->employee->department_id) {
+                $managerDeptIds[] = $user->employee->department_id;
+            }
+            if (!empty($managedBackEmployeeIds)) {
+                $managedDepts = Employee::whereIn('id', $managedBackEmployeeIds)
+                    ->whereNotNull('department_id')
+                    ->pluck('department_id')
+                    ->toArray();
+                $managerDeptIds = array_unique(array_merge($managerDeptIds, $managedDepts));
+            }
+
+            $departments = \App\Models\Department::whereIn('id', $managerDeptIds)->orderBy('name')->get();
+        }
+
+        return view('backend.evaluation_approvals.index', compact('evaluations', 'grades', 'counts', 'currentStatus', 'departments', 'selectedMonth', 'selectedYear'));
     }
 
     public function edit($id)
