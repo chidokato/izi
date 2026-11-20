@@ -187,7 +187,7 @@ class EvaluationApprovalController extends Controller
             });
         };
 
-        // Tính số lượng cho từng tab (Chờ duyệt, Chưa duyệt, Đã duyệt, Tất cả)
+        // Tính số lượng cho từng tab (Chờ duyệt, Chưa duyệt, Đã duyệt, Tất cả, Chưa làm đánh giá)
         $waitingQuery = (clone $baseQuery);
         $applyWaiting($waitingQuery);
         $waitingCount = $waitingQuery->count();
@@ -206,39 +206,95 @@ class EvaluationApprovalController extends Controller
 
         $allCount = (clone $baseQuery)->count();
 
+        // Xác định kỳ tháng/năm để kiểm tra danh sách nhân viên chưa làm đánh giá
+        $targetMonth = ($selectedMonth !== 'all' && $selectedMonth !== '' && $selectedMonth !== null)
+            ? (int)$selectedMonth
+            : (int)date('n');
+        $targetYear = ($selectedYear !== 'all' && $selectedYear !== '' && $selectedYear !== null)
+            ? (int)$selectedYear
+            : (int)date('Y');
+
+        $missingEmpQuery = Employee::with([
+            'department',
+            'manager',
+            'managerL2',
+            'evaluations' => function ($q) use ($targetMonth, $targetYear) {
+                $q->where('month', $targetMonth)->where('year', $targetYear);
+            }
+        ])->where(function ($q) {
+            $q->whereIn('status', ['active', 'probation'])
+              ->orWhereNull('status');
+        });
+
+        if (!$isHR) {
+            // Quản lý chỉ xem các nhân viên thuộc quyền quản lý của mình
+            $missingEmpQuery->whereIn('id', $managedBackEmployeeIds);
+        }
+
+        if ($request->filled('department_id')) {
+            $missingEmpQuery->where('department_id', $request->department_id);
+        }
+
+        if ($request->filled('search')) {
+            $search = trim($request->search);
+            $missingEmpQuery->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('employee_code', 'like', "%{$search}%");
+            });
+        }
+
+        // Nhân viên chưa gửi phiếu đánh giá trong tháng/năm đang chọn
+        $missingEmpQuery->whereDoesntHave('evaluations', function ($q) use ($targetMonth, $targetYear) {
+            $q->where('month', $targetMonth)
+              ->where('year', $targetYear)
+              ->whereIn('status', ['submitted', 'manager_reviewed', 'hr_approved']);
+        });
+
+        $notEvaluatedCount = (clone $missingEmpQuery)->count();
+
         $counts = [
             'waiting' => $waitingCount,
             'pending' => $pendingCount,
             'approved' => $approvedCount,
             'all' => $allCount,
+            'not_evaluated' => $notEvaluatedCount,
         ];
 
         // Xác định tab hiện tại (nếu có phiếu chờ duyệt thì mặc định tab Chờ duyệt, nếu không thì Tất cả)
         $defaultStatus = $waitingCount > 0 ? 'waiting' : 'all';
         $currentStatus = $request->input('status', $defaultStatus);
-        if (!in_array($currentStatus, ['waiting', 'pending', 'approved', 'all'])) {
+        if (!in_array($currentStatus, ['waiting', 'pending', 'approved', 'all', 'not_evaluated'])) {
             $currentStatus = $defaultStatus;
         }
 
-        $query = (clone $baseQuery);
+        $notEvaluatedEmployees = null;
+        if ($currentStatus === 'not_evaluated') {
+            $notEvaluatedEmployees = $missingEmpQuery->orderBy('department_id')
+                ->orderBy('name')
+                ->paginate(20)
+                ->withQueryString();
+            $evaluations = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 20);
+        } else {
+            $query = (clone $baseQuery);
 
-        if ($currentStatus === 'waiting') {
-            $applyWaiting($query);
-        } elseif ($currentStatus === 'pending') {
-            $query->whereIn('status', ['submitted', 'manager_reviewed']);
-        } elseif ($currentStatus === 'approved') {
-            if (!$isHR) {
-                $query->whereIn('status', ['manager_reviewed', 'hr_approved']);
-            } else {
-                $query->where('status', 'hr_approved');
+            if ($currentStatus === 'waiting') {
+                $applyWaiting($query);
+            } elseif ($currentStatus === 'pending') {
+                $query->whereIn('status', ['submitted', 'manager_reviewed']);
+            } elseif ($currentStatus === 'approved') {
+                if (!$isHR) {
+                    $query->whereIn('status', ['manager_reviewed', 'hr_approved']);
+                } else {
+                    $query->where('status', 'hr_approved');
+                }
             }
-        }
 
-        $evaluations = $query->orderBy('year', 'desc')
-            ->orderBy('month', 'desc')
-            ->orderBy('id', 'desc')
-            ->paginate(20)
-            ->withQueryString();
+            $evaluations = $query->orderBy('year', 'desc')
+                ->orderBy('month', 'desc')
+                ->orderBy('id', 'desc')
+                ->paginate(20)
+                ->withQueryString();
+        }
 
         $grades = EvaluationGrade::orderBy('min_score', 'asc')->get();
 
@@ -260,7 +316,9 @@ class EvaluationApprovalController extends Controller
             $departments = \App\Models\Department::whereIn('id', $managerDeptIds)->orderBy('name')->get();
         }
 
-        return view('backend.evaluation_approvals.index', compact('evaluations', 'grades', 'counts', 'currentStatus', 'departments', 'selectedMonth', 'selectedYear'));
+        return view('backend.evaluation_approvals.index', compact(
+            'evaluations', 'grades', 'counts', 'currentStatus', 'departments', 'selectedMonth', 'selectedYear', 'notEvaluatedEmployees', 'targetMonth', 'targetYear'
+        ));
     }
 
     public function edit($id)

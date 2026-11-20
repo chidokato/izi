@@ -82,6 +82,16 @@
                         </span>
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link fw-semibold {{ $currentStatus === 'not_evaluated' ? 'active' : '' }}" 
+                       href="{{ route('backend.evaluation-approvals.index', array_merge($tabParams, ['status' => 'not_evaluated'])) }}"
+                       title="Danh sách nhân viên chưa gửi phiếu đánh giá trong tháng {{ $targetMonth ?? date('n') }}/{{ $targetYear ?? date('Y') }}">
+                        <i class="ri-user-unfollow-line me-1 align-bottom text-danger"></i> Chưa làm đánh giá 
+                        <span class="badge {{ $currentStatus === 'not_evaluated' ? 'bg-danger text-white' : 'bg-danger-subtle text-danger' }} rounded-pill align-middle ms-1">
+                            {{ $counts['not_evaluated'] ?? 0 }}
+                        </span>
+                    </a>
+                </li>
             </ul>
         </div>
 
@@ -174,128 +184,220 @@
                 </div>
             @endif
 
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead style="background: #f8fafc; border-bottom: 2px solid #e2e8f0;">
-                        <tr>
-                            <th class="ps-4 text-uppercase fs-12 text-muted fw-bold" style="min-width: 260px;">Nhân viên</th>
-                            <th class="text-uppercase fs-12 text-muted fw-bold" style="width: 150px;">Kỳ đánh giá</th>
-                            <th class="text-uppercase fs-12 text-muted fw-bold" style="width: 180px;">Trạng thái</th>
-                            <th class="text-center text-uppercase fs-12 text-muted fw-bold" style="width: 170px;">Tự chấm</th>
-                            <th class="text-center text-uppercase fs-12 text-muted fw-bold" style="width: 170px;">Quản lý chấm</th>
-                            <th class="text-center text-uppercase fs-12 text-muted fw-bold" style="width: 170px;">HR chốt</th>
-                            <th class="pe-4 text-end text-uppercase fs-12 text-muted fw-bold" style="width: 140px;">Thao tác</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse ($evaluations as $eval)
-                            @php
-                                $mgrScore = $eval->details->sum('manager_score');
-                            @endphp
+            @if($currentStatus === 'not_evaluated')
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead style="background: #f8fafc; border-bottom: 2px solid #e2e8f0;">
                             <tr>
-                                <td class="ps-4 py-3">
-                                    <div class="d-flex align-items-center">
-                                        <div class="avatar-sm me-3 flex-shrink-0">
-                                            <div class="avatar-title rounded-circle bg-soft-primary text-primary fs-14 fw-bold">
-                                                {{ mb_substr($eval->employee?->name ?? 'N', 0, 1) }}
+                                <th class="ps-4 text-uppercase fs-12 text-muted fw-bold" style="width: 70px;">STT</th>
+                                <th class="text-uppercase fs-12 text-muted fw-bold" style="min-width: 260px;">Nhân viên</th>
+                                <th class="text-uppercase fs-12 text-muted fw-bold" style="width: 180px;">Phòng ban</th>
+                                <th class="text-uppercase fs-12 text-muted fw-bold" style="width: 150px;">Kỳ đánh giá</th>
+                                <th class="text-uppercase fs-12 text-muted fw-bold" style="width: 200px;">Trạng thái đánh giá</th>
+                                <th class="pe-4 text-uppercase fs-12 text-muted fw-bold" style="width: 200px;">Người duyệt</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse ($notEvaluatedEmployees ?? [] as $index => $emp)
+                                @php
+                                    $draftEval = $emp->evaluations->firstWhere('status', 'draft');
+                                    $isSaleEmp = $emp->evaluation_type === 'sale';
+                                    $reviewerName = $isSaleEmp
+                                        ? 'HR duyệt trực tiếp'
+                                        : ($emp->managerL2?->name ?? $emp->manager?->name ?? 'HR duyệt trực tiếp');
+                                @endphp
+                                <tr>
+                                    <td class="ps-4 py-3 text-muted fs-13">
+                                        {{ ($notEvaluatedEmployees->currentPage() - 1) * $notEvaluatedEmployees->perPage() + $index + 1 }}
+                                    </td>
+                                    <td class="py-3">
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-sm me-3 flex-shrink-0">
+                                                <div class="avatar-title rounded-circle bg-soft-danger text-danger fs-14 fw-bold">
+                                                    {{ mb_substr($emp->name ?? 'N', 0, 1) }}
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <strong class="text-dark fs-14">{{ $emp->name_with_position ?? $emp->name ?? 'N/A' }}</strong>
+                                                    <span class="badge bg-light text-primary border px-2 py-0 fs-11">
+                                                        {{ $emp->evaluation_type_name ?? 'Back' }}
+                                                    </span>
+                                                </div>
+                                                <div class="text-muted fs-12">
+                                                    @if($emp->employee_code)
+                                                        Mã NV: {{ $emp->employee_code }} •
+                                                    @endif
+                                                    {{ $emp->position ?? 'Nhân sự' }}
+                                                </div>
                                             </div>
                                         </div>
-                                        <div>
-                                            <div class="d-flex align-items-center gap-2">
-                                                <strong class="text-dark fs-14">{{ $eval->employee?->name_with_position ?? $eval->employee?->name ?? 'N/A' }}</strong>
-                                                <span class="badge bg-light text-primary border px-2 py-0 fs-11">
-                                                    {{ $eval->employee?->evaluation_type_name ?? $eval->evaluation_type_name ?? 'Back' }}
-                                                </span>
-                                            </div>
-                                            <div class="text-muted fs-12">
-                                                {{ $eval->employee?->department?->name ?? 'Phòng ban' }} • {{ $eval->employee?->position ?? 'Nhân sự' }}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="py-3">
-                                    <span class="fw-semibold text-dark fs-13">Tháng {{ $eval->month }}/{{ $eval->year }}</span>
-                                </td>
-                                <td class="py-3">
-                                    @php
-                                        $evalEmp = $eval->employee;
-                                        $isSale = ($eval->evaluation_type ?: optional($evalEmp)->evaluation_type) === 'sale';
-                                        $hasMgr = !$isSale && ($evalEmp?->manager_l2_id || $evalEmp?->manager_id);
-                                    @endphp
-                                    @if ($eval->status == 'submitted')
-                                        @if ($hasMgr)
+                                    </td>
+                                    <td class="py-3">
+                                        <span class="text-dark fs-13">{{ $emp->department?->name ?? 'Chưa phân phòng' }}</span>
+                                    </td>
+                                    <td class="py-3">
+                                        <span class="fw-semibold text-dark fs-13">Tháng {{ $targetMonth ?? date('n') }}/{{ $targetYear ?? date('Y') }}</span>
+                                    </td>
+                                    <td class="py-3">
+                                        @if($draftEval)
                                             <span class="badge bg-soft-warning text-warning border border-warning px-2 py-1 fs-12">
-                                                <i class="ri-time-line me-1"></i>Chờ QL duyệt
+                                                <i class="ri-draft-line me-1"></i>Đang lưu nháp (Chưa gửi)
                                             </span>
                                         @else
-                                            <span class="badge bg-soft-info text-info border border-info px-2 py-1 fs-12">
-                                                <i class="ri-time-line me-1"></i>Chờ HR duyệt
+                                            <span class="badge bg-soft-danger text-danger border border-danger px-2 py-1 fs-12">
+                                                <i class="ri-close-circle-line me-1"></i>Chưa làm đánh giá
                                             </span>
                                         @endif
-                                    @elseif ($eval->status == 'manager_reviewed')
-                                        <span class="badge bg-soft-info text-info border border-info px-2 py-1 fs-12">
-                                            <i class="ri-check-double-line me-1"></i>Chờ HR chốt
-                                        </span>
-                                    @elseif ($eval->status == 'hr_approved')
-                                        <span class="badge bg-soft-success text-success border border-success px-2 py-1 fs-12">
-                                            <i class="ri-checkbox-circle-line me-1"></i>Đã chốt
-                                        </span>
-                                    @else
-                                        <span class="badge bg-dark px-2 py-1 fs-12">{{ $eval->status }}</span>
-                                    @endif
-                                </td>
-                                <td class="text-center py-3">
-                                    {!! getApprovalGradeBadge($eval->self_total_score) !!}
-                                </td>
-                                <td class="text-center py-3">
-                                    @if(!$hasMgr)
-                                        <span class="text-muted fs-12">-</span>
-                                    @elseif($eval->status != 'submitted' || (float)$mgrScore > 0)
-                                        {!! getApprovalGradeBadge($mgrScore) !!}
-                                    @else
-                                        <span class="text-muted fs-12">-</span>
-                                    @endif
-                                </td>
-                                <td class="text-center py-3">
-                                    @if($eval->status == 'hr_approved' && (float)$eval->final_score > 0)
-                                        {!! getApprovalGradeBadge($eval->final_score) !!}
-                                    @else
-                                        <span class="text-muted fs-12">-</span>
-                                    @endif
-                                </td>
-                                <td class="pe-4 text-end py-3">
-                                    <a href="{{ route('backend.evaluation-approvals.edit', $eval->id) }}" class="btn btn-sm btn-primary px-3 py-1">
-                                        <i class="ri-eye-line me-1"></i> Xem / Duyệt
-                                    </a>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="7" class="text-center py-5 text-muted">
-                                    <i class="ri-inbox-line fs-36 d-block mb-2 text-muted"></i>
-                                    @if($currentStatus === 'waiting')
-                                        Tuyệt vời! Hiện tại không có phiếu nào đang chờ bạn duyệt.
-                                    @elseif($currentStatus === 'pending')
-                                        Không có phiếu đánh giá nào đang trong quá trình xét duyệt.
-                                    @elseif($currentStatus === 'approved')
-                                        Chưa có phiếu đánh giá nào đã được duyệt hoàn tất.
-                                    @else
-                                        Không tìm thấy phiếu đánh giá nào.
-                                    @endif
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-
-            @if($evaluations->hasPages())
-                <div class="card-footer bg-white py-3 border-top d-flex justify-content-between align-items-center flex-wrap gap-2">
-                    <span class="text-muted fs-12">
-                        Hiển thị từ <strong>{{ $evaluations->firstItem() }}</strong> đến <strong>{{ $evaluations->lastItem() }}</strong> trong tổng số <strong>{{ $evaluations->total() }}</strong> phiếu
-                    </span>
-                    {{ $evaluations->links() }}
+                                    </td>
+                                    <td class="pe-4 py-3">
+                                        <span class="text-muted fs-13"><i class="ri-user-follow-line me-1"></i>{{ $reviewerName }}</span>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="6" class="text-center py-5 text-muted">
+                                        <i class="ri-checkbox-circle-line fs-36 d-block mb-2 text-success"></i>
+                                        Tất cả nhân viên đều đã hoàn thành gửi phiếu đánh giá trong tháng {{ $targetMonth ?? date('n') }}/{{ $targetYear ?? date('Y') }}.
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
                 </div>
+
+                @if(isset($notEvaluatedEmployees) && $notEvaluatedEmployees->hasPages())
+                    <div class="card-footer bg-white py-3 border-top d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <span class="text-muted fs-12">
+                            Hiển thị từ <strong>{{ $notEvaluatedEmployees->firstItem() }}</strong> đến <strong>{{ $notEvaluatedEmployees->lastItem() }}</strong> trong tổng số <strong>{{ $notEvaluatedEmployees->total() }}</strong> nhân viên chưa làm đánh giá
+                        </span>
+                        {{ $notEvaluatedEmployees->links() }}
+                    </div>
+                @endif
+            @else
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead style="background: #f8fafc; border-bottom: 2px solid #e2e8f0;">
+                            <tr>
+                                <th class="ps-4 text-uppercase fs-12 text-muted fw-bold" style="min-width: 260px;">Nhân viên</th>
+                                <th class="text-uppercase fs-12 text-muted fw-bold" style="width: 150px;">Kỳ đánh giá</th>
+                                <th class="text-uppercase fs-12 text-muted fw-bold" style="width: 180px;">Trạng thái</th>
+                                <th class="text-center text-uppercase fs-12 text-muted fw-bold" style="width: 170px;">Tự chấm</th>
+                                <th class="text-center text-uppercase fs-12 text-muted fw-bold" style="width: 170px;">Quản lý chấm</th>
+                                <th class="text-center text-uppercase fs-12 text-muted fw-bold" style="width: 170px;">HR chốt</th>
+                                <th class="pe-4 text-end text-uppercase fs-12 text-muted fw-bold" style="width: 140px;">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse ($evaluations as $eval)
+                                @php
+                                    $mgrScore = $eval->details->sum('manager_score');
+                                @endphp
+                                <tr>
+                                    <td class="ps-4 py-3">
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-sm me-3 flex-shrink-0">
+                                                <div class="avatar-title rounded-circle bg-soft-primary text-primary fs-14 fw-bold">
+                                                    {{ mb_substr($eval->employee?->name ?? 'N', 0, 1) }}
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <strong class="text-dark fs-14">{{ $eval->employee?->name_with_position ?? $eval->employee?->name ?? 'N/A' }}</strong>
+                                                    <span class="badge bg-light text-primary border px-2 py-0 fs-11">
+                                                        {{ $eval->employee?->evaluation_type_name ?? $eval->evaluation_type_name ?? 'Back' }}
+                                                    </span>
+                                                </div>
+                                                <div class="text-muted fs-12">
+                                                    {{ $eval->employee?->department?->name ?? 'Phòng ban' }} • {{ $eval->employee?->position ?? 'Nhân sự' }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="py-3">
+                                        <span class="fw-semibold text-dark fs-13">Tháng {{ $eval->month }}/{{ $eval->year }}</span>
+                                    </td>
+                                    <td class="py-3">
+                                        @php
+                                            $evalEmp = $eval->employee;
+                                            $isSale = ($eval->evaluation_type ?: optional($evalEmp)->evaluation_type) === 'sale';
+                                            $hasMgr = !$isSale && ($evalEmp?->manager_l2_id || $evalEmp?->manager_id);
+                                        @endphp
+                                        @if ($eval->status == 'submitted')
+                                            @if ($hasMgr)
+                                                <span class="badge bg-soft-warning text-warning border border-warning px-2 py-1 fs-12">
+                                                    <i class="ri-time-line me-1"></i>Chờ QL duyệt
+                                                </span>
+                                            @else
+                                                <span class="badge bg-soft-info text-info border border-info px-2 py-1 fs-12">
+                                                    <i class="ri-time-line me-1"></i>Chờ HR duyệt
+                                                </span>
+                                            @endif
+                                        @elseif ($eval->status == 'manager_reviewed')
+                                            <span class="badge bg-soft-info text-info border border-info px-2 py-1 fs-12">
+                                                <i class="ri-check-double-line me-1"></i>Chờ HR chốt
+                                            </span>
+                                        @elseif ($eval->status == 'hr_approved')
+                                            <span class="badge bg-soft-success text-success border border-success px-2 py-1 fs-12">
+                                                <i class="ri-checkbox-circle-line me-1"></i>Đã chốt
+                                            </span>
+                                        @else
+                                            <span class="badge bg-dark px-2 py-1 fs-12">{{ $eval->status }}</span>
+                                        @endif
+                                    </td>
+                                    <td class="text-center py-3">
+                                        {!! getApprovalGradeBadge($eval->self_total_score) !!}
+                                    </td>
+                                    <td class="text-center py-3">
+                                        @if(!$hasMgr)
+                                            <span class="text-muted fs-12">-</span>
+                                        @elseif($eval->status != 'submitted' || (float)$mgrScore > 0)
+                                            {!! getApprovalGradeBadge($mgrScore) !!}
+                                        @else
+                                            <span class="text-muted fs-12">-</span>
+                                        @endif
+                                    </td>
+                                    <td class="text-center py-3">
+                                        @if($eval->status == 'hr_approved' && (float)$eval->final_score > 0)
+                                            {!! getApprovalGradeBadge($eval->final_score) !!}
+                                        @else
+                                            <span class="text-muted fs-12">-</span>
+                                        @endif
+                                    </td>
+                                    <td class="pe-4 text-end py-3">
+                                        <a href="{{ route('backend.evaluation-approvals.edit', $eval->id) }}" class="btn btn-sm btn-primary px-3 py-1">
+                                            <i class="ri-eye-line me-1"></i> Xem / Duyệt
+                                        </a>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="7" class="text-center py-5 text-muted">
+                                        <i class="ri-inbox-line fs-36 d-block mb-2 text-muted"></i>
+                                        @if($currentStatus === 'waiting')
+                                            Tuyệt vời! Hiện tại không có phiếu nào đang chờ bạn duyệt.
+                                        @elseif($currentStatus === 'pending')
+                                            Không có phiếu đánh giá nào đang trong quá trình xét duyệt.
+                                        @elseif($currentStatus === 'approved')
+                                            Chưa có phiếu đánh giá nào đã được duyệt hoàn tất.
+                                        @else
+                                            Không tìm thấy phiếu đánh giá nào.
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+
+                @if($evaluations->hasPages())
+                    <div class="card-footer bg-white py-3 border-top d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <span class="text-muted fs-12">
+                            Hiển thị từ <strong>{{ $evaluations->firstItem() }}</strong> đến <strong>{{ $evaluations->lastItem() }}</strong> trong tổng số <strong>{{ $evaluations->total() }}</strong> phiếu
+                        </span>
+                        {{ $evaluations->links() }}
+                    </div>
+                @endif
             @endif
         </div>
     </div>

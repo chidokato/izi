@@ -56,6 +56,11 @@ class Employee extends Model
         return $this->hasMany(AttendanceRequest::class);
     }
 
+    public function evaluations()
+    {
+        return $this->hasMany(Evaluation::class, 'employee_id');
+    }
+
     public function manager()
     {
         return $this->belongsTo(Employee::class, 'manager_id');
