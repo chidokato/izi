@@ -84,7 +84,65 @@ class AttendanceRequestController extends Controller
             }
         }
 
+        $isHR = optional($user->employee)->level === 'HR' || $user->isAdmin();
+        $empId = $user->employee_id;
+        $userId = $user->id;
+
+        $applyWaitingForMe = function($q) use ($isHR, $empId, $userId) {
+            $q->where('attendance_requests.status', 'pending');
+
+            $q->where(function($sub) use ($isHR, $empId, $userId) {
+                // Step 1: current_approval_step == 1
+                $sub->where(function($q1) use ($empId, $userId) {
+                    $q1->where('current_approval_step', 1)
+                       ->where(function($sub1) use ($empId, $userId) {
+                           $sub1->whereHas('requestApprovals', function($qa) use ($userId) {
+                               $qa->where('step', 1)->where('status', 'pending')->where('approver_id', $userId);
+                           });
+                           if ($empId) {
+                               $sub1->orWhereHas('employee', function($qe) use ($empId) {
+                                   $qe->where('manager_id', $empId);
+                               });
+                           }
+                       });
+                });
+
+                // Step 2: current_approval_step == 2
+                $sub->orWhere(function($q2) use ($empId, $userId) {
+                    $q2->where('current_approval_step', 2)
+                       ->where(function($sub2) use ($empId, $userId) {
+                           $sub2->whereHas('requestApprovals', function($qa) use ($userId) {
+                               $qa->where('step', 2)->where('status', 'pending')->where('approver_id', $userId);
+                           });
+                           if ($empId) {
+                               $sub2->orWhereHas('employee', function($qe) use ($empId) {
+                                   $qe->where('manager_l2_id', $empId);
+                               });
+                           }
+                       });
+                });
+
+                // Step 3: current_approval_step == 3
+                $sub->orWhere(function($q3) use ($isHR, $userId) {
+                    $q3->where('current_approval_step', 3)
+                       ->where(function($sub3) use ($isHR, $userId) {
+                           $sub3->whereHas('requestApprovals', function($qa) use ($userId) {
+                               $qa->where('step', 3)->where('status', 'pending')->where('approver_id', $userId);
+                           });
+                           if ($isHR) {
+                               $sub3->orWhereRaw('1 = 1');
+                           }
+                       });
+                });
+            });
+        };
+
+        $waitingQuery = (clone $baseQuery);
+        $applyWaitingForMe($waitingQuery);
+        $waitingCount = $waitingQuery->count();
+
         $counts = [
+            'waiting' => $waitingCount,
             'all' => (clone $baseQuery)->count(),
             'pending' => (clone $baseQuery)->where('status', 'pending')->count(),
             'approved' => (clone $baseQuery)->where('status', 'approved')->count(),
@@ -92,10 +150,15 @@ class AttendanceRequestController extends Controller
         ];
 
         $currentStatus = $request->input('status', 'pending');
+        if ($currentStatus === 'waiting' && $waitingCount == 0) {
+            $currentStatus = 'pending';
+        }
 
         $query = (clone $baseQuery)->with(['employee.department', 'employee.manager', 'employee.managerL2', 'requestApprovals.approver']);
 
-        if ($currentStatus !== 'all') {
+        if ($currentStatus === 'waiting') {
+            $applyWaitingForMe($query);
+        } elseif ($currentStatus !== 'all') {
             $query->where('status', $currentStatus);
         }
 

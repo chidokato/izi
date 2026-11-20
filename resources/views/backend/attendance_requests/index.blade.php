@@ -17,6 +17,13 @@
                     <div class="d-flex align-items-center flex-wrap gap-3">
                         <h5 class="card-title mb-0 fs-15">Danh sách phiếu</h5>
                         <ul class="nav nav-tabs nav-tabs-custom border-bottom-0" role="tablist">
+                            @if(($counts['waiting'] ?? 0) > 0)
+                            <li class="nav-item">
+                                <a class="nav-link fw-semibold {{ $currentStatus === 'waiting' ? 'active' : '' }}" href="{{ route('backend.attendance-requests.index', array_merge(request()->except('page'), ['status' => 'waiting'])) }}" title="Các phiếu đang chờ bạn duyệt">
+                                    Chờ duyệt <span class="badge {{ $currentStatus === 'waiting' ? 'bg-warning text-dark' : 'bg-warning-subtle text-warning' }} rounded-pill align-middle ms-1">{{ $counts['waiting'] ?? 0 }}</span>
+                                </a>
+                            </li>
+                            @endif
                             <li class="nav-item">
                                 <a class="nav-link fw-semibold {{ $currentStatus === 'pending' ? 'active' : '' }}" href="{{ route('backend.attendance-requests.index', array_merge(request()->except('page'), ['status' => 'pending'])) }}">
                                     Chưa duyệt <span class="badge {{ $currentStatus === 'pending' ? 'bg-warning text-dark' : 'bg-warning-subtle text-warning' }} rounded-pill align-middle ms-1">{{ $counts['pending'] ?? 0 }}</span>
