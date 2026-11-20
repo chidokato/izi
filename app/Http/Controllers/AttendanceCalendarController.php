@@ -12,13 +12,21 @@ class AttendanceCalendarController extends Controller
     {
         $request->validate([
             'employee_id' => 'nullable|integer|exists:employees,id',
+            'department_id' => 'nullable|integer|exists:departments,id',
             'month' => ['nullable', 'date_format:Y-m', 'regex:/^(19|20|21)\d{2}-(0[1-9]|1[0-2])$/'],
         ]);
-        $employees = \App\Models\Employee::with(['manager', 'managerL2'])->orderBy('name')->orderBy('employee_code')->get();
+        $departments = DB::table('departments')->where('status', 'active')->orderBy('name')->get(['id', 'name']);
+        $departmentId = $request->input('department_id');
+        $employeesQuery = \App\Models\Employee::with(['manager', 'managerL2']);
+        if ($departmentId) {
+            $employeesQuery->where('department_id', $departmentId);
+        }
+        $employees = $employeesQuery->orderBy('name')->orderBy('employee_code')->get();
         if (auth()->check() && !auth()->user()->isAdmin()) {
             $employeeId = auth()->user()->employee_id;
         } else {
-            $employeeId = $request->input('employee_id') ?: (auth()->check() && auth()->user()->employee_id ? auth()->user()->employee_id : optional($employees->first())->id);
+            $requestedEmployee = $employees->firstWhere('id', (int) $request->input('employee_id'));
+            $employeeId = $requestedEmployee?->id ?: (auth()->check() && auth()->user()->employee_id && !$departmentId ? auth()->user()->employee_id : optional($employees->first())->id);
         }
         $employee = $employeeId ? DB::table('employees as e')->leftJoin('departments as d', 'd.id', '=', 'e.department_id')
             ->where('e.id', $employeeId)->select('e.*', 'd.name as department_name')->first() : null;
@@ -315,7 +323,7 @@ class AttendanceCalendarController extends Controller
             $currentUserEmployee = \App\Models\Employee::with(['manager', 'managerL2'])->find(auth()->user()->employee_id);
         }
 
-        return view('backend.attendance.calendar', compact('employees', 'employee', 'currentUserEmployee', 'month', 'periodStart', 'periodEnd', 'days', 'totals', 'labels', 'latest', 'totalCongThucTe', 'totalCongTinhLuong', 'totalCongChuan'));
+        return view('backend.attendance.calendar', compact('employees', 'departments', 'departmentId', 'employee', 'currentUserEmployee', 'month', 'periodStart', 'periodEnd', 'days', 'totals', 'labels', 'latest', 'totalCongThucTe', 'totalCongTinhLuong', 'totalCongChuan'));
     }
 
     public function swapPunch(Request $request)

@@ -136,7 +136,16 @@
 @if(auth()->check() && auth()->user()->isAdmin())
 <div class="card"><div class="card-body">
     <form action="{{ route('backend.calendar.index') }}" method="get" class="row g-3 align-items-end">
-        <div class="col-md-6">
+        <div class="col-md-3">
+            <label for="calendar-department" class="form-label">Phòng ban</label>
+            <select id="calendar-department" name="department_id" class="form-select">
+                <option value="">Tất cả phòng ban</option>
+                @foreach($departments as $department)
+                <option value="{{ $department->id }}" @selected((string) $departmentId === (string) $department->id)>{{ $department->name }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div class="col-md-4">
             <label for="calendar-employee" class="form-label">Nhân viên</label>
             <select id="calendar-employee" name="employee_id" class="form-select" @disabled(!$employee)>
                 @forelse($employees as $person)
@@ -145,7 +154,7 @@
             </select>
         </div>
         <div class="col-md-3"><label for="calendar-month" class="form-label">Tháng theo dõi</label><input id="calendar-month" class="form-control" type="month" name="month" value="{{ $month->format('Y-m') }}" min="1900-01" max="2199-12" required></div>
-        <div class="col-md-3"><button class="btn btn-primary" @disabled(!$employee)>Xem lịch</button> <a class="btn btn-light" href="{{ route('backend.employees.index') }}">Nhân viên</a></div>
+        <div class="col-md-2"><button class="btn btn-primary" @disabled(!$employee)>Xem lịch</button></div>
     </form>
 </div></div>
 @endif
@@ -794,6 +803,10 @@ $(document).ready(function() {
         if($(this).val()) {
             $(this).closest('form').submit();
         }
+    });
+    $('#calendar-department').on('change', function() {
+        $('#calendar-employee').val('');
+        $(this).closest('form').submit();
     });
 
     $('.swap-punch').on('click', function(e) {
