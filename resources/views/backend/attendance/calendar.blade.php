@@ -275,7 +275,13 @@
                                 @elseif($day['request']->type == 'attendance_adjustment')
                                     (XN: {{ $day['request']->start_session == 'morning' ? 'Vào' : ($day['request']->start_session == 'afternoon' ? 'Ra' : 'Vào/Ra') }})
                                 @elseif($day['request']->type == 'business_trip')
-                                    ({{ isset($day['request']->business_hours) && $day['request']->business_hours < 8 ? round($day['request']->business_hours, 1) . 'h' : 'Cả ngày' }})
+                                    @php
+                                        $bHoursStr = isset($day['request']->business_hours) && $day['request']->business_hours < 8 ? round($day['request']->business_hours, 1) . 'h' : 'Cả ngày';
+                                        $timeRange = (!empty($day['request']->business_start_time) && !empty($day['request']->business_end_time))
+                                            ? $day['request']->business_start_time . ' - ' . $day['request']->business_end_time
+                                            : '';
+                                    @endphp
+                                    ({{ $bHoursStr }})@if($timeRange)<span class="text-muted fw-normal ms-1" style="font-size: 10px;">{{ $timeRange }}</span>@endif
                                 @elseif($day['request']->start_session == 'afternoon' && substr($day['request']->start_date, 0, 10) == $day['date']->toDateString())
                                     (Nửa chiều)
                                 @elseif($day['request']->end_session == 'morning' && substr($day['request']->end_date, 0, 10) == $day['date']->toDateString())

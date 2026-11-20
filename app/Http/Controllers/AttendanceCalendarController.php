@@ -38,6 +38,7 @@ class AttendanceCalendarController extends Controller
             
         $requests = $employee ? DB::table('attendance_requests')
             ->where('employee_id', $employee->id)
+            ->where('status', 'approved')
             ->where(function($q) use ($periodStart, $periodEnd) {
                 $q->whereBetween('start_date', [$periodStart->toDateString(), $periodEnd->toDateString()])
                   ->orWhereBetween('end_date', [$periodStart->toDateString(), $periodEnd->toDateString()]);
@@ -54,7 +55,7 @@ class AttendanceCalendarController extends Controller
         $labels = [
             'complete' => 'Hợp lệ', 'missing' => 'Thiếu một giờ chấm',
             'blank' => 'Vắng', 'overnight' => 'Kiểm tra ca qua đêm', 'no_data' => '',
-            'leave' => 'Phép năm/thường', 'adjustment' => 'B.sung công', 'business' => 'Công tác'
+            'leave' => 'Phép năm/thường', 'adjustment' => 'B.sung công', 'business' => 'c.tác'
         ];
         $totals = array_fill_keys(array_keys($labels), 0);
         $days = [];
@@ -154,7 +155,7 @@ class AttendanceCalendarController extends Controller
                     }
                 } elseif ($dayReq->type === 'business_trip') {
                     $status = 'business';
-                    $label = 'Công tác';
+                    $label = 'c.tác';
                     
                     if ($rule && $rule->is_working_day && !$isNonWorkingDay) {
                         $seconds = fn ($time) => (int) substr($time, 0, 2) * 3600 + (int) substr($time, 3, 2) * 60 + (int) substr($time, 6, 2);
@@ -185,7 +186,13 @@ class AttendanceCalendarController extends Controller
                             $bHours = ($workOverlap - $breakOverlap) / 3600;
                         }
                         
-                        $totalWorked = ($metrics && isset($metrics['regular_hours'])) ? $metrics['regular_hours'] : 0;
+                        // A missing punch should not erase the hours covered by the other
+                        // punch. Treat it as the scheduled boundary when adding business time.
+                        $punchStart = $entry && $entry->checkin !== null ? $seconds($entry->checkin) : $rStart;
+                        $punchEnd = $entry && $entry->checkout !== null ? $seconds($entry->checkout) : $rEnd;
+                        $punchWorkOverlap = $overlap($punchStart, $punchEnd, $rStart, $rEnd);
+                        $punchBreakOverlap = ($bStartSec && $bEndSec) ? $overlap($punchStart, $punchEnd, $bStartSec, $bEndSec) : 0;
+                        $totalWorked = max(0, $punchWorkOverlap - $punchBreakOverlap) / 3600;
                         $combined = $totalWorked + $bHours;
                         
                         if ($date->dayOfWeek == 6) {
@@ -199,7 +206,22 @@ class AttendanceCalendarController extends Controller
                                 $cong = 0;
                             }
                         }
+
+                        $defaultStartTime = ($rule && $rule->start_time) ? substr($rule->start_time, 0, 5) : '08:30';
+                        $defaultEndTime = ($rule && $rule->end_time) ? substr($rule->end_time, 0, 5) : ($date->dayOfWeek == 6 ? '12:30' : '17:30');
+
+                        $isStartDay = ($dateStr === substr($reqStartStr, 0, 10));
+                        $isEndDay = ($dateStr === substr($reqEndStr, 0, 10));
+
+                        $bStart = $isStartDay ? substr($reqStartStr, 11, 5) : $defaultStartTime;
+                        if ($bStart === '00:00') $bStart = $defaultStartTime;
+
+                        $bEnd = $isEndDay ? substr($reqEndStr, 11, 5) : $defaultEndTime;
+                        if ($bEnd === '00:00' || $bEnd === '23:59') $bEnd = $defaultEndTime;
+
                         $dayReq->business_hours = $bHours;
+                        $dayReq->business_start_time = $bStart;
+                        $dayReq->business_end_time = $bEnd;
                     } elseif (!$isNonWorkingDay) {
                         // Fallback if no rule
                         $dayStartStr = $dateStr . ' 00:00:00';
@@ -214,12 +236,26 @@ class AttendanceCalendarController extends Controller
                             if ($bHours > 8) $bHours = 8;
                         }
                         $cong = 1;
+
+                        $defaultStartTime = '08:30';
+                        $defaultEndTime = ($date->dayOfWeek == 6 ? '12:30' : '17:30');
+                        $isStartDay = ($dateStr === substr($reqStartStr, 0, 10));
+                        $isEndDay = ($dateStr === substr($reqEndStr, 0, 10));
+                        $bStart = $isStartDay ? substr($reqStartStr, 11, 5) : $defaultStartTime;
+                        if ($bStart === '00:00') $bStart = $defaultStartTime;
+                        $bEnd = $isEndDay ? substr($reqEndStr, 11, 5) : $defaultEndTime;
+                        if ($bEnd === '00:00' || $bEnd === '23:59') $bEnd = $defaultEndTime;
+
                         $dayReq->business_hours = $bHours;
+                        $dayReq->business_start_time = $bStart;
+                        $dayReq->business_end_time = $bEnd;
                     } else {
                         // Sunday or non-working day: 0 hours, no cong
                         $bHours = 0;
                         $cong = null;
                         $dayReq->business_hours = 0;
+                        $dayReq->business_start_time = null;
+                        $dayReq->business_end_time = null;
                     }
                 }
                 
