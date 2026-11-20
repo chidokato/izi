@@ -337,16 +337,16 @@
                                     </div>
                                 </div>
                                 <div class="overflow-hidden">
-                                    <h6 class="text-white mb-0 fw-bold text-truncate fs-13">{{ $evaluation->employee->name ?? auth()->user()->name }}</h6>
+                                    <h6 class="text-white mb-0 fw-bold text-truncate fs-13">{{ $evaluation->employee?->name ?? auth()->user()->name }}</h6>
                                     <span class="badge bg-white text-primary fw-semibold px-1.5 py-0 fs-10">
-                                        {{ $evaluation->employee->evaluation_type_name }}
+                                        {{ $evaluation->employee?->evaluation_type_name ?? $evaluation->evaluation_type_name ?? 'Back' }}
                                     </span>
                                 </div>
                             </div>
 
                             <div class="mt-2 text-white-50 fs-11 d-flex flex-column gap-1" style="border-top: 1px solid rgba(255, 255, 255, 0.2); padding-top: 10px;">
-                                <div><i class="ri-building-line me-1 text-white"></i>{{ $evaluation->employee->department->name ?? 'Phòng ban' }}</div>
-                                <div><i class="ri-briefcase-line me-1 text-white"></i>{{ $evaluation->employee->position ?? 'Nhân sự' }}</div>
+                                <div><i class="ri-building-line me-1 text-white"></i>{{ $evaluation->employee?->department?->name ?? 'Phòng ban' }}</div>
+                                <div><i class="ri-briefcase-line me-1 text-white"></i>{{ $evaluation->employee?->position ?? 'Nhân sự' }}</div>
                                 <div><i class="ri-calendar-event-line me-1 text-white"></i>Tháng <strong class="text-white">{{ $evaluation->month }}/{{ $evaluation->year }}</strong></div>
                             </div>
                         </div>

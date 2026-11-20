@@ -27,7 +27,14 @@ class Evaluation extends Model
 
     public function employee()
     {
-        return $this->belongsTo(Employee::class);
+        return $this->belongsTo(Employee::class)->withTrashed();
+    }
+
+    public function getEvaluationTypeNameAttribute(): string
+    {
+        $types = EvaluationCriterion::getTargetTypes();
+        $type = $this->evaluation_type ?: ($this->employee?->evaluation_type ?? 'office');
+        return $types[$type] ?? ($this->employee?->evaluation_type_name ?? 'Back');
     }
 
     public function grade()

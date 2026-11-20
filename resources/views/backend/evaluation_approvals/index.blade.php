@@ -74,18 +74,18 @@
                                     <div class="d-flex align-items-center">
                                         <div class="avatar-sm me-3 flex-shrink-0">
                                             <div class="avatar-title rounded-circle bg-soft-primary text-primary fs-14 fw-bold">
-                                                {{ mb_substr($eval->employee->name ?? 'N', 0, 1) }}
+                                                {{ mb_substr($eval->employee?->name ?? 'N', 0, 1) }}
                                             </div>
                                         </div>
                                         <div>
                                             <div class="d-flex align-items-center gap-2">
-                                                <strong class="text-dark fs-14">{{ $eval->employee->name_with_position ?? $eval->employee->name ?? 'N/A' }}</strong>
+                                                <strong class="text-dark fs-14">{{ $eval->employee?->name_with_position ?? $eval->employee?->name ?? 'N/A' }}</strong>
                                                 <span class="badge bg-light text-primary border px-2 py-0 fs-11">
-                                                    {{ $eval->employee->evaluation_type_name }}
+                                                    {{ $eval->employee?->evaluation_type_name ?? $eval->evaluation_type_name ?? 'Back' }}
                                                 </span>
                                             </div>
                                             <div class="text-muted fs-12">
-                                                {{ $eval->employee->department->name ?? 'Phòng ban' }} • {{ $eval->employee->position ?? 'Nhân sự' }}
+                                                {{ $eval->employee?->department?->name ?? 'Phòng ban' }} • {{ $eval->employee?->position ?? 'Nhân sự' }}
                                             </div>
                                         </div>
                                     </div>
