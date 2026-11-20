@@ -4,16 +4,131 @@
 @section('page_title', 'Danh sách phiếu đánh giá cần xét duyệt')
 @section('breadcrumb', 'Duyệt đánh giá')
 
+@push('styles')
+<style>
+    .nav-tabs-custom .nav-link {
+        font-size: 13px;
+        padding: 10px 18px;
+        color: #495057;
+    }
+    .nav-tabs-custom .nav-link:hover {
+        color: #2563eb;
+    }
+    .nav-tabs-custom .nav-link.active {
+        color: #2563eb !important;
+        font-weight: 600;
+        border-bottom: 2px solid #2563eb !important;
+    }
+</style>
+@endpush
+
 @section('content')
     <div class="card border-0 shadow-sm" style="border-radius: 12px;">
-        <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">
-            <div>
-                <h5 class="card-title mb-0 fs-15 fw-bold text-dark">
-                    <i class="ri-user-follow-line text-primary me-2"></i>Phiếu đánh giá nhân viên cấp dưới & phòng ban
-                </h5>
-                <span class="text-muted fs-12">Xem xét, chấm điểm và phê duyệt kết quả đánh giá năng lực định kỳ</span>
+        <div class="card-header bg-white pt-3 pb-0 border-bottom-0">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+                <div>
+                    <h5 class="card-title mb-0 fs-15 fw-bold text-dark">
+                        <i class="ri-user-follow-line text-primary me-2"></i>Phiếu đánh giá nhân viên cấp dưới & phòng ban
+                    </h5>
+                    <span class="text-muted fs-12">Xem xét, chấm điểm và phê duyệt kết quả đánh giá năng lực định kỳ</span>
+                </div>
             </div>
+
+            <!-- TABS PHÂN LOẠI: Chờ duyệt, Chưa duyệt, Đã duyệt, Tất cả -->
+            <ul class="nav nav-tabs nav-tabs-custom border-bottom-0 mt-2" role="tablist">
+                <li class="nav-item">
+                    <a class="nav-link fw-semibold {{ $currentStatus === 'waiting' ? 'active' : '' }}" 
+                       href="{{ route('backend.evaluation-approvals.index', array_merge(request()->except(['page']), ['status' => 'waiting'])) }}"
+                       title="Các phiếu đang chờ bạn duyệt">
+                        <i class="ri-time-line me-1 align-bottom text-warning"></i> Chờ duyệt 
+                        <span class="badge {{ $currentStatus === 'waiting' ? 'bg-warning text-dark' : 'bg-warning-subtle text-warning' }} rounded-pill align-middle ms-1">
+                            {{ $counts['waiting'] ?? 0 }}
+                        </span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link fw-semibold {{ $currentStatus === 'pending' ? 'active' : '' }}" 
+                       href="{{ route('backend.evaluation-approvals.index', array_merge(request()->except(['page']), ['status' => 'pending'])) }}"
+                       title="Các phiếu chưa hoàn thành phê duyệt">
+                        <i class="ri-hourglass-2-line me-1 align-bottom text-info"></i> Chưa duyệt 
+                        <span class="badge {{ $currentStatus === 'pending' ? 'bg-info text-white' : 'bg-info-subtle text-info' }} rounded-pill align-middle ms-1">
+                            {{ $counts['pending'] ?? 0 }}
+                        </span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link fw-semibold {{ $currentStatus === 'approved' ? 'active' : '' }}" 
+                       href="{{ route('backend.evaluation-approvals.index', array_merge(request()->except(['page']), ['status' => 'approved'])) }}"
+                       title="Các phiếu đã được phê duyệt">
+                        <i class="ri-checkbox-circle-line me-1 align-bottom text-success"></i> Đã duyệt 
+                        <span class="badge {{ $currentStatus === 'approved' ? 'bg-success text-white' : 'bg-success-subtle text-success' }} rounded-pill align-middle ms-1">
+                            {{ $counts['approved'] ?? 0 }}
+                        </span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link fw-semibold {{ $currentStatus === 'all' ? 'active' : '' }}" 
+                       href="{{ route('backend.evaluation-approvals.index', array_merge(request()->except(['page']), ['status' => 'all'])) }}"
+                       title="Tất cả phiếu đánh giá">
+                        <i class="ri-apps-line me-1 align-bottom text-primary"></i> Tất cả 
+                        <span class="badge {{ $currentStatus === 'all' ? 'bg-primary text-white' : 'bg-light text-muted border' }} rounded-pill align-middle ms-1">
+                            {{ $counts['all'] ?? 0 }}
+                        </span>
+                    </a>
+                </li>
+            </ul>
         </div>
+
+        <!-- BỘ LỌC TÌM KIẾM -->
+        <div class="card-body border-top border-bottom bg-light py-2 px-3">
+            <form method="GET" action="{{ route('backend.evaluation-approvals.index') }}">
+                <input type="hidden" name="status" value="{{ $currentStatus }}">
+                <div class="row g-2 align-items-center">
+                    <div class="col-xxl-4 col-md-4 col-sm-6">
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text bg-white border-end-0"><i class="ri-search-line text-muted"></i></span>
+                            <input type="text" class="form-control border-start-0" name="search" placeholder="Nhập tên nhân viên cần tìm..." value="{{ request('search') }}">
+                        </div>
+                    </div>
+                    <div class="col-xxl-3 col-md-3 col-sm-6">
+                        <select class="form-select form-select-sm" name="department_id">
+                            <option value="">Tất cả phòng ban</option>
+                            @foreach($departments as $dept)
+                                <option value="{{ $dept->id }}" {{ request('department_id') == $dept->id ? 'selected' : '' }}>{{ $dept->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-xxl-2 col-md-2 col-sm-4">
+                        <select class="form-select form-select-sm" name="month">
+                            <option value="">Tất cả tháng</option>
+                            @for($m = 1; $m <= 12; $m++)
+                                <option value="{{ $m }}" {{ request('month') == $m ? 'selected' : '' }}>Tháng {{ $m }}</option>
+                            @endfor
+                        </select>
+                    </div>
+                    <div class="col-xxl-2 col-md-2 col-sm-4">
+                        <select class="form-select form-select-sm" name="year">
+                            <option value="">Tất cả năm</option>
+                            @php $currYear = (int)date('Y'); @endphp
+                            @for($y = $currYear; $y >= $currYear - 2; $y--)
+                                <option value="{{ $y }}" {{ request('year') == $y ? 'selected' : '' }}>Năm {{ $y }}</option>
+                            @endfor
+                        </select>
+                    </div>
+                    <div class="col-xxl-1 col-md-1 col-sm-4 d-flex gap-1">
+                        <button type="submit" class="btn btn-primary btn-sm flex-fill" title="Lọc">
+                            <i class="ri-filter-2-line"></i>
+                        </button>
+                        @if(request()->filled('search') || request()->filled('department_id') || request()->filled('month') || request()->filled('year'))
+                            <a href="{{ route('backend.evaluation-approvals.index', ['status' => $currentStatus]) }}" class="btn btn-light btn-sm border" title="Xóa bộ lọc">
+                                <i class="ri-refresh-line"></i>
+                            </a>
+                        @endif
+                    </div>
+                </div>
+            </form>
+        </div>
+
         <div class="card-body p-0">
             @php
                 if (!function_exists('getApprovalGradeBadge')) {
@@ -137,13 +252,30 @@
                             <tr>
                                 <td colspan="7" class="text-center py-5 text-muted">
                                     <i class="ri-inbox-line fs-36 d-block mb-2 text-muted"></i>
-                                    Không có phiếu đánh giá nào cần xét duyệt.
+                                    @if($currentStatus === 'waiting')
+                                        Tuyệt vời! Hiện tại không có phiếu nào đang chờ bạn duyệt.
+                                    @elseif($currentStatus === 'pending')
+                                        Không có phiếu đánh giá nào đang trong quá trình xét duyệt.
+                                    @elseif($currentStatus === 'approved')
+                                        Chưa có phiếu đánh giá nào đã được duyệt hoàn tất.
+                                    @else
+                                        Không tìm thấy phiếu đánh giá nào.
+                                    @endif
                                 </td>
                             </tr>
                         @endforelse
                     </tbody>
                 </table>
             </div>
+
+            @if($evaluations->hasPages())
+                <div class="card-footer bg-white py-3 border-top d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <span class="text-muted fs-12">
+                        Hiển thị từ <strong>{{ $evaluations->firstItem() }}</strong> đến <strong>{{ $evaluations->lastItem() }}</strong> trong tổng số <strong>{{ $evaluations->total() }}</strong> phiếu
+                    </span>
+                    {{ $evaluations->links() }}
+                </div>
+            @endif
         </div>
     </div>
 @endsection
