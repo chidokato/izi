@@ -149,7 +149,8 @@ class AttendanceRequestController extends Controller
             'rejected' => (clone $baseQuery)->where('status', 'rejected')->count(),
         ];
 
-        $currentStatus = $request->input('status', 'pending');
+        $defaultStatus = $waitingCount > 0 ? 'waiting' : 'pending';
+        $currentStatus = $request->input('status', $defaultStatus);
         if ($currentStatus === 'waiting' && $waitingCount == 0) {
             $currentStatus = 'pending';
         }
