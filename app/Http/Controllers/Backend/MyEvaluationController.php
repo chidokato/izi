@@ -124,6 +124,49 @@ class MyEvaluationController extends Controller
         // Lấy danh sách các xếp loại
         $grades = \App\Models\EvaluationGrade::orderBy('min_score', 'asc')->get();
 
+        // Đảm bảo tất cả tiêu chí lá đều có bản ghi trong evaluation_details
+        $existingCriteriaIds = $evaluation->details->pluck('criteria_id')->toArray();
+        $missingDetails = [];
+        foreach ($criteriaTree as $parent) {
+            if ($parent->children->isNotEmpty()) {
+                foreach ($parent->children as $child) {
+                    if (!in_array($child->id, $existingCriteriaIds)) {
+                        $missingDetails[] = [
+                            'evaluation_id' => $evaluation->id,
+                            'criteria_id' => $child->id,
+                            'self_score' => 0,
+                            'manager_score' => 0,
+                            'hr_score' => 0,
+                            'is_self_selected' => false,
+                            'is_manager_selected' => false,
+                            'is_hr_selected' => false,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ];
+                    }
+                }
+            } else {
+                if (!in_array($parent->id, $existingCriteriaIds)) {
+                    $missingDetails[] = [
+                        'evaluation_id' => $evaluation->id,
+                        'criteria_id' => $parent->id,
+                        'self_score' => 0,
+                        'manager_score' => 0,
+                        'hr_score' => 0,
+                        'is_self_selected' => false,
+                        'is_manager_selected' => false,
+                        'is_hr_selected' => false,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ];
+                }
+            }
+        }
+        if (!empty($missingDetails)) {
+            \App\Models\EvaluationDetail::insert($missingDetails);
+            $evaluation->load('details.criterion.parent');
+        }
+
         return view('backend.my_evaluations.edit', compact('evaluation', 'criteriaTree', 'grades'));
     }
 

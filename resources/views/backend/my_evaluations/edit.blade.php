@@ -64,12 +64,40 @@
 
 @section('content')
     @php
+        $isEditable = in_array($evaluation->status, ['draft', 'submitted']);
         $matchedInitialGrade = \App\Models\EvaluationGrade::getGradeForScore($evaluation->self_total_score);
-        $initialGradeName = $matchedInitialGrade ? $matchedInitialGrade->name : '-';
+        $initialGradeName = $matchedInitialGrade ? 'Hạng ' . $matchedInitialGrade->name : '-';
+        $gradeColors = [
+            'A' => '#10b981',
+            'B' => '#3b82f6',
+            'C' => '#f59e0b',
+            'D' => '#f97316',
+            'E' => '#ef4444',
+        ];
+        $initialGradeColor = ($matchedInitialGrade && isset($gradeColors[strtoupper($matchedInitialGrade->name)]))
+            ? $gradeColors[strtoupper($matchedInitialGrade->name)]
+            : '#64748b';
+
         $totalMaxPossible = 0;
         foreach ($criteriaTree as $p) {
             $totalMaxPossible += $p->children->isNotEmpty() ? (float)($p->children->max('max_score') ?? 0) : (float)($p->max_score ?? 0);
         }
+
+        $totalCriteriaCount = $criteriaTree->count();
+        $completedCount = 0;
+        foreach ($criteriaTree as $p) {
+            if ($p->children->isNotEmpty()) {
+                $hasSelected = $p->children->contains(function($c) use ($evaluation) {
+                    $d = $evaluation->details->where('criteria_id', $c->id)->first();
+                    return $d && $d->is_self_selected;
+                });
+                if ($hasSelected) $completedCount++;
+            } else {
+                $d = $evaluation->details->where('criteria_id', $p->id)->first();
+                if ($d && $d->is_self_selected) $completedCount++;
+            }
+        }
+        $completionPct = $totalCriteriaCount > 0 ? round(($completedCount / $totalCriteriaCount) * 100) : 0;
     @endphp
 
     @if(session('info'))
@@ -135,7 +163,7 @@
                                             </td>
                                             <td class="text-center py-2"></td>
                                             <td class="text-center py-2">
-                                                <span class="badge bg-soft-primary text-primary border border-primary px-2 py-0.5 fs-11 fw-bold parent-self-score-badge" id="parent-score-{{ $parent->id }}">
+                                                <span class="badge {{ $parentSelfScore !== '-' ? 'bg-primary text-white' : 'bg-soft-secondary text-muted border' }} px-2 py-0.5 fs-11 fw-bold parent-self-score-badge" id="parent-score-{{ $parent->id }}">
                                                     {{ $parentSelfScore !== '-' ? $parentSelfScore . ' đ' : 'Chưa chọn' }}
                                                 </span>
                                             </td>
@@ -184,7 +212,7 @@
                                                     </span>
                                                 </td>
                                                 <td class="text-center py-2">
-                                                    @if (in_array($evaluation->status, ['draft']))
+                                                    @if ($isEditable)
                                                         <div class="form-check d-flex justify-content-center mb-0">
                                                             <input class="form-check-input score-radio" 
                                                                    type="radio" 
@@ -229,7 +257,7 @@
                                                 </span>
                                             </td>
                                             <td class="text-center py-2">
-                                                @if (in_array($evaluation->status, ['draft']))
+                                                @if ($isEditable)
                                                     <div class="form-check d-flex justify-content-center mb-0">
                                                         <input class="form-check-input score-single" 
                                                                style="transform: scale(1.15); cursor: pointer;" 
@@ -270,7 +298,7 @@
                             <textarea name="self_note" class="form-control fs-12" rows="2" 
                                       style="border-radius: 6px;"
                                       placeholder="Nhập ghi chú tóm tắt kết quả nổi bật hoặc giải trình trong tháng..."
-                                      {{ in_array($evaluation->status, ['draft']) ? '' : 'disabled' }}>{{ $evaluation->self_note }}</textarea>
+                                      {{ $isEditable ? '' : 'disabled' }}>{{ $evaluation->self_note }}</textarea>
                         </div>
 
                         @if ($evaluation->manager_note)
@@ -354,7 +382,7 @@
                                     <div class="h-100 p-2 rounded-2 text-center d-flex flex-column justify-content-between" style="background: #f8fafc; border: 1px solid #e2e8f0;">
                                         <span class="d-block text-muted fs-10 text-uppercase fw-semibold">Xếp loại</span>
                                         <div class="my-auto py-1">
-                                            <span class="badge fs-12 px-2 py-0.5 grade-badge-pill" id="sidebar-grade-display" style="background-color: #10b981;">
+                                            <span class="badge fs-12 px-2 py-0.5 grade-badge-pill" id="sidebar-grade-display" style="background-color: {{ $initialGradeColor }};">
                                                 {{ $initialGradeName }}
                                             </span>
                                         </div>
@@ -367,22 +395,27 @@
                             <div class="p-2 rounded-2 mb-3" style="background: #f0f7ff; border: 1px solid #dbeafe;">
                                 <div class="d-flex justify-content-between align-items-center mb-1">
                                     <span class="fs-11 fw-semibold text-dark"><i class="ri-task-line text-primary me-1"></i>Tiến độ</span>
-                                    <span class="fs-11 fw-bold text-primary" id="completion-ratio">0/0</span>
+                                    <span class="fs-11 fw-bold text-primary" id="completion-ratio">{{ $completedCount }}/{{ $totalCriteriaCount }} ({{ $completionPct }}%)</span>
                                 </div>
                                 <div class="progress" style="height: 5px; border-radius: 3px; background: #cbd5e1;">
-                                    <div class="progress-bar bg-primary" id="completion-progress-bar" style="width: 0%; transition: width 0.3s ease;"></div>
+                                    <div class="progress-bar {{ $completionPct == 100 ? 'bg-success' : 'bg-primary' }}" id="completion-progress-bar" style="width: {{ $completionPct }}%; transition: width 0.3s ease;"></div>
                                 </div>
                             </div>
 
                             <!-- Các nút hành động chính -->
-                            @if (in_array($evaluation->status, ['draft']))
-                            <div class="d-flex gap-2">
+                            @if ($isEditable)
+                            <div class="d-flex gap-2 mb-2">
                                 <button type="submit" class="btn btn-outline-secondary btn-sm flex-fill fw-semibold py-1.5 fs-12 text-nowrap">
                                     <i class="ri-save-line me-1"></i> Lưu nháp
                                 </button>
                                 <button type="button" class="btn btn-primary btn-sm flex-fill fw-semibold py-1.5 btn-submit-eval shadow-sm fs-12 text-nowrap">
-                                    <i class="ri-send-plane-fill me-1"></i> Gửi duyệt
+                                    <i class="ri-send-plane-fill me-1"></i> {{ $evaluation->status == 'submitted' ? 'Cập nhật & Gửi' : 'Gửi duyệt' }}
                                 </button>
+                            </div>
+                            <div class="d-grid">
+                                <a href="{{ route('backend.my-evaluations.index') }}" class="btn btn-soft-secondary btn-sm py-1 fs-11">
+                                    <i class="ri-arrow-left-line me-1"></i> Quay lại danh sách
+                                </a>
                             </div>
                             @else
                             <div class="d-grid">
@@ -407,12 +440,12 @@
                 <div>
                     <span class="text-muted fs-11 text-uppercase fw-semibold">Điểm:</span>
                     <strong class="text-primary fs-15" id="mobile-score-display">{{ (float)$evaluation->self_total_score }}đ</strong>
-                    <span class="badge fs-11 px-2 py-0 ms-1 grade-badge-pill" id="mobile-grade-display" style="background-color: #10b981;">{{ $initialGradeName }}</span>
+                    <span class="badge fs-11 px-2 py-0 ms-1 grade-badge-pill" id="mobile-grade-display" style="background-color: {{ $initialGradeColor }};">{{ $initialGradeName }}</span>
                 </div>
-                @if (in_array($evaluation->status, ['draft']))
+                @if ($isEditable)
                 <div class="d-flex gap-1">
                     <button type="submit" class="btn btn-sm btn-outline-secondary py-1 px-2 fs-12">Lưu</button>
-                    <button type="button" class="btn btn-sm btn-primary py-1 px-2 fs-12 btn-submit-eval">Gửi duyệt</button>
+                    <button type="button" class="btn btn-sm btn-primary py-1 px-2 fs-12 btn-submit-eval">{{ $evaluation->status == 'submitted' ? 'Cập nhật' : 'Gửi duyệt' }}</button>
                 </div>
                 @endif
             </div>
@@ -431,7 +464,7 @@
         const mobileGradeDisplay = document.getElementById('mobile-grade-display');
         const completionRatio = document.getElementById('completion-ratio');
         const completionBar = document.getElementById('completion-progress-bar');
-        const isEditable = {{ in_array($evaluation->status, ['draft']) ? 'true' : 'false' }};
+        const isEditable = {{ $isEditable ? 'true' : 'false' }};
 
         const grades = @json($grades);
 
@@ -598,21 +631,26 @@
             });
         }
 
-        // Chạy khởi tạo ngay lúc vừa tải trang
-        updateScoreAndGrade();
+        // Chạy khởi tạo ngay lúc vừa tải trang nếu ở chế độ có thể chỉnh sửa
+        if (isEditable) {
+            updateScoreAndGrade();
+        }
 
         // Xử lý nút Gửi duyệt bằng SweetAlert2
         document.querySelectorAll('.btn-submit-eval').forEach(btn => {
             btn.addEventListener('click', function(e) {
                 e.preventDefault();
+                const isAlreadySubmitted = {{ $evaluation->status == 'submitted' ? 'true' : 'false' }};
                 Swal.fire({
-                    title: 'Xác nhận gửi duyệt?',
-                    text: 'Sau khi gửi, phiếu đánh giá sẽ được chuyển cho Quản lý xét duyệt và bạn không thể chỉnh sửa điểm nữa.',
+                    title: isAlreadySubmitted ? 'Xác nhận cập nhật phiếu đánh giá?' : 'Xác nhận gửi duyệt?',
+                    text: isAlreadySubmitted 
+                        ? 'Phiếu đánh giá sẽ được cập nhật điểm và gửi lại cho Quản lý xét duyệt.' 
+                        : 'Sau khi gửi, phiếu đánh giá sẽ được chuyển cho Quản lý xét duyệt và bạn không thể chỉnh sửa điểm nữa.',
                     icon: 'question',
                     showCancelButton: true,
                     confirmButtonColor: '#2563eb',
                     cancelButtonColor: '#64748b',
-                    confirmButtonText: 'Đồng ý, gửi duyệt!',
+                    confirmButtonText: isAlreadySubmitted ? 'Đồng ý, cập nhật!' : 'Đồng ý, gửi duyệt!',
                     cancelButtonText: 'Hủy'
                 }).then((result) => {
                     if (result.isConfirmed) {

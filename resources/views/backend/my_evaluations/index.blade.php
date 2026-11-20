@@ -122,8 +122,8 @@
                                     @endif
                                 </td>
                                 <td class="pe-4 text-end py-3">
-                                    <a href="{{ route('backend.my-evaluations.edit', $eval->id) }}" class="btn btn-sm {{ in_array($eval->status, ['draft']) ? 'btn-primary' : 'btn-soft-primary' }} px-3 py-1">
-                                        {{ in_array($eval->status, ['draft']) ? 'Chấm điểm' : 'Xem chi tiết' }}
+                                    <a href="{{ route('backend.my-evaluations.edit', $eval->id) }}" class="btn btn-sm {{ in_array($eval->status, ['draft', 'submitted']) ? 'btn-primary' : 'btn-soft-primary' }} px-3 py-1">
+                                        {{ in_array($eval->status, ['draft', 'submitted']) ? 'Chấm điểm / Sửa' : 'Xem chi tiết' }}
                                     </a>
                                 </td>
                             </tr>

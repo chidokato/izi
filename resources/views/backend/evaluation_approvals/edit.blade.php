@@ -80,17 +80,65 @@
     $hasAnyManagerSelected = $evaluation->details->where('is_manager_selected', true)->count() > 0;
     $hasAnyHrSelected = $evaluation->details->where('is_hr_selected', true)->count() > 0;
 
-    $displayScore = $actingAs == 'hr' ? (float)$evaluation->final_score : (float)$evaluation->details->sum('manager_score');
-    if ($displayScore == 0 && $actingAs == 'manager' && !$hasAnyManagerSelected) {
-        $displayScore = (float)$evaluation->self_total_score;
+    if ($actingAs == 'hr') {
+        $displayScore = (float)$evaluation->final_score > 0 ? (float)$evaluation->final_score : (float)$evaluation->details->sum('manager_score');
+        if ($displayScore == 0) {
+            $displayScore = (float)$evaluation->self_total_score;
+        }
+    } elseif ($actingAs == 'manager') {
+        $displayScore = (float)$evaluation->details->sum('manager_score');
+        if ($displayScore == 0 && !$hasAnyManagerSelected) {
+            $displayScore = (float)$evaluation->self_total_score;
+        }
+    } else {
+        if ($evaluation->status == 'hr_approved') {
+            $displayScore = (float)$evaluation->final_score;
+        } elseif ($evaluation->status == 'manager_reviewed') {
+            $displayScore = (float)$evaluation->details->sum('manager_score');
+        } else {
+            $displayScore = (float)$evaluation->self_total_score;
+        }
     }
     $matchedInitialGrade = \App\Models\EvaluationGrade::getGradeForScore($displayScore);
-    $initialGradeName = $matchedInitialGrade ? $matchedInitialGrade->name : '-';
+    $initialGradeName = $matchedInitialGrade ? 'Hạng ' . $matchedInitialGrade->name : '-';
+    $gradeColors = [
+        'A' => '#10b981',
+        'B' => '#3b82f6',
+        'C' => '#f59e0b',
+        'D' => '#f97316',
+        'E' => '#ef4444',
+    ];
+    $initialGradeColor = ($matchedInitialGrade && isset($gradeColors[strtoupper($matchedInitialGrade->name)]))
+        ? $gradeColors[strtoupper($matchedInitialGrade->name)]
+        : '#64748b';
 
     $totalMaxPossible = 0;
     foreach ($criteriaTree as $p) {
         $totalMaxPossible += $p->children->isNotEmpty() ? (float)($p->children->max('max_score') ?? 0) : (float)($p->max_score ?? 0);
     }
+
+    $totalCriteriaCount = $criteriaTree->count();
+    $completedCount = 0;
+    foreach ($criteriaTree as $p) {
+        if ($p->children->isNotEmpty()) {
+            $hasSelected = $p->children->contains(function($c) use ($evaluation, $actingAs) {
+                $d = $evaluation->details->where('criteria_id', $c->id)->first();
+                if (!$d) return false;
+                if ($actingAs === 'hr') return $d->is_hr_selected;
+                if ($actingAs === 'manager') return $d->is_manager_selected;
+                return $d->is_hr_selected || $d->is_manager_selected || $d->is_self_selected;
+            });
+            if ($hasSelected) $completedCount++;
+        } else {
+            $d = $evaluation->details->where('criteria_id', $p->id)->first();
+            if ($d) {
+                if ($actingAs === 'hr' && $d->is_hr_selected) $completedCount++;
+                elseif ($actingAs === 'manager' && $d->is_manager_selected) $completedCount++;
+                elseif ($d->is_hr_selected || $d->is_manager_selected || $d->is_self_selected) $completedCount++;
+            }
+        }
+    }
+    $completionPct = $totalCriteriaCount > 0 ? round(($completedCount / $totalCriteriaCount) * 100) : 0;
 @endphp
 
     @if(session('success'))
@@ -487,7 +535,7 @@
                                     <div class="h-100 p-2 rounded-2 text-center d-flex flex-column justify-content-between" style="background: #f8fafc; border: 1px solid #e2e8f0;">
                                         <span class="d-block text-muted fs-10 text-uppercase fw-semibold">Xếp loại</span>
                                         <div class="my-auto py-1">
-                                            <span class="badge fs-12 px-2 py-0.5 grade-badge-pill" id="sidebar-grade-display" style="background-color: #10b981;">
+                                            <span class="badge fs-12 px-2 py-0.5 grade-badge-pill" id="sidebar-grade-display" style="background-color: {{ $initialGradeColor }};">
                                                 {{ $initialGradeName }}
                                             </span>
                                         </div>
@@ -500,10 +548,10 @@
                             <div class="p-2 rounded-2 mb-3" style="background: #f0f7ff; border: 1px solid #dbeafe;">
                                 <div class="d-flex justify-content-between align-items-center mb-1">
                                     <span class="fs-11 fw-semibold text-dark"><i class="ri-task-line text-primary me-1"></i>Tiến độ</span>
-                                    <span class="fs-11 fw-bold text-primary" id="completion-ratio">0/0</span>
+                                    <span class="fs-11 fw-bold text-primary" id="completion-ratio">{{ $completedCount }}/{{ $totalCriteriaCount }} ({{ $completionPct }}%)</span>
                                 </div>
                                 <div class="progress" style="height: 5px; border-radius: 3px; background: #cbd5e1;">
-                                    <div class="progress-bar bg-primary" id="completion-progress-bar" style="width: 0%; transition: width 0.3s ease;"></div>
+                                    <div class="progress-bar {{ $completionPct == 100 ? 'bg-success' : 'bg-primary' }}" id="completion-progress-bar" style="width: {{ $completionPct }}%; transition: width 0.3s ease;"></div>
                                 </div>
                             </div>
 
@@ -553,7 +601,7 @@
                 <div>
                     <span class="text-muted fs-11 text-uppercase fw-semibold">Điểm:</span>
                     <strong class="text-primary fs-15" id="mobile-score-display">{{ (float)$displayScore }}đ</strong>
-                    <span class="badge fs-11 px-2 py-0 ms-1 grade-badge-pill" id="mobile-grade-display" style="background-color: #10b981;">{{ $initialGradeName }}</span>
+                    <span class="badge fs-11 px-2 py-0 ms-1 grade-badge-pill" id="mobile-grade-display" style="background-color: {{ $initialGradeColor }};">{{ $initialGradeName }}</span>
                 </div>
                 @if ($isEditable)
                 <div class="d-flex gap-1">
@@ -745,8 +793,10 @@
             });
         }
 
-        // Chạy khởi tạo lúc tải trang
-        updateScoreAndGrade();
+        // Chạy khởi tạo lúc tải trang nếu ở chế độ có thể chỉnh sửa
+        if (isEditable) {
+            updateScoreAndGrade();
+        }
 
         // Xử lý nút Duyệt bằng SweetAlert2
         document.querySelectorAll('.btn-approve').forEach(btn => {
