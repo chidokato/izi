@@ -79,7 +79,7 @@
                                         </div>
                                         <div>
                                             <div class="d-flex align-items-center gap-2">
-                                                <strong class="text-dark fs-14">{{ $eval->employee->name ?? 'N/A' }}</strong>
+                                                <strong class="text-dark fs-14">{{ $eval->employee->name_with_position ?? $eval->employee->name ?? 'N/A' }}</strong>
                                                 <span class="badge bg-light text-primary border px-2 py-0 fs-11">
                                                     {{ $eval->employee->evaluation_type_name }}
                                                 </span>

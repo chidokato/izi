@@ -215,6 +215,8 @@
                                                 @elseif($step2->status == 'rejected') <span class="badge bg-danger">Từ chối</span>
                                                 @else <span class="badge bg-warning">Chờ duyệt</span> @endif
                                             @endif
+                                        @elseif(!optional($req->employee)->manager_l2_id)
+                                            <span class="text-muted">-</span>
                                         @else
                                             @if($req->status == 'rejected' && $req->current_approval_step < 2)
                                                 <span class="badge bg-danger">Từ chối</span>

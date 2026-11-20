@@ -1,7 +1,7 @@
 @extends('backend.layouts.app')
 
 @section('title', 'Duyệt đánh giá nhân viên')
-@section('page_title', 'Duyệt phiếu: ' . ($evaluation->employee->name ?? 'N/A') . ' - Tháng ' . $evaluation->month . '/' . $evaluation->year)
+@section('page_title', 'Duyệt phiếu: ' . ($evaluation->employee->name_with_position ?? $evaluation->employee->name ?? 'N/A') . ' - Tháng ' . $evaluation->month . '/' . $evaluation->year)
 @section('breadcrumb', 'Duyệt đánh giá')
 
 @push('styles')
@@ -485,7 +485,7 @@
                                     </div>
                                 </div>
                                 <div class="overflow-hidden">
-                                    <h6 class="text-white mb-0 fw-bold text-truncate fs-13">{{ $evaluation->employee->name ?? 'N/A' }}</h6>
+                                    <h6 class="text-white mb-0 fw-bold text-truncate fs-13">{{ $evaluation->employee->name_with_position ?? $evaluation->employee->name ?? 'N/A' }}</h6>
                                     <span class="badge bg-white text-primary fw-semibold px-1.5 py-0 fs-10">
                                         {{ $evaluation->employee->evaluation_type_name }}
                                     </span>

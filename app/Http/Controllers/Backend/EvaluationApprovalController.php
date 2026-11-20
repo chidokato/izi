@@ -15,17 +15,15 @@ class EvaluationApprovalController extends Controller
     public function index()
     {
         $user = auth()->user();
+        $isSuperAdmin = $user->permission == 1 || $user->isAdmin();
         $query = Evaluation::with(['employee.department', 'details']);
 
-        if (!$user->employee_id) {
+        if (!$isSuperAdmin && !$user->employee_id) {
             return redirect()->route('backend.admin.dashboard')->with('error', 'Tài khoản chưa liên kết nhân viên.');
         }
 
-        $directReportIds = Employee::where('manager_id', $user->employee_id)->pluck('id')->toArray();
-        $hrReportIds = Employee::where('manager_l2_id', $user->employee_id)->pluck('id')->toArray();
-        
-        // Nếu là Super Admin (permission=1) thì cho phép xem tất cả
-        $isSuperAdmin = $user->permission == 1;
+        $directReportIds = $user->employee_id ? Employee::where('manager_id', $user->employee_id)->pluck('id')->toArray() : [];
+        $hrReportIds = $user->employee_id ? Employee::where('manager_l2_id', $user->employee_id)->pluck('id')->toArray() : [];
 
         if (empty($directReportIds) && empty($hrReportIds) && !$isSuperAdmin) {
             return redirect()->route('backend.admin.dashboard')->with('error', 'Bạn không có quyền duyệt phiếu.');
@@ -56,15 +54,15 @@ class EvaluationApprovalController extends Controller
         $user = auth()->user();
         $evaluation = Evaluation::with(['employee.department', 'details.criterion.parent'])->findOrFail($id);
 
-        $directReportIds = Employee::where('manager_id', $user->employee_id)->pluck('id')->toArray();
-        $hrReportIds = Employee::where('manager_l2_id', $user->employee_id)->pluck('id')->toArray();
-        $isSuperAdmin = $user->permission == 1;
+        $isSuperAdmin = $user->permission == 1 || $user->isAdmin();
+        $directReportIds = $user->employee_id ? Employee::where('manager_id', $user->employee_id)->pluck('id')->toArray() : [];
+        $hrReportIds = $user->employee_id ? Employee::where('manager_l2_id', $user->employee_id)->pluck('id')->toArray() : [];
 
-        $isManager = in_array($evaluation->employee_id, $directReportIds);
+        $isManager = in_array($evaluation->employee_id, $directReportIds) || $isSuperAdmin;
         $isHR = in_array($evaluation->employee_id, $hrReportIds) || $isSuperAdmin;
 
         // Phân quyền truy cập
-        if (!$isHR && !$isManager) {
+        if (!$isHR && !$isManager && !$isSuperAdmin) {
             abort(403, 'Bạn không có quyền truy cập phiếu này.');
         }
 
@@ -143,14 +141,14 @@ class EvaluationApprovalController extends Controller
         $user = auth()->user();
         $evaluation = Evaluation::findOrFail($id);
         
-        $directReportIds = Employee::where('manager_id', $user->employee_id)->pluck('id')->toArray();
-        $hrReportIds = Employee::where('manager_l2_id', $user->employee_id)->pluck('id')->toArray();
-        $isSuperAdmin = $user->permission == 1;
+        $isSuperAdmin = $user->permission == 1 || $user->isAdmin();
+        $directReportIds = $user->employee_id ? Employee::where('manager_id', $user->employee_id)->pluck('id')->toArray() : [];
+        $hrReportIds = $user->employee_id ? Employee::where('manager_l2_id', $user->employee_id)->pluck('id')->toArray() : [];
 
-        $isManager = in_array($evaluation->employee_id, $directReportIds);
+        $isManager = in_array($evaluation->employee_id, $directReportIds) || $isSuperAdmin;
         $isHR = in_array($evaluation->employee_id, $hrReportIds) || $isSuperAdmin;
 
-        if (!$isHR && !$isManager) {
+        if (!$isHR && !$isManager && !$isSuperAdmin) {
             abort(403);
         }
 
