@@ -281,7 +281,7 @@
                                             ? $day['request']->business_start_time . ' - ' . $day['request']->business_end_time
                                             : '';
                                     @endphp
-                                    ({{ $bHoursStr }})@if($timeRange)<span class="text-muted fw-normal ms-1" style="font-size: 10px;">{{ $timeRange }}</span>@endif
+                                    ({{ $timeRange ?: $bHoursStr }})
                                 @elseif($day['request']->start_session == 'afternoon' && substr($day['request']->start_date, 0, 10) == $day['date']->toDateString())
                                     (Nửa chiều)
                                 @elseif($day['request']->end_session == 'morning' && substr($day['request']->end_date, 0, 10) == $day['date']->toDateString())
