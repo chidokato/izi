@@ -12,32 +12,106 @@ use App\Models\EvaluationDetail;
 
 class EvaluationApprovalController extends Controller
 {
+    /**
+     * Kiểm tra xem user có phải là HR (hoặc SuperAdmin / Admin) hay không
+     */
+    private function isHRUser($user): bool
+    {
+        if (!$user) return false;
+        return $user->permission == 1 
+            || $user->isAdmin() 
+            || optional($user->employee)->level === 'HR';
+    }
+
+    /**
+     * Xác định người duyệt lần 1 (Quản lý) của một nhân viên:
+     * - Sale: HR là người duyệt trực tiếp -> không qua Quản lý (null)
+     * - Back: Người duyệt lần 2 (cột manager_l2_id) là người duyệt lần 1; fallback manager_id
+     *   Nếu không có -> null (đẩy thẳng lên HR)
+     */
+    private function getManagerReviewerId($employee, $evalType = null): ?int
+    {
+        if (!$employee) return null;
+        $type = $evalType ?: ($employee->evaluation_type ?: 'office');
+        if ($type === 'sale') {
+            return null; // Sale: HR duyệt trực tiếp
+        }
+        return $employee->manager_l2_id ? (int)$employee->manager_l2_id : ($employee->manager_id ? (int)$employee->manager_id : null);
+    }
+
+    /**
+     * Scope query để lọc phiếu Sale
+     */
+    private function scopeSaleEvaluation($query)
+    {
+        $query->where(function ($q) {
+            $q->where('evaluations.evaluation_type', 'sale')
+              ->orWhere(function ($q2) {
+                  $q2->where(function ($sub) {
+                      $sub->whereNull('evaluations.evaluation_type')
+                          ->orWhere('evaluations.evaluation_type', '');
+                  })->whereHas('employee', function ($qe) {
+                      $qe->where('evaluation_type', 'sale');
+                  });
+              });
+        });
+    }
+
+    /**
+     * Scope query để lọc phiếu Back
+     */
+    private function scopeBackEvaluation($query)
+    {
+        $query->where(function ($q) {
+            $q->where(function ($sub) {
+                $sub->where('evaluations.evaluation_type', '!=', 'sale')
+                    ->whereNotNull('evaluations.evaluation_type')
+                    ->where('evaluations.evaluation_type', '!=', '');
+            })->orWhere(function ($q2) {
+                $q2->where(function ($sub) {
+                    $sub->whereNull('evaluations.evaluation_type')
+                        ->orWhere('evaluations.evaluation_type', '');
+                })->whereHas('employee', function ($qe) {
+                    $qe->where('evaluation_type', '!=', 'sale')
+                       ->orWhereNull('evaluation_type');
+                });
+            });
+        });
+    }
+
     public function index(Request $request)
     {
         $user = auth()->user();
-        $isSuperAdmin = $user->permission == 1 || $user->isAdmin();
-        $baseQuery = Evaluation::with(['employee.department', 'details']);
+        $isHR = $this->isHRUser($user);
+        $userEmpId = $user->employee_id;
 
-        if (!$isSuperAdmin && !$user->employee_id) {
-            return redirect()->route('backend.admin.dashboard')->with('error', 'Tài khoản chưa liên kết nhân viên.');
+        // Quản lý của Back: là người ở cột manager_l2_id (hoặc manager_id) của các nhân viên Back
+        $managedBackEmployeeIds = [];
+        if ($userEmpId) {
+            $managedBackEmployeeIds = Employee::where(function ($q) use ($userEmpId) {
+                $q->where('manager_l2_id', $userEmpId)
+                  ->orWhere(function ($q2) use ($userEmpId) {
+                      $q2->whereNull('manager_l2_id')->where('manager_id', $userEmpId);
+                  });
+            })->where(function ($q) {
+                $q->where('evaluation_type', '!=', 'sale')
+                  ->orWhereNull('evaluation_type');
+            })->pluck('id')->toArray();
         }
 
-        $directReportIds = $user->employee_id ? Employee::where('manager_id', $user->employee_id)->pluck('id')->toArray() : [];
-        $hrReportIds = $user->employee_id ? Employee::where('manager_l2_id', $user->employee_id)->pluck('id')->toArray() : [];
+        $isManager = !empty($managedBackEmployeeIds);
 
-        if (empty($directReportIds) && empty($hrReportIds) && !$isSuperAdmin) {
+        // Quyền truy cập: chỉ HR hoặc Quản lý được duyệt
+        if (!$isHR && !$isManager) {
             return redirect()->route('backend.admin.dashboard')->with('error', 'Bạn không có quyền duyệt phiếu.');
         }
 
-        if (!$isSuperAdmin) {
-            $baseQuery->where(function ($q) use ($directReportIds, $hrReportIds) {
-                if (!empty($directReportIds)) {
-                    $q->orWhereIn('employee_id', $directReportIds);
-                }
-                if (!empty($hrReportIds)) {
-                    $q->orWhereIn('employee_id', $hrReportIds);
-                }
-            });
+        $baseQuery = Evaluation::with(['employee.department', 'details']);
+
+        if (!$isHR) {
+            // Quản lý thông thường chỉ xem các nhân viên Back thuộc quyền quản lý của mình
+            $baseQuery->whereIn('employee_id', $managedBackEmployeeIds);
+            $this->scopeBackEvaluation($baseQuery);
         }
 
         // Chỉ hiện các phiếu đã gửi duyệt trở đi
@@ -66,26 +140,48 @@ class EvaluationApprovalController extends Controller
             });
         }
 
-        // Logic lọc cho tab "Chờ duyệt" (Các phiếu đang chờ đúng người này duyệt)
-        $applyWaiting = function ($q) use ($isSuperAdmin, $directReportIds, $hrReportIds) {
-            if ($isSuperAdmin) {
-                $q->whereIn('status', ['submitted', 'manager_reviewed']);
-            } else {
-                $q->where(function ($sub) use ($directReportIds, $hrReportIds) {
-                    if (!empty($directReportIds)) {
-                        $sub->orWhere(function ($q1) use ($directReportIds) {
-                            $q1->whereIn('employee_id', $directReportIds)
-                               ->where('status', 'submitted');
-                        });
-                    }
-                    if (!empty($hrReportIds)) {
-                        $sub->orWhere(function ($q2) use ($hrReportIds) {
-                            $q2->whereIn('employee_id', $hrReportIds)
-                               ->where('status', 'manager_reviewed');
-                        });
-                    }
-                });
-            }
+        // Logic lọc cho tab "Chờ duyệt":
+        // - Sale: HR duyệt trực tiếp khi submitted
+        // - Back: Người ở cột Người duyệt lần 2 duyệt lần 1 khi submitted; nếu không có thì đẩy lên HR khi submitted
+        // - Cấp 2: Quản lý duyệt xong (manager_reviewed) thì đẩy lên HR chốt
+        $applyWaiting = function ($q) use ($isHR, $userEmpId) {
+            $q->where(function ($sub) use ($isHR, $userEmpId) {
+                if ($isHR) {
+                    // 1. HR duyệt trực tiếp cho Sale khi submitted
+                    $sub->orWhere(function ($qSale) {
+                        $qSale->where('status', 'submitted');
+                        $this->scopeSaleEvaluation($qSale);
+                    });
+                    // 2. HR duyệt trực tiếp cho Back không có người duyệt khi submitted
+                    $sub->orWhere(function ($qBackNoMgr) {
+                        $qBackNoMgr->where('status', 'submitted')
+                                   ->whereHas('employee', function ($qe) {
+                                       $qe->whereNull('manager_l2_id')
+                                          ->whereNull('manager_id');
+                                   });
+                        $this->scopeBackEvaluation($qBackNoMgr);
+                    });
+                    // 3. HR duyệt/chốt cho tất cả các phiếu đã qua quản lý duyệt (manager_reviewed)
+                    $sub->orWhere('status', 'manager_reviewed');
+                }
+
+                if ($userEmpId) {
+                    // Quản lý duyệt lần 1 cho nhân viên Back của mình khi submitted
+                    $sub->orWhere(function ($qMgr) use ($userEmpId) {
+                        $qMgr->where('status', 'submitted')
+                             ->whereHas('employee', function ($qe) use ($userEmpId) {
+                                 $qe->where(function ($qm) use ($userEmpId) {
+                                     $qm->where('manager_l2_id', $userEmpId)
+                                        ->orWhere(function ($qm1) use ($userEmpId) {
+                                            $qm1->whereNull('manager_l2_id')
+                                                ->where('manager_id', $userEmpId);
+                                        });
+                                 });
+                             });
+                        $this->scopeBackEvaluation($qMgr);
+                    });
+                }
+            });
         };
 
         // Tính số lượng cho từng tab (Chờ duyệt, Chưa duyệt, Đã duyệt, Tất cả)
@@ -96,9 +192,11 @@ class EvaluationApprovalController extends Controller
         $pendingCount = (clone $baseQuery)->whereIn('status', ['submitted', 'manager_reviewed'])->count();
 
         $approvedQuery = (clone $baseQuery);
-        if (!$isSuperAdmin && empty($hrReportIds)) {
+        if (!$isHR) {
+            // Quản lý cấp 1 đã duyệt xong phiếu của mình
             $approvedQuery->whereIn('status', ['manager_reviewed', 'hr_approved']);
         } else {
+            // HR đã chốt
             $approvedQuery->where('status', 'hr_approved');
         }
         $approvedCount = $approvedQuery->count();
@@ -126,7 +224,7 @@ class EvaluationApprovalController extends Controller
         } elseif ($currentStatus === 'pending') {
             $query->whereIn('status', ['submitted', 'manager_reviewed']);
         } elseif ($currentStatus === 'approved') {
-            if (!$isSuperAdmin && empty($hrReportIds)) {
+            if (!$isHR) {
                 $query->whereIn('status', ['manager_reviewed', 'hr_approved']);
             } else {
                 $query->where('status', 'hr_approved');
@@ -149,20 +247,62 @@ class EvaluationApprovalController extends Controller
     {
         $user = auth()->user();
         $evaluation = Evaluation::with(['employee.department', 'details.criterion.parent'])->findOrFail($id);
+        $employee = $evaluation->employee;
 
-        $isSuperAdmin = $user->permission == 1 || $user->isAdmin();
-        $directReportIds = $user->employee_id ? Employee::where('manager_id', $user->employee_id)->pluck('id')->toArray() : [];
-        $hrReportIds = $user->employee_id ? Employee::where('manager_l2_id', $user->employee_id)->pluck('id')->toArray() : [];
-
-        $isManager = in_array($evaluation->employee_id, $directReportIds) || $isSuperAdmin;
-        $isHR = in_array($evaluation->employee_id, $hrReportIds) || $isSuperAdmin;
+        $isHR = $this->isHRUser($user);
+        $managerReviewerId = $this->getManagerReviewerId($employee, $evaluation->evaluation_type);
+        $isManager = ($user->employee_id && $managerReviewerId && $user->employee_id == $managerReviewerId) || ($user->permission == 1);
 
         // Phân quyền truy cập
-        if (!$isHR && !$isManager && !$isSuperAdmin) {
+        if (!$isHR && !$isManager) {
             abort(403, 'Bạn không có quyền truy cập phiếu này.');
         }
 
-        $evalType = $evaluation->evaluation_type ?: ($evaluation->employee->evaluation_type ?? 'office');
+        $isSale = ($evaluation->evaluation_type ?: optional($employee)->evaluation_type) === 'sale';
+
+        // Xác định vai trò hiện tại đang thao tác:
+        // - Sale: HR duyệt trực tiếp khi submitted
+        // - Back: Người ở cột Người duyệt lần 2 duyệt lần 1 khi submitted; nếu không có thì đẩy lên HR trực tiếp
+        // - Sau khi quản lý duyệt xong (manager_reviewed) -> đẩy lên HR chốt
+        $actingAs = 'viewer';
+        if ($evaluation->status == 'submitted') {
+            if ($isSale || empty($managerReviewerId)) {
+                // Sale hoặc Back không có quản lý -> HR duyệt trực tiếp!
+                if ($isHR) {
+                    $actingAs = 'hr';
+                }
+            } else {
+                // Back có quản lý -> Người duyệt lần 2 duyệt lần 1!
+                if ($isManager) {
+                    $actingAs = 'manager';
+                } elseif ($isHR && $user->permission == 1) {
+                    // SuperAdmin có thể thao tác thay quản lý
+                    $actingAs = 'manager';
+                }
+            }
+        } elseif ($evaluation->status == 'manager_reviewed') {
+            // Quản lý đã duyệt xong -> đẩy lên HR chốt!
+            if ($isHR) {
+                $actingAs = 'hr';
+            }
+        }
+
+        // Tự động khởi tạo lựa chọn cho HR nếu là Sale hoặc Back không có quản lý (lấy từ NV tự chấm)
+        if ($actingAs === 'hr') {
+            $hasAnyHrSelected = $evaluation->details->where('is_hr_selected', true)->count() > 0;
+            if (!$hasAnyHrSelected && ($isSale || empty($managerReviewerId))) {
+                foreach ($evaluation->details as $d) {
+                    if ($d->is_self_selected) {
+                        $d->is_hr_selected = true;
+                        $d->hr_score = $d->self_score;
+                        $d->save();
+                    }
+                }
+                $evaluation->load('details.criterion.parent');
+            }
+        }
+
+        $evalType = $evaluation->evaluation_type ?: ($employee->evaluation_type ?? 'office');
         $detailCriteriaIds = $evaluation->details->pluck('criteria_id')->toArray();
 
         $criteriaTree = EvaluationCriterion::whereNull('parent_id')
@@ -229,32 +369,42 @@ class EvaluationApprovalController extends Controller
             $evaluation->load('details.criterion.parent');
         }
 
-        return view('backend.evaluation_approvals.edit', compact('evaluation', 'criteriaTree', 'grades', 'isHR', 'isManager'));
+        return view('backend.evaluation_approvals.edit', compact('evaluation', 'criteriaTree', 'grades', 'isHR', 'isManager', 'actingAs'));
     }
 
     public function update(Request $request, $id)
     {
         $user = auth()->user();
-        $evaluation = Evaluation::findOrFail($id);
-        
-        $isSuperAdmin = $user->permission == 1 || $user->isAdmin();
-        $directReportIds = $user->employee_id ? Employee::where('manager_id', $user->employee_id)->pluck('id')->toArray() : [];
-        $hrReportIds = $user->employee_id ? Employee::where('manager_l2_id', $user->employee_id)->pluck('id')->toArray() : [];
+        $evaluation = Evaluation::with('employee')->findOrFail($id);
+        $employee = $evaluation->employee;
 
-        $isManager = in_array($evaluation->employee_id, $directReportIds) || $isSuperAdmin;
-        $isHR = in_array($evaluation->employee_id, $hrReportIds) || $isSuperAdmin;
+        $isHR = $this->isHRUser($user);
+        $managerReviewerId = $this->getManagerReviewerId($employee, $evaluation->evaluation_type);
+        $isManager = ($user->employee_id && $managerReviewerId && $user->employee_id == $managerReviewerId) || ($user->permission == 1);
 
-        if (!$isHR && !$isManager && !$isSuperAdmin) {
+        if (!$isHR && !$isManager) {
             abort(403);
         }
 
-        // Xác định vai trò hiện tại đang thao tác dựa vào status
+        $isSale = ($evaluation->evaluation_type ?: optional($employee)->evaluation_type) === 'sale';
+
         $actingAs = 'viewer';
-        if ($isHR) {
-            $actingAs = 'hr';
-        }
-        if ($isManager && $evaluation->status == 'submitted') {
-            $actingAs = 'manager';
+        if ($evaluation->status == 'submitted') {
+            if ($isSale || empty($managerReviewerId)) {
+                if ($isHR) {
+                    $actingAs = 'hr';
+                }
+            } else {
+                if ($isManager) {
+                    $actingAs = 'manager';
+                } elseif ($isHR && $user->permission == 1) {
+                    $actingAs = 'manager';
+                }
+            }
+        } elseif ($evaluation->status == 'manager_reviewed') {
+            if ($isHR) {
+                $actingAs = 'hr';
+            }
         }
 
         if ($actingAs == 'viewer') {
@@ -279,8 +429,17 @@ class EvaluationApprovalController extends Controller
                     $totalScore += $detail->hr_score;
                 }
             }
+
+            $evaluation->final_score = $totalScore;
+            $evaluation->hr_note = $request->input('note');
+            $matchedGrade = EvaluationGrade::getGradeForScore($totalScore);
+            $evaluation->grade_id = $matchedGrade ? $matchedGrade->id : null;
+            
+            if ($request->has('approve')) {
+                $evaluation->status = 'hr_approved';
+            }
         } else {
-            // Manager
+            // Manager (Người duyệt lần 2 của Back)
             $managerChoices = $request->input('manager_choice', []);
             $singleChoices = $request->input('single_choice', []);
             $selectedDetailIds = array_map('intval', array_values(array_filter(array_merge((array)$managerChoices, (array)$singleChoices))));
@@ -291,7 +450,7 @@ class EvaluationApprovalController extends Controller
                 $detail->manager_score = $isSelected ? (float)($detail->criterion->max_score ?? 0) : 0;
                 
                 if ($request->has('approve')) {
-                    // Khi Quản lý bấm chốt duyệt, copy luôn lựa chọn này sang cột của HR để làm điểm khởi tạo
+                    // Khi Quản lý duyệt, copy luôn lựa chọn này sang cột của HR để làm điểm khởi tạo
                     $detail->is_hr_selected = $isSelected;
                     $detail->hr_score = $detail->manager_score;
                 }
@@ -301,18 +460,8 @@ class EvaluationApprovalController extends Controller
                     $totalScore += $detail->manager_score;
                 }
             }
-        }
 
-        if ($actingAs == 'hr') {
-            $evaluation->final_score = $totalScore;
-            $evaluation->hr_note = $request->input('note');
-            $matchedGrade = EvaluationGrade::getGradeForScore($totalScore);
-            $evaluation->grade_id = $matchedGrade ? $matchedGrade->id : null;
-            
-            if ($request->has('approve')) {
-                $evaluation->status = 'hr_approved';
-            }
-        } else {
+            $evaluation->manager_total_score = $totalScore;
             $evaluation->manager_note = $request->input('note');
             $matchedGrade = EvaluationGrade::getGradeForScore($totalScore);
             $evaluation->grade_id = $matchedGrade ? $matchedGrade->id : null;

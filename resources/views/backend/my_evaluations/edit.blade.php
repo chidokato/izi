@@ -65,6 +65,8 @@
 @section('content')
     @php
         $isEditable = in_array($evaluation->status, ['draft', 'submitted']);
+        $isSale = ($evaluation->evaluation_type ?: optional($evaluation->employee)->evaluation_type) === 'sale';
+        $hasMgr = !$isSale && ($evaluation->employee?->manager_l2_id || $evaluation->employee?->manager_id);
         $matchedInitialGrade = \App\Models\EvaluationGrade::getGradeForScore($evaluation->self_total_score);
         $initialGradeName = $matchedInitialGrade ? 'Hạng ' . $matchedInitialGrade->name : '-';
         $gradeColors = [
@@ -359,11 +361,15 @@
                                     @if ($evaluation->status == 'draft')
                                         <span class="badge bg-warning text-dark px-1.5 py-0.5 fs-11"><i class="ri-edit-line me-1"></i>Bản nháp</span>
                                     @elseif ($evaluation->status == 'submitted')
-                                        <span class="badge bg-info text-white px-1.5 py-0.5 fs-11"><i class="ri-time-line me-1"></i>Chờ QL duyệt</span>
+                                        @if ($hasMgr)
+                                            <span class="badge bg-warning text-dark px-1.5 py-0.5 fs-11"><i class="ri-time-line me-1"></i>Chờ QL duyệt</span>
+                                        @else
+                                            <span class="badge bg-info text-white px-1.5 py-0.5 fs-11"><i class="ri-time-line me-1"></i>Chờ HR duyệt</span>
+                                        @endif
                                     @elseif ($evaluation->status == 'manager_reviewed')
-                                        <span class="badge bg-primary px-1.5 py-0.5 fs-11"><i class="ri-check-double-line me-1"></i>QL đã duyệt</span>
+                                        <span class="badge bg-info text-white px-1.5 py-0.5 fs-11"><i class="ri-check-double-line me-1"></i>Chờ HR chốt</span>
                                     @elseif ($evaluation->status == 'hr_approved')
-                                        <span class="badge bg-success px-1.5 py-0.5 fs-11"><i class="ri-checkbox-circle-line me-1"></i>HR chốt</span>
+                                        <span class="badge bg-success px-1.5 py-0.5 fs-11"><i class="ri-checkbox-circle-line me-1"></i>Đã hoàn thành</span>
                                     @endif
                                 </div>
                             </div>
@@ -641,11 +647,12 @@
             btn.addEventListener('click', function(e) {
                 e.preventDefault();
                 const isAlreadySubmitted = {{ $evaluation->status == 'submitted' ? 'true' : 'false' }};
+                const reviewerTitle = '{{ $hasMgr ? 'Quản lý' : 'Phòng Nhân sự' }}';
                 Swal.fire({
                     title: isAlreadySubmitted ? 'Xác nhận cập nhật phiếu đánh giá?' : 'Xác nhận gửi duyệt?',
                     text: isAlreadySubmitted 
-                        ? 'Phiếu đánh giá sẽ được cập nhật điểm và gửi lại cho Quản lý xét duyệt.' 
-                        : 'Sau khi gửi, phiếu đánh giá sẽ được chuyển cho Quản lý xét duyệt và bạn không thể chỉnh sửa điểm nữa.',
+                        ? `Phiếu đánh giá sẽ được cập nhật điểm và gửi lại cho ${reviewerTitle} xét duyệt.` 
+                        : `Sau khi gửi, phiếu đánh giá sẽ được chuyển cho ${reviewerTitle} xét duyệt và bạn không thể chỉnh sửa điểm nữa.`,
                     icon: 'question',
                     showCancelButton: true,
                     confirmButtonColor: '#2563eb',

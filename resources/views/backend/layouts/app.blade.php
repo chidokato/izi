@@ -149,11 +149,22 @@
                             $menuItems[] = ['label' => 'Đánh giá của tôi', 'icon' => 'ri-user-star-line', 'route' => 'backend.my-evaluations.index', 'active' => 'backend.my-evaluations.*'];
                             
                             // Check if current user is manager or hr to show "Duyệt đánh giá"
-                            $isSuperAdmin = auth()->user()->permission == 1 || auth()->user()->isAdmin();
-                            $isManager = auth()->user()->employee_id && \App\Models\Employee::where('manager_id', auth()->user()->employee_id)->exists();
-                            $isHRRole = auth()->user()->employee_id && \App\Models\Employee::where('manager_l2_id', auth()->user()->employee_id)->exists();
+                            $isHR = auth()->user()->permission == 1 || auth()->user()->isAdmin() || optional(auth()->user()->employee)->level === 'HR';
+                            $isReviewer = false;
+                            if (auth()->user()->employee_id) {
+                                $userEmpId = auth()->user()->employee_id;
+                                $isReviewer = \App\Models\Employee::where(function ($q) use ($userEmpId) {
+                                    $q->where('manager_l2_id', $userEmpId)
+                                      ->orWhere(function ($q2) use ($userEmpId) {
+                                          $q2->whereNull('manager_l2_id')->where('manager_id', $userEmpId);
+                                      });
+                                })->where(function ($q) {
+                                    $q->where('evaluation_type', '!=', 'sale')
+                                      ->orWhereNull('evaluation_type');
+                                })->exists();
+                            }
                             
-                            if ($isManager || $isHRRole || $isSuperAdmin) {
+                            if ($isHR || $isReviewer) {
                                 $menuItems[] = ['label' => 'Duyệt phiếu đánh giá', 'icon' => 'ri-check-double-line', 'route' => 'backend.evaluation-approvals.index', 'active' => 'backend.evaluation-approvals.*'];
                             }
 

@@ -91,14 +91,25 @@
                                     </div>
                                 </td>
                                 <td class="py-3">
+                                    @php
+                                        $evalEmp = $eval->employee;
+                                        $isSale = ($eval->evaluation_type ?: optional($evalEmp)->evaluation_type) === 'sale';
+                                        $hasMgr = !$isSale && ($evalEmp?->manager_l2_id || $evalEmp?->manager_id);
+                                    @endphp
                                     @if ($eval->status == 'draft')
                                         <span class="badge bg-soft-secondary text-secondary border px-2 py-1 fs-12">
                                             <i class="ri-edit-line me-1"></i>Bản nháp
                                         </span>
                                     @elseif ($eval->status == 'submitted')
-                                        <span class="badge bg-soft-warning text-warning border border-warning px-2 py-1 fs-12">
-                                            <i class="ri-time-line me-1"></i>Chờ QL duyệt
-                                        </span>
+                                        @if ($hasMgr)
+                                            <span class="badge bg-soft-warning text-warning border border-warning px-2 py-1 fs-12">
+                                                <i class="ri-time-line me-1"></i>Chờ QL duyệt
+                                            </span>
+                                        @else
+                                            <span class="badge bg-soft-info text-info border border-info px-2 py-1 fs-12">
+                                                <i class="ri-time-line me-1"></i>Chờ HR duyệt
+                                            </span>
+                                        @endif
                                     @elseif ($eval->status == 'manager_reviewed')
                                         <span class="badge bg-soft-info text-info border border-info px-2 py-1 fs-12">
                                             <i class="ri-check-double-line me-1"></i>Chờ HR chốt

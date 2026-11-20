@@ -68,14 +68,10 @@
 
 @section('content')
 @php
-    $actingAs = 'viewer';
-    if ($isHR) {
-        $actingAs = 'hr';
-    }
-    if ($isManager && $evaluation->status == 'submitted') {
-        $actingAs = 'manager';
-    }
+    $actingAs = $actingAs ?? 'viewer';
     $isEditable = in_array($actingAs, ['manager', 'hr']);
+    $isSale = ($evaluation->evaluation_type ?: optional($evaluation->employee)->evaluation_type) === 'sale';
+    $hasMgr = !$isSale && ($evaluation->employee?->manager_l2_id || $evaluation->employee?->manager_id);
 
     $hasAnyManagerSelected = $evaluation->details->where('is_manager_selected', true)->count() > 0;
     $hasAnyHrSelected = $evaluation->details->where('is_hr_selected', true)->count() > 0;
@@ -505,7 +501,11 @@
                                 <span class="text-muted fs-11 fw-semibold text-uppercase">Trạng thái</span>
                                 <div>
                                     @if ($evaluation->status == 'submitted')
-                                        <span class="badge bg-warning text-dark px-1.5 py-0.5 fs-11"><i class="ri-time-line me-1"></i>Chờ QL duyệt</span>
+                                        @if ($hasMgr)
+                                            <span class="badge bg-warning text-dark px-1.5 py-0.5 fs-11"><i class="ri-time-line me-1"></i>Chờ QL duyệt</span>
+                                        @else
+                                            <span class="badge bg-info text-white px-1.5 py-0.5 fs-11"><i class="ri-time-line me-1"></i>Chờ HR duyệt</span>
+                                        @endif
                                     @elseif ($evaluation->status == 'manager_reviewed')
                                         <span class="badge bg-info text-white px-1.5 py-0.5 fs-11"><i class="ri-check-double-line me-1"></i>Chờ HR chốt</span>
                                     @elseif ($evaluation->status == 'hr_approved')

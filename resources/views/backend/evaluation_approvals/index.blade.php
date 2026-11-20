@@ -209,10 +209,21 @@
                                     <span class="fw-semibold text-dark fs-13">Tháng {{ $eval->month }}/{{ $eval->year }}</span>
                                 </td>
                                 <td class="py-3">
+                                    @php
+                                        $evalEmp = $eval->employee;
+                                        $isSale = ($eval->evaluation_type ?: optional($evalEmp)->evaluation_type) === 'sale';
+                                        $hasMgr = !$isSale && ($evalEmp?->manager_l2_id || $evalEmp?->manager_id);
+                                    @endphp
                                     @if ($eval->status == 'submitted')
-                                        <span class="badge bg-soft-warning text-warning border border-warning px-2 py-1 fs-12">
-                                            <i class="ri-time-line me-1"></i>Chờ QL duyệt
-                                        </span>
+                                        @if ($hasMgr)
+                                            <span class="badge bg-soft-warning text-warning border border-warning px-2 py-1 fs-12">
+                                                <i class="ri-time-line me-1"></i>Chờ QL duyệt
+                                            </span>
+                                        @else
+                                            <span class="badge bg-soft-info text-info border border-info px-2 py-1 fs-12">
+                                                <i class="ri-time-line me-1"></i>Chờ HR duyệt
+                                            </span>
+                                        @endif
                                     @elseif ($eval->status == 'manager_reviewed')
                                         <span class="badge bg-soft-info text-info border border-info px-2 py-1 fs-12">
                                             <i class="ri-check-double-line me-1"></i>Chờ HR chốt
@@ -229,7 +240,9 @@
                                     {!! getApprovalGradeBadge($eval->self_total_score) !!}
                                 </td>
                                 <td class="text-center py-3">
-                                    @if($eval->status != 'submitted' || (float)$mgrScore > 0)
+                                    @if(!$hasMgr)
+                                        <span class="text-muted fs-12">-</span>
+                                    @elseif($eval->status != 'submitted' || (float)$mgrScore > 0)
                                         {!! getApprovalGradeBadge($mgrScore) !!}
                                     @else
                                         <span class="text-muted fs-12">-</span>
