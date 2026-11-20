@@ -19,7 +19,7 @@
                     
                     <div class="mb-3">
                         <label class="form-label">Nhân viên</label>
-                        <input type="text" class="form-control" value="{{ optional($attendanceRequest->employee)->name }} ({{ optional($attendanceRequest->employee)->employee_code }})" disabled>
+                        <input type="text" class="form-control" value="{{ optional($attendanceRequest->employee)->name_with_position }} ({{ optional($attendanceRequest->employee)->employee_code }})" disabled>
                     </div>
 
                     <div class="mb-3">

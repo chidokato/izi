@@ -69,7 +69,6 @@
                                 <option value="unpaid_leave" {{ request('type') == 'unpaid_leave' ? 'selected' : '' }}>Nghỉ không lương</option>
                                 <option value="business_trip" {{ request('type') == 'business_trip' ? 'selected' : '' }}>Công tác</option>
                                 <option value="attendance_adjustment" {{ request('type') == 'attendance_adjustment' ? 'selected' : '' }}>Bổ sung công</option>
-                                <option value="overtime" {{ request('type') == 'overtime' ? 'selected' : '' }}>Làm tăng ca</option>
                             </select>
                         </div>
                         <div class="col-xxl-3 col-md-2 col-sm-6">
@@ -128,7 +127,7 @@
                                     </td>
                                     @endif
                                     <td>
-                                        <div class="fw-medium">{{ optional($req->employee)->name }}</div>
+                                        <div class="fw-medium">{{ optional($req->employee)->name_with_position }}</div>
                                         <small class="text-muted">{{ optional($req->employee)->employee_code }}</small>
                                     </td>
                                     <td>{{ optional(optional($req->employee)->department)->name ?? '-' }}</td>

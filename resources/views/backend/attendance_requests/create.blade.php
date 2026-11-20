@@ -30,7 +30,7 @@
                         <select name="employee_id" class="form-control" required>
                             <option value="">Chọn nhân viên</option>
                             @foreach($employees as $emp)
-                                <option value="{{ $emp->id }}" data-manager="{{ $emp->manager ? $emp->manager->name : 'Bỏ qua' }}" data-manager-l2="{{ $emp->managerL2 ? $emp->managerL2->name : 'Bỏ qua' }}" {{ old('employee_id', auth()->user()->employee_id) == $emp->id ? 'selected' : '' }}>{{ $emp->name }} ({{ $emp->employee_code }})</option>
+                                <option value="{{ $emp->id }}" data-manager="{{ $emp->manager ? $emp->manager->name : 'Bỏ qua' }}" data-manager-l2="{{ $emp->managerL2 ? $emp->managerL2->name : 'Bỏ qua' }}" {{ old('employee_id', auth()->user()->employee_id) == $emp->id ? 'selected' : '' }}>{{ $emp->name_with_position }} ({{ $emp->employee_code }})</option>
                             @endforeach
                         </select>
                     </div>
@@ -50,7 +50,6 @@
                             <option value="paid_leave" {{ old('type') == 'paid_leave' ? 'selected' : '' }}>Nghỉ phép năm</option>
                             <option value="business_trip" {{ old('type') == 'business_trip' ? 'selected' : '' }}>Phiếu công tác</option>
                             <option value="attendance_adjustment" {{ old('type') == 'attendance_adjustment' ? 'selected' : '' }}>Bổ sung công (quên chấm)</option>
-                            <option value="overtime" {{ old('type') == 'overtime' ? 'selected' : '' }}>Làm tăng ca</option>
                         </select>
                         <div id="limit-info" class="text-info mt-1" style="display: none; font-size: 0.875rem;">
                             <i class="ri-information-line align-middle"></i>

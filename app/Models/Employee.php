@@ -34,6 +34,23 @@ class Employee extends Model
         return $types[$this->evaluation_type] ?? 'Back';
     }
 
+    public function getPositionShortAttribute(): string
+    {
+        $pos = strtolower(trim((string)$this->position));
+        return match ($pos) {
+            'team_leader', 'trưởng nhóm', 'truong nhom', 'tn' => 'TN',
+            'manager', 'trưởng phòng', 'truong phong', 'tp', 'quản lý', 'quan ly' => 'TP',
+            'director', 'giám đốc', 'giam doc', 'gđ', 'gd' => 'GĐ',
+            default => '',
+        };
+    }
+
+    public function getNameWithPositionAttribute(): string
+    {
+        $short = $this->position_short;
+        return $short ? "{$this->name} [{$short}]" : ($this->name ?? '');
+    }
+
     public function requests()
     {
         return $this->hasMany(AttendanceRequest::class);

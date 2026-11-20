@@ -376,7 +376,6 @@
                     <option value="paid_leave">Nghỉ phép năm</option>
                     <option value="unpaid_leave">Nghỉ không lương</option>
                     <option value="business_trip">Phiếu công tác</option>
-                    <option value="overtime">Làm tăng ca</option>
                 </select>
                 <div id="quick-limit-info" class="text-info mt-1 fs-12" style="display: none;">
                     <i class="ri-information-line align-middle"></i> <span id="quick-limit-text"></span>
