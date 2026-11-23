@@ -167,6 +167,7 @@ class AttendanceCalendarController extends Controller
                     
                     if ($rule && $rule->is_working_day && !$isNonWorkingDay) {
                         $seconds = fn ($time) => (int) substr($time, 0, 2) * 3600 + (int) substr($time, 3, 2) * 60 + (int) substr($time, 6, 2);
+                        $overlap = fn ($a, $b, $c, $d) => max(0, min($b, $d) - max($a, $c));
                         
                         $rStart = $seconds($rule->start_time);
                         $rEnd = $seconds($rule->end_time);
@@ -187,7 +188,6 @@ class AttendanceCalendarController extends Controller
                             $t1 = $seconds(substr($actStart, 11, 8));
                             $t2 = $seconds(substr($actEnd, 11, 8));
                             
-                            $overlap = fn ($a, $b, $c, $d) => max(0, min($b, $d) - max($a, $c));
                             $workOverlap = $overlap($t1, $t2, $rStart, $rEnd);
                             $breakOverlap = ($bStartSec && $bEndSec) ? $overlap($t1, $t2, $bStartSec, $bEndSec) : 0;
                             
@@ -196,23 +196,32 @@ class AttendanceCalendarController extends Controller
                         
                         // A missing punch should not erase the hours covered by the other
                         // punch. Treat it as the scheduled boundary when adding business time.
-                        $punchStart = $entry && $entry->checkin !== null ? $seconds($entry->checkin) : $rStart;
-                        $punchEnd = $entry && $entry->checkout !== null ? $seconds($entry->checkout) : $rEnd;
-                        $punchWorkOverlap = $overlap($punchStart, $punchEnd, $rStart, $rEnd);
-                        $punchBreakOverlap = ($bStartSec && $bEndSec) ? $overlap($punchStart, $punchEnd, $bStartSec, $bEndSec) : 0;
-                        $totalWorked = max(0, $punchWorkOverlap - $punchBreakOverlap) / 3600;
+                        $hasPunch = $entry && ($entry->checkin !== null || $entry->checkout !== null);
+                        if ($hasPunch) {
+                            $punchStart = $entry->checkin !== null ? $seconds($entry->checkin) : $rStart;
+                            $punchEnd = $entry->checkout !== null ? $seconds($entry->checkout) : $rEnd;
+                            $punchWorkOverlap = $overlap($punchStart, $punchEnd, $rStart, $rEnd);
+                            $punchBreakOverlap = ($bStartSec && $bEndSec) ? $overlap($punchStart, $punchEnd, $bStartSec, $bEndSec) : 0;
+                            $totalWorked = max(0, $punchWorkOverlap - $punchBreakOverlap) / 3600;
+                        } else {
+                            $totalWorked = 0;
+                        }
                         $combined = $totalWorked + $bHours;
                         
-                        if ($date->dayOfWeek == 6) {
-                            $cong = ($combined > 2) ? 0.5 : 0;
-                        } else {
-                            if ($combined >= 6) {
-                                $cong = 1;
-                            } elseif ($combined >= 2) {
-                                $cong = 0.5;
+                        if ($combined > 0 || $entry) {
+                            if ($date->dayOfWeek == 6) {
+                                $cong = ($combined > 2) ? 0.5 : 0;
                             } else {
-                                $cong = 0;
+                                if ($combined >= 6) {
+                                    $cong = 1;
+                                } elseif ($combined >= 2) {
+                                    $cong = 0.5;
+                                } else {
+                                    $cong = 0;
+                                }
                             }
+                        } else {
+                            $cong = null;
                         }
 
                         $defaultStartTime = ($rule && $rule->start_time) ? substr($rule->start_time, 0, 5) : '08:30';
@@ -243,7 +252,21 @@ class AttendanceCalendarController extends Controller
                             $bHours = (\Carbon\Carbon::parse($actEnd)->diffInMinutes(\Carbon\Carbon::parse($actStart))) / 60;
                             if ($bHours > 8) $bHours = 8;
                         }
-                        $cong = 1;
+                        if ($bHours > 0 || $entry) {
+                            if ($date->dayOfWeek == 6) {
+                                $cong = ($bHours > 2) ? 0.5 : 0;
+                            } else {
+                                if ($bHours >= 6) {
+                                    $cong = 1;
+                                } elseif ($bHours >= 2) {
+                                    $cong = 0.5;
+                                } else {
+                                    $cong = 0;
+                                }
+                            }
+                        } else {
+                            $cong = null;
+                        }
 
                         $defaultStartTime = '08:30';
                         $defaultEndTime = ($date->dayOfWeek == 6 ? '12:30' : '17:30');

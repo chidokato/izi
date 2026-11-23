@@ -174,4 +174,54 @@ class AttendanceCalendarTest extends TestCase
         $content = $response->getContent();
         $this->assertStringContainsString('(Nghỉ)', $content);
     }
+
+    public function test_previous_cycle_navigation_with_zero_overlap_business_trip_does_not_error(): void
+    {
+        $schedId = DB::table('work_schedules')->insertGetId([
+            'name' => 'Lịch chuẩn 2',
+            'code' => 'STD2',
+            'status' => 'active',
+            'grace_period' => 10,
+        ]);
+
+        for ($dow = 1; $dow <= 5; $dow++) {
+            DB::table('work_schedule_rules')->insert([
+                'work_schedule_id' => $schedId,
+                'day_of_week' => $dow,
+                'is_working_day' => 1,
+                'start_time' => '08:30:00',
+                'end_time' => '17:30:00',
+                'break_start' => '12:00:00',
+                'break_end' => '13:00:00',
+            ]);
+        }
+
+        DB::table('employee_schedules')->insert([
+            'employee_id' => $this->employee,
+            'work_schedule_id' => $schedId,
+            'effective_from' => '2026-01-01',
+        ]);
+
+        // Insert business trip where start_date and end_date are on the boundary or zero duration
+        DB::table('attendance_requests')->insert([
+            'code' => 'REQ-BT-ZERO',
+            'employee_id' => $this->employee,
+            'type' => 'business_trip',
+            'start_date' => '2026-10-21 00:00:00',
+            'end_date' => '2026-10-21 00:00:00',
+            'status' => 'approved',
+            'reason' => 'Zero duration trip',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        // Navigating to previous month (2026-11) should render without Undefined variable $overlap error
+        $response = $this->actingAs($this->admin)->get('/admin/attendance-calendar?employee_id='.$this->employee.'&month=2026-11');
+        $response->assertOk();
+
+        $days = collect($response->viewData('days'))->keyBy(fn ($d) => $d['date']->toDateString());
+        $this->assertTrue($days->has('2026-10-21'));
+        $this->assertEquals(0, $days['2026-10-21']['request']->business_hours);
+        $this->assertNull($days['2026-10-21']['cong']);
+    }
 }
