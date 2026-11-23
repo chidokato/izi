@@ -17,11 +17,13 @@
                     <div class="d-flex align-items-center flex-wrap gap-3">
                         <h5 class="card-title mb-0 fs-15">Danh sách phiếu</h5>
                         <ul class="nav nav-tabs nav-tabs-custom border-bottom-0" role="tablist">
+                            @if($canViewMineTab)
                             <li class="nav-item">
                                 <a class="nav-link fw-semibold {{ $currentStatus === 'mine' ? 'active' : '' }}" href="{{ route('backend.attendance-requests.index', array_merge(request()->except('page'), ['status' => 'mine'])) }}">
                                     Phiếu của tôi <span class="badge {{ $currentStatus === 'mine' ? 'bg-primary' : 'bg-light text-muted' }} rounded-pill align-middle ms-1">{{ $counts['mine'] ?? 0 }}</span>
                                 </a>
                             </li>
+                            @endif
                             @if(($counts['waiting'] ?? 0) > 0)
                             <li class="nav-item">
                                 <a class="nav-link fw-semibold {{ $currentStatus === 'waiting' ? 'active' : '' }}" href="{{ route('backend.attendance-requests.index', array_merge(request()->except('page'), ['status' => 'waiting'])) }}" title="Các phiếu đang chờ bạn duyệt">
@@ -66,6 +68,7 @@
                         <div class="col-xxl-3 col-md-3 col-sm-6">
                             <input type="text" class="form-control" name="search_employee" placeholder="Nhập mã hoặc tên NV" value="{{ request('search_employee') }}">
                         </div>
+                        @if($canFilterDepartment)
                         <div class="col-xxl-2 col-md-3 col-sm-6">
                             <select class="form-select" name="department_id">
                                 <option value="">Tất cả phòng ban</option>
@@ -74,6 +77,7 @@
                                 @endforeach
                             </select>
                         </div>
+                        @endif
                         <div class="col-xxl-2 col-md-2 col-sm-6">
                             <select class="form-select" name="type">
                                 <option value="">Tất cả loại phiếu</option>

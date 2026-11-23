@@ -180,13 +180,18 @@ class AttendanceRequestController extends Controller
                               \App\Models\RequestApproval::where('approver_id', $user->id)->exists();
         }
 
-        $departments = Department::where('status', 'active');
-        if ($request->filled('department_id')) {
-            $departments->orWhere('id', $request->department_id);
+        $canFilterDepartment = optional($user->employee)->level === 'HR' || $user->isAdmin();
+        $canViewMineTab = $canFilterDepartment;
+        $departments = collect();
+        if ($canFilterDepartment) {
+            $departmentQuery = Department::where('status', 'active');
+            if ($request->filled('department_id')) {
+                $departmentQuery->orWhere('id', $request->department_id);
+            }
+            $departments = $departmentQuery->orderBy('name')->get();
         }
-        $departments = $departments->orderBy('name')->get();
 
-        return view('backend.attendance_requests.index', compact('requests', 'canBulkApprove', 'counts', 'currentStatus', 'departments'));
+        return view('backend.attendance_requests.index', compact('requests', 'canBulkApprove', 'counts', 'currentStatus', 'departments', 'canFilterDepartment', 'canViewMineTab'));
     }
 
     public function create()

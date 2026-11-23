@@ -1,7 +1,7 @@
 # Graph Report - izi  (2026-11-23)
 
 ## Corpus Check
-- 406 files · ~208,281 words
+- 406 files · ~208,304 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 527 file(s) not represented in the graph (top: .tmp 469, (none) 14, .css 11)
 - WARNING: 527 of 1494 files seen (35%) have no supported extractor and are missing from this graph entirely. It may look complete while representing only part of the codebase.
@@ -974,7 +974,7 @@ Cohesion: 0.83
 Nodes (3): a(), c(), d()
 
 ## Knowledge Gaps
-- **59 isolated node(s):** `RFC-2822`, `backend.settings.partials.image-field`, `backend.layouts.app`, `backend.categories._form`, `backend.layouts.app` (+54 more)
+- **59 isolated node(s):** `backend.layouts.app`, `RFC-2822`, `backend.settings.partials.image-field`, `backend.layouts.app`, `backend.categories._form` (+54 more)
   These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 1858 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
 - **275 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
@@ -982,15 +982,15 @@ Nodes (3): a(), c(), d()
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `tn()` connect `an` to `apexcharts.min.js`, `index.global.min.js`?**
-  _High betweenness centrality (0.041) - this node is a cross-community bridge._
+  _High betweenness centrality (0.040) - this node is a cross-community bridge._
 - **Are the 2 inferred relationships involving `E()` (e.g. with `h()` and `l()`) actually correct?**
   _`E()` has 2 INFERRED edges - model-reasoned connections that need verification._
-- **What connects `RFC-2822`, `backend.settings.partials.image-field`, `backend.layouts.app` to the rest of the system?**
+- **What connects `backend.layouts.app`, `RFC-2822`, `backend.settings.partials.image-field` to the rest of the system?**
   _59 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `chart.umd.js` be split into smaller, more focused modules?**
   _Cohesion score 0.02232408114761056 - nodes in this community are weakly interconnected._
 - **Why does `Jt()` connect `apexcharts.min.js` to `attr`, `an`?**
-  _High betweenness centrality (0.041) - this node is a cross-community bridge._
+  _High betweenness centrality (0.040) - this node is a cross-community bridge._
 - **Are the 5 inferred relationships involving `p()` (e.g. with `N()` and `i()`) actually correct?**
   _`p()` has 5 INFERRED edges - model-reasoned connections that need verification._
 - **Should `lord-icon-2.1.0.js` be split into smaller, more focused modules?**
