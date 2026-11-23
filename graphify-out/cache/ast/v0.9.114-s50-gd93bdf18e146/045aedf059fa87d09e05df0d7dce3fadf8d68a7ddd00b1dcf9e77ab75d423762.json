@@ -1,0 +1,1 @@
+{"nodes": [{"id": "$graphify-root$_test_adj_php", "label": "test_adj.php", "file_type": "code", "source_file": "test_adj.php", "source_location": "L1"}], "edges": [], "raw_calls": [], "parse_errors": {"first_error_line": 3, "multiline_error": false}}

@@ -141,7 +141,11 @@ class AttendanceRequestController extends Controller
         $applyWaitingForMe($waitingQuery);
         $waitingCount = $waitingQuery->count();
 
+        $mineQuery = clone $baseQuery;
+        $mineQuery->where('employee_id', $user->employee_id ?? 0);
+
         $counts = [
+            'mine' => (clone $mineQuery)->count(),
             'waiting' => $waitingCount,
             'all' => (clone $baseQuery)->count(),
             'pending' => (clone $baseQuery)->where('status', 'pending')->count(),
@@ -155,9 +159,12 @@ class AttendanceRequestController extends Controller
             $currentStatus = 'pending';
         }
 
-        $query = (clone $baseQuery)->with(['employee.department', 'employee.manager', 'employee.managerL2', 'requestApprovals.approver']);
+        $query = clone ($currentStatus === 'mine' ? $mineQuery : $baseQuery);
+        $query->with(['employee.department', 'employee.manager', 'employee.managerL2', 'requestApprovals.approver']);
 
-        if ($currentStatus === 'waiting') {
+        if ($currentStatus === 'mine') {
+            // The owner filter is already applied to $mineQuery.
+        } elseif ($currentStatus === 'waiting') {
             $applyWaitingForMe($query);
         } elseif ($currentStatus !== 'all') {
             $query->where('status', $currentStatus);

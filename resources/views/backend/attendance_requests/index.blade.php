@@ -17,6 +17,11 @@
                     <div class="d-flex align-items-center flex-wrap gap-3">
                         <h5 class="card-title mb-0 fs-15">Danh sách phiếu</h5>
                         <ul class="nav nav-tabs nav-tabs-custom border-bottom-0" role="tablist">
+                            <li class="nav-item">
+                                <a class="nav-link fw-semibold {{ $currentStatus === 'mine' ? 'active' : '' }}" href="{{ route('backend.attendance-requests.index', array_merge(request()->except('page'), ['status' => 'mine'])) }}">
+                                    Phiếu của tôi <span class="badge {{ $currentStatus === 'mine' ? 'bg-primary' : 'bg-light text-muted' }} rounded-pill align-middle ms-1">{{ $counts['mine'] ?? 0 }}</span>
+                                </a>
+                            </li>
                             @if(($counts['waiting'] ?? 0) > 0)
                             <li class="nav-item">
                                 <a class="nav-link fw-semibold {{ $currentStatus === 'waiting' ? 'active' : '' }}" href="{{ route('backend.attendance-requests.index', array_merge(request()->except('page'), ['status' => 'waiting'])) }}" title="Các phiếu đang chờ bạn duyệt">
