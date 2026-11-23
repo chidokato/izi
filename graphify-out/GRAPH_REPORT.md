@@ -1,7 +1,7 @@
 # Graph Report - izi  (2026-11-23)
 
 ## Corpus Check
-- 406 files · ~208,304 words
+- 406 files · ~208,317 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 527 file(s) not represented in the graph (top: .tmp 469, (none) 14, .css 11)
 - WARNING: 527 of 1494 files seen (35%) have no supported extractor and are missing from this graph entirely. It may look complete while representing only part of the codebase.

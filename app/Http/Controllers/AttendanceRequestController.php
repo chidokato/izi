@@ -181,6 +181,7 @@ class AttendanceRequestController extends Controller
         }
 
         $canFilterDepartment = optional($user->employee)->level === 'HR' || $user->isAdmin();
+        $canSearchEmployee = $canFilterDepartment || strtolower(trim((string) optional($user->employee)->position)) === 'director';
         $canViewMineTab = $canFilterDepartment;
         $departments = collect();
         if ($canFilterDepartment) {
@@ -191,7 +192,7 @@ class AttendanceRequestController extends Controller
             $departments = $departmentQuery->orderBy('name')->get();
         }
 
-        return view('backend.attendance_requests.index', compact('requests', 'canBulkApprove', 'counts', 'currentStatus', 'departments', 'canFilterDepartment', 'canViewMineTab'));
+        return view('backend.attendance_requests.index', compact('requests', 'canBulkApprove', 'counts', 'currentStatus', 'departments', 'canFilterDepartment', 'canSearchEmployee', 'canViewMineTab'));
     }
 
     public function create()

@@ -66,9 +66,13 @@
                     <input type="hidden" name="status" value="{{ $currentStatus }}">
                     <div class="row g-2">
                         @if($canFilterDepartment)
+                        @endif
+                        @if($canSearchEmployee)
                         <div class="col-xxl-3 col-md-3 col-sm-6">
                             <input type="text" class="form-control" name="search_employee" placeholder="Nhập mã hoặc tên NV" value="{{ request('search_employee') }}">
                         </div>
+                        @endif
+                        @if($canFilterDepartment)
                         <div class="col-xxl-2 col-md-3 col-sm-6">
                             <select class="form-select" name="department_id">
                                 <option value="">Tất cả phòng ban</option>
