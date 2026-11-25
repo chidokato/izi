@@ -26,6 +26,11 @@ class Employee extends Model
         'status',
         'annual_leave_balance',
         'evaluation_type',
+        'attendance_exempt',
+    ];
+
+    protected $casts = [
+        'attendance_exempt' => 'boolean',
     ];
 
     public function getEvaluationTypeNameAttribute(): string

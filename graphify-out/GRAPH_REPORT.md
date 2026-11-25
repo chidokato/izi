@@ -1,13 +1,13 @@
-# Graph Report - izi  (2026-11-23)
+# Graph Report - izi  (2026-11-25)
 
 ## Corpus Check
-- 406 files · ~208,317 words
+- 407 files · ~208,739 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 527 file(s) not represented in the graph (top: .tmp 469, (none) 14, .css 11)
-- WARNING: 527 of 1494 files seen (35%) have no supported extractor and are missing from this graph entirely. It may look complete while representing only part of the codebase.
+- WARNING: 527 of 1495 files seen (35%) have no supported extractor and are missing from this graph entirely. It may look complete while representing only part of the codebase.
 
 ## Summary
-- 6517 nodes · 13912 edges · 432 communities (157 shown, 275 thin omitted)
+- 6524 nodes · 13923 edges · 434 communities (156 shown, 278 thin omitted)
 - Extraction: 92% EXTRACTED · 8% INFERRED · 0% AMBIGUOUS · INFERRED: 1098 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
@@ -54,11 +54,11 @@
 - us
 - rt
 - .constructor
-- AttendanceImportTest
+- User
 - Qe
 - shepherd.min.js
 - sweetalert2.min.js
-- T
+- oo
 - EvaluationApprovalController.php
 - q
 - AttendanceRequestController.php
@@ -81,7 +81,7 @@
 - _n
 - dom-autoscroller.min.js
 - ss
-- s
+- l
 - l
 - Qn
 - Illuminate\Database\Schema\Blueprint
@@ -100,11 +100,11 @@
 - Category
 - Ro
 - nw
-- n
+- ls
 - Q
-- UserFactory.php
+- Illuminate\Support\Str
 - Lt
-- an
+- Qa
 - getLocale
 - getParsingFlags
 - quill.min.js
@@ -118,7 +118,7 @@
 - backend-content-form.js
 - n
 - n
-- ki
+- s
 - fo
 - ts
 - O
@@ -132,13 +132,13 @@
 - createUTC
 - E
 - simplebar.min.js
-- kt
+- an
 - .calculate
 - mailbox.init.js
 - todo.init.js
 - fn
-- Illuminate\Database\Migrations\Migration
-- .defs
+- Illuminate\Support\Facades\Schema
+- attr
 - ks
 - Rt
 - localeData
@@ -156,7 +156,7 @@
 - Rn
 - dropzone-min.js
 - filepond.min.js
-- qn
+- st
 - isotope.pkgd.min.js
 - jsvectormap.min.js
 - masonry.pkgd.min.js
@@ -212,19 +212,19 @@
 - 2026_09_18_000000_alter_date_columns_in_attendance_requests_table.php
 - 2026_09_19_044746_add_overtime_to_attendance_requests_type_enum.php
 - 2026_09_21_105115_add_profile_fields_to_users_table.php
-- _s
+- rc
 - 2026_09_24_035910_add_annual_leave_balance_to_employees_table.php
 - 2026_09_26_030203_add_parent_id_to_evaluation_criteria_table.php
 - 2026_10_01_075826_add_level_to_employees_table.php
 - 2026_10_01_080740_rename_hr_id_to_manager_l2_id_on_employees_table.php
-- 2026_09_18_000002_add_sessions_to_attendance_requests_table.php
+- As
 - 2026_10_07_092302_alter_attendance_entries_replace_department_name_with_id.php
 - 2026_10_07_141117_add_deleted_at_to_employees_table.php
 - 2026_10_29_141500_add_selection_flags_to_evaluation_details_table.php
 - apexcharts-column.init.js
 - apps-nft-explore.init.js
-- HSVtoRGB
-- bezFunction
+- en
+- HccSsoTest
 - D
 - tasks-kanban.init.js
 - Oe
@@ -236,17 +236,17 @@
 - 2014_10_12_100000_create_password_resets_table.php
 - 2019_08_19_000000_create_failed_jobs_table.php
 - 2019_12_14_000001_create_personal_access_tokens_table.php
-- 2026_09_25_091545_add_hr_id_to_employees_table.php
+- 2026_09_23_104800_add_is_active_to_users_table.php
 - 2026_09_16_000002_create_employees_table.php
 - 2026_09_16_000005_create_work_schedule_rules_table.php
 - 2026_09_16_000007_create_holidays_table.php
 - 2026_09_16_000009_create_attendance_imports_table.php
 - 2026_09_16_000010_create_attendance_logs_table.php
-- 2026_09_16_000008_create_attendance_periods_table.php
+- 2026_10_02_171115_add_grace_period_to_work_schedules_table.php
 - 2026_09_16_000012_create_attendance_requests_table.php
 - 2026_09_16_000014_create_monthly_attendances_table.php
 - 2026_09_16_000015_create_audit_logs_table.php
-- 2026_09_16_000013_create_request_approvals_table.php
+- 2026_11_25_000001_add_attendance_exempt_to_employees_table.php
 - 2026_09_26_022355_create_evaluation_details_table.php
 - loadCharts
 - Fe
@@ -314,7 +314,9 @@
 - timesheet_export/index.blade.php
 - users/index.blade.php
 - 403.blade.php
-- 2026_09_26_022343_create_evaluation_criteria_table.php
+- 2026_09_16_000001_create_departments_table.php
+- 2026_09_16_000011_create_daily_attendances_table.php
+- 2026_09_26_022349_create_evaluation_grades_table.php
 
 ## God Nodes (most connected - your core abstractions)
 1. `tn` - 131 edges
@@ -329,8 +331,6 @@
 10. `vt` - 51 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `AttendanceCalendarTest` --references--> `User`  [EXTRACTED]
-  tests/Feature/AttendanceCalendarTest.php → app/Models/User.php
 - `WorkScheduleTest` --references--> `User`  [EXTRACTED]
   tests/Feature/WorkScheduleTest.php → app/Models/User.php
 - `eo()` --indirect_call--> `Io()`  [INFERRED]
@@ -339,19 +339,21 @@
   public/admin-assets/libs/gridjs/gridjs.umd.js → public/admin-assets/libs/chart.js/chart.umd.js
 - `er()` --indirect_call--> `Ui()`  [INFERRED]
   public/admin-assets/libs/echarts/echarts.min.js → public/admin-assets/libs/chart.js/chart.umd.js
+- `Ss()` --indirect_call--> `ws()`  [INFERRED]
+  public/admin-assets/libs/echarts/echarts.min.js → public/admin-assets/libs/chart.js/chart.umd.js
 
 ## Import Cycles
 - None detected.
 
-## Communities (432 total, 275 thin omitted)
+## Communities (434 total, 278 thin omitted)
 
 ### Community 0 - "chart.umd.js"
 Cohesion: 0.02
-Nodes (91): ai(), at(), beforeDatasetDraw(), beforeDatasetsDraw(), beforeDraw(), beforeLayout(), Bi(), bs() (+83 more)
+Nodes (121): addElements(), ai(), ao(), as(), at(), b(), beforeDatasetDraw(), beforeDatasetsDraw() (+113 more)
 
 ### Community 1 - "lord-icon-2.1.0.js"
 Cohesion: 0.02
-Nodes (54): addDecorator(), boxIntersect(), CanvasRenderer(), CanvasRendererBase(), checkReady(), createNS(), createProxyFunction(), createSizedArray() (+46 more)
+Nodes (59): addBrightnessToRGB(), addDecorator(), addHueToRGB(), addSaturationToRGB(), boxIntersect(), CanvasRenderer(), CanvasRendererBase(), checkReady() (+51 more)
 
 ### Community 2 - "echarts.min.js"
 Cohesion: 0.02
@@ -359,11 +361,11 @@ Nodes (96): Ab(), aw(), bk(), Bx(), ce(), Cf(), cg(), co() (+88 more)
 
 ### Community 3 - "tn"
 Cohesion: 0.04
-Nodes (9): d(), dt(), Js(), ke(), Pn(), Qs(), Sn(), tn (+1 more)
+Nodes (11): d(), dt(), Js(), ke(), kn(), Pn(), qn(), Qs() (+3 more)
 
 ### Community 4 - "index.global.min.js"
 Cohesion: 0.03
-Nodes (72): A(), Al(), be(), bs(), bt(), C(), cc(), ci() (+64 more)
+Nodes (97): A(), at(), b(), be(), Bo(), bs(), C(), Cn() (+89 more)
 
 ### Community 5 - "swiper-bundle.min.js"
 Cohesion: 0.06
@@ -375,31 +377,31 @@ Nodes (70): a(), Ae(), an(), at(), b(), be(), bt(), ce() (+62 more)
 
 ### Community 7 - "p"
 Cohesion: 0.04
-Nodes (48): _a, ao(), As(), bi(), Bl(), cl(), Ds, ec() (+40 more)
+Nodes (48): ws(), _a, Al(), ao(), As(), bi(), Bl(), cl() (+40 more)
 
 ### Community 8 - "Illuminate\Http\Request"
-Cohesion: 0.04
-Nodes (11): AttendanceCalendarController, EmployeeController, GoogleController, {closure#5}(), WorkScheduleController, EnsureAdmin, RedirectIfAuthenticated, TrustProxies (+3 more)
+Cohesion: 0.03
+Nodes (12): AttendanceCalendarController, EvaluationGradeController, EmployeeController, GoogleController, {closure#5}(), WorkScheduleController, EnsureAdmin, RedirectIfAuthenticated (+4 more)
 
 ### Community 9 - "js"
-Cohesion: 0.08
-Nodes (5): initialize(), js, g(), Ls(), rt()
+Cohesion: 0.07
+Nodes (8): Bn(), _calculateBarValuePixels(), jn(), js, g(), Ls(), rt(), updateElements()
 
 ### Community 10 - "c"
-Cohesion: 0.06
-Nodes (7): c(), createTag(), s(), n(), t(), T, TextAnimatorDataProperty()
+Cohesion: 0.05
+Nodes (25): a(), c(), createTag(), d(), e(), f(), g(), getFontProperties() (+17 more)
 
 ### Community 11 - "attr"
-Cohesion: 0.04
-Nodes (27): attr(), cy(), dmove(), ee(), hi, ie(), ki, Kt() (+19 more)
+Cohesion: 0.06
+Nodes (14): dmove(), ee(), hi, ie(), li, ne(), oe(), oi (+6 more)
 
 ### Community 12 - "E"
 Cohesion: 0.04
 Nodes (71): af(), bl(), bz(), cc(), e(), Cl(), Cm(), Dk() (+63 more)
 
 ### Community 13 - "a"
-Cohesion: 0.05
-Nodes (20): a(), Ae(), as(), Bo(), configure(), determineDataLimits(), Di(), _generate() (+12 more)
+Cohesion: 0.06
+Nodes (14): a(), Ae(), Bo(), configure(), determineDataLimits(), Di(), _generate(), _getTimestampsForTable() (+6 more)
 
 ### Community 14 - "t"
 Cohesion: 0.08
@@ -411,15 +413,15 @@ Nodes (16): Apartment, ApartmentImage, CustomerInquiry, Department, Employee, Ev
 
 ### Community 16 - "apexcharts.min.js"
 Cohesion: 0.04
-Nodes (31): amove(), ax(), ay(), bi, center(), clipper(), componentTransfer(), createResizeHandles() (+23 more)
+Nodes (34): amove(), ax(), ay(), bi, center(), clipper(), componentTransfer(), createResizeHandles() (+26 more)
 
 ### Community 17 - "moment.js"
 Cohesion: 0.04
 Nodes (19): RFC-2822, add$1(), addSubtract$1(), addTimeToArrayFromToken(), extractFromRFC2822Strings(), getParseRegexForToken(), hasOwnProp(), localeWeekdays() (+11 more)
 
 ### Community 18 - "Ba"
-Cohesion: 0.09
-Nodes (12): _a, afterInit(), Ba, Ca(), f(), Oi(), p(), Si() (+4 more)
+Cohesion: 0.06
+Nodes (22): _a, aa(), afterDatasetsUpdate(), afterInit(), Ba, Ca(), Ee(), f() (+14 more)
 
 ### Community 19 - "n"
 Cohesion: 0.06
@@ -439,7 +441,7 @@ Nodes (52): A(), au(), ay(), bu(), bv(), cA(), da(), dd() (+44 more)
 
 ### Community 23 - "ti"
 Cohesion: 0.05
-Nodes (18): ai(), constructor(), cr(), ft(), gt(), hr(), kr(), lt() (+10 more)
+Nodes (19): ai(), constructor(), cr(), ft(), gt(), hr(), lt(), Mi (+11 more)
 
 ### Community 24 - "Ni"
 Cohesion: 0.08
@@ -462,7 +464,7 @@ Cohesion: 0.06
 Nodes (47): ag(), bB(), bf(), BG(), bp(), df(), dg(), Eg() (+39 more)
 
 ### Community 29 - "Illuminate\Support\Facades\DB"
-Cohesion: 0.06
+Cohesion: 0.05
 Nodes (6): AttendanceImportController, {closure#9}(), {closure#1}(), AttendanceFileReader, AttendanceImporter, {closure#6}()
 
 ### Community 30 - "ja"
@@ -470,8 +472,8 @@ Cohesion: 0.06
 Nodes (5): as, ja, os, ss, Ua
 
 ### Community 31 - "Controller"
-Cohesion: 0.06
-Nodes (6): EvaluationGradeController, MyEvaluationController, TimesheetExportController, Controller, HccSsoController, MonthlyWorkSettingController
+Cohesion: 0.08
+Nodes (4): MyEvaluationController, TimesheetExportController, Controller, MonthlyWorkSettingController
 
 ### Community 32 - "E"
 Cohesion: 0.09
@@ -482,20 +484,20 @@ Cohesion: 0.04
 Nodes (46): pestphp/pest-plugin, autoload, autoload-dev, psr-4, psr-4, config, allow-plugins, optimize-autoloader (+38 more)
 
 ### Community 34 - "TestCase"
-Cohesion: 0.03
-Nodes (12): ResetPasswordMail, User, CreatesApplication, AdminAccessTest, {closure#1}(), AttendanceCalendarTest, CourseEmptyDataTest, CourseManagementTest (+4 more)
+Cohesion: 0.05
+Nodes (9): CreatesApplication, AdminAccessTest, {closure#1}(), AttendanceCalendarTest, CourseEmptyDataTest, CourseManagementTest, ExampleTest, WorkScheduleTest (+1 more)
 
 ### Community 35 - "we"
 Cohesion: 0.06
-Nodes (12): dx(), dy(), Ee, he, ke, load(), mi, move() (+4 more)
+Nodes (11): dx(), dy(), Ee, he, ke, load(), move(), size() (+3 more)
 
 ### Community 36 - "Illuminate\Http\RedirectResponse"
-Cohesion: 0.07
+Cohesion: 0.08
 Nodes (3): AdminController, ProfileController, UserController
 
 ### Community 37 - "gr"
 Cohesion: 0.10
-Nodes (10): dc(), fr(), gr, ks, _l(), vt(), wt(), xl (+2 more)
+Nodes (11): dc(), dr(), fr(), gr, ks, _l(), rl(), vt() (+3 more)
 
 ### Community 38 - "kt"
 Cohesion: 0.09
@@ -506,12 +508,16 @@ Cohesion: 0.07
 Nodes (39): ac(), aR(), D(), ec(), fc(), hc(), ic(), iy() (+31 more)
 
 ### Community 41 - ".constructor"
-Cohesion: 0.07
-Nodes (10): Ba, et(), Fa, Ge(), Ke(), La, Mi, qa() (+2 more)
+Cohesion: 0.08
+Nodes (8): Ba, et(), Fa, Ge(), Ie(), Ke(), La, za
+
+### Community 42 - "User"
+Cohesion: 0.09
+Nodes (4): HccSsoController, ResetPasswordMail, User, AttendanceImportTest
 
 ### Community 43 - "Qe"
-Cohesion: 0.10
-Nodes (11): animate(), css(), delay(), plot(), Qe, _queueNumberDelta(), _queueObject(), styleAttr() (+3 more)
+Cohesion: 0.07
+Nodes (15): animate(), css(), delay(), ii(), kt, mi, plot(), Qe (+7 more)
 
 ### Community 44 - "shepherd.min.js"
 Cohesion: 0.09
@@ -521,9 +527,9 @@ Nodes (32): Ab, ac(), Bb(), Cb(), ec, fa(), K(), mc (+24 more)
 Cohesion: 0.08
 Nodes (19): dt(), e(), emit(), En, Ft(), _getHandlersByEventName(), _main(), mt() (+11 more)
 
-### Community 46 - "T"
-Cohesion: 0.15
-Nodes (29): b(), Bo(), E(), f(), g(), r(), c(), H() (+21 more)
+### Community 46 - "oo"
+Cohesion: 0.10
+Nodes (9): Bi(), Fi(), getCenterPoint(), io(), no(), oo, $s, tooltipPosition() (+1 more)
 
 ### Community 47 - "EvaluationApprovalController.php"
 Cohesion: 0.06
@@ -538,12 +544,12 @@ Cohesion: 0.07
 Nodes (3): AttendanceRequestController, {closure#23}(), AttendanceRequest
 
 ### Community 50 - "ls"
-Cohesion: 0.09
-Nodes (8): eo(), Ha(), Ka, ls, Oe(), Pa, querySegEl(), rc
+Cohesion: 0.18
+Nodes (3): Ha(), Ka, Pa
 
 ### Community 51 - "Hn"
-Cohesion: 0.08
-Nodes (11): ct(), Hn, Ht(), jt(), kt(), markerToArray(), Pn(), tt() (+3 more)
+Cohesion: 0.09
+Nodes (10): ct(), Hn, Ht(), jt(), kt(), markerToArray(), Pn(), tt() (+2 more)
 
 ### Community 52 - "isValid"
 Cohesion: 0.10
@@ -566,16 +572,16 @@ Cohesion: 0.07
 Nodes (35): BD(), be(), bh(), Bs(), a(), Fh(), Gd(), Gn() (+27 more)
 
 ### Community 58 - "Gn"
-Cohesion: 0.07
-Nodes (20): al, bl, cs, dl, ds(), fs(), gl(), Gn (+12 more)
+Cohesion: 0.05
+Nodes (25): al, bl, bo, cs, dl, ds(), er, fl (+17 more)
 
 ### Community 59 - "rs"
-Cohesion: 0.11
-Nodes (4): is(), kn(), rs, Sl
+Cohesion: 0.10
+Nodes (5): is(), kn(), rs, Sl, xs()
 
 ### Community 60 - "vt"
 Cohesion: 0.08
-Nodes (4): _currentTransform(), ii(), mt(), vt
+Nodes (3): _currentTransform(), mt(), vt
 
 ### Community 61 - "Ta"
 Cohesion: 0.10
@@ -583,23 +589,23 @@ Nodes (8): B(), Jc, Qb(), sa(), Sa, Ta, Wa(), Xa()
 
 ### Community 62 - "Zt"
 Cohesion: 0.09
-Nodes (15): Et(), Bt(), Ft(), Gt(), It(), jt(), kt(), mt() (+7 more)
+Nodes (14): Bt(), Ft(), Gt(), It(), jt(), kt(), mt(), qt() (+6 more)
 
 ### Community 63 - "El"
-Cohesion: 0.08
-Nodes (10): El, io, Ll(), ml(), nc, ol(), pl(), rl() (+2 more)
+Cohesion: 0.10
+Nodes (6): El, io, Ll(), nc, Vs, Wl()
 
 ### Community 64 - "C"
 Cohesion: 0.10
-Nodes (3): b(), C, x()
+Nodes (4): E(), b(), C, x()
 
 ### Community 65 - "kn"
 Cohesion: 0.14
 Nodes (3): dn, kn, Tn()
 
 ### Community 66 - "_n"
-Cohesion: 0.10
-Nodes (4): fn(), gn(), _n, xn()
+Cohesion: 0.09
+Nodes (6): fn(), gn(), _n, xn(), Ye(), yn()
 
 ### Community 67 - "dom-autoscroller.min.js"
 Cohesion: 0.12
@@ -609,17 +615,17 @@ Nodes (29): a(), c(), d(), e(), f(), h(), i(), l() (+21 more)
 Cohesion: 0.12
 Nodes (12): active(), as(), createPointHandles(), gi, init(), is(), Ka(), mutationHandler() (+4 more)
 
-### Community 69 - "s"
-Cohesion: 0.05
-Nodes (41): addElements(), Be(), Bn(), bo, _calculateBarIndexPixels(), _calculateBarValuePixels(), De(), getLabelAndValue() (+33 more)
+### Community 69 - "l"
+Cohesion: 0.10
+Nodes (20): _calculateBarIndexPixels(), getLabelAndValue(), getMaxOverflow(), getPixelForTick(), getPixelForValue(), _getRuler(), _getStackCount(), _getStackIndex() (+12 more)
 
 ### Community 70 - "l"
 Cohesion: 0.13
 Nodes (30): aA(), ap(), cp(), dp(), ep(), fp(), Hl(), hp() (+22 more)
 
 ### Community 71 - "Qn"
-Cohesion: 0.06
-Nodes (17): at(), bo, Ca, Do(), fl, Fs, gi(), hc (+9 more)
+Cohesion: 0.09
+Nodes (6): Ca, Fs, Jn, Qn(), qn, Zn()
 
 ### Community 72 - "Illuminate\Database\Schema\Blueprint"
 Cohesion: 0.10
@@ -627,7 +633,7 @@ Nodes (15): {closure#1}(), {closure#2}(), {closure#1}(), {closure#2}(), {closure
 
 ### Community 75 - "t"
 Cohesion: 0.09
-Nodes (26): a(), c(), constructor(), d(), _draw(), e(), _e, f() (+18 more)
+Nodes (25): a(), At(), c(), constructor(), d(), _draw(), e(), _e (+17 more)
 
 ### Community 76 - "dragula.min.js"
 Cohesion: 0.21
@@ -645,17 +651,9 @@ Nodes (3): {closure#1}(), MenuController, Menu
 Cohesion: 0.09
 Nodes (4): array(), Dt, ge, Ue
 
-### Community 80 - "Lt"
-Cohesion: 0.09
-Nodes (4): At(), wt(), Lt, st
-
-### Community 81 - "hs"
-Cohesion: 0.08
-Nodes (9): As, cs, es(), hs, is(), ns(), os(), ss() (+1 more)
-
 ### Community 82 - "Is"
-Cohesion: 0.11
-Nodes (9): ac(), Cl, ir(), Is, oc, Os(), sc, wl (+1 more)
+Cohesion: 0.10
+Nodes (14): ci(), Cl, eventRangesToSegs(), eventRangeToSegs(), _eventStoreToSegs(), ii(), ir(), Is (+6 more)
 
 ### Community 83 - "glightbox.min.js"
 Cohesion: 0.22
@@ -666,8 +664,8 @@ Cohesion: 0.13
 Nodes (3): Kc, lc, zc()
 
 ### Community 85 - "Category"
-Cohesion: 0.09
-Nodes (7): CategoryController, {closure#2}(), Category, CategorySeeder, DatabaseSeeder, MenuSeeder, PostSeeder
+Cohesion: 0.16
+Nodes (3): CategoryController, {closure#2}(), Category
 
 ### Community 86 - "Ro"
 Cohesion: 0.13
@@ -677,21 +675,25 @@ Nodes (5): buildTicks(), Ci(), init(), mo(), Ro
 Cohesion: 0.14
 Nodes (24): bi(), bw(), Cw(), di(), Dw(), Ew(), F(), fi() (+16 more)
 
-### Community 88 - "n"
-Cohesion: 0.08
-Nodes (36): ao(), b(), co(), dn(), Do(), e(), ei(), eo() (+28 more)
+### Community 88 - "ls"
+Cohesion: 0.09
+Nodes (16): ac(), En(), eo(), Hl, ls, mn(), no(), oc (+8 more)
 
 ### Community 89 - "Q"
 Cohesion: 0.12
 Nodes (19): Bc(), Da(), dc(), d(), F(), fc(), gc(), H() (+11 more)
 
-### Community 91 - "Lt"
-Cohesion: 0.15
-Nodes (5): ci, fi, Lt(), targets(), wi
+### Community 90 - "Illuminate\Support\Str"
+Cohesion: 0.11
+Nodes (5): UserFactory, CategorySeeder, DatabaseSeeder, MenuSeeder, PostSeeder
 
-### Community 92 - "an"
-Cohesion: 0.06
-Nodes (20): an(), ar(), bc(), en, es(), il(), ji(), Ki() (+12 more)
+### Community 91 - "Lt"
+Cohesion: 0.10
+Nodes (6): ce, ci, fi, Lt(), targets(), wi
+
+### Community 92 - "Qa"
+Cohesion: 0.12
+Nodes (11): ar(), es(), ji(), Ki(), ns(), Qa, qa(), ts() (+3 more)
 
 ### Community 93 - "getLocale"
 Cohesion: 0.11
@@ -718,24 +720,24 @@ Cohesion: 0.17
 Nodes (3): AdminChatbotController, ChatbotConfigService, ChatbotService
 
 ### Community 102 - "admin-assets/js/app.js"
-Cohesion: 0.18
-Nodes (16): b(), c(), D(), E(), G(), i(), l(), m() (+8 more)
+Cohesion: 0.17
+Nodes (15): b(), c(), D(), G(), i(), l(), m(), n() (+7 more)
 
 ### Community 103 - "backend-content-form.js"
 Cohesion: 0.16
 Nodes (15): addGalleryFiles(), appendGalleryItem(), applySingleImage(), applySinglePdfFile(), bindDropZone(), bindFloorPlanItem(), applyFloorPlanImage(), showFloorPlanPreview() (+7 more)
 
 ### Community 104 - "n"
-Cohesion: 0.09
-Nodes (25): a(), addPropertyDecorator(), d(), e(), extendPrototype(), f(), g(), getFontProperties() (+17 more)
+Cohesion: 0.11
+Nodes (11): addPropertyDecorator(), bezFunction(), extendPrototype(), initialize$1(), n(), e(), f(), i() (+3 more)
 
 ### Community 105 - "n"
 Cohesion: 0.28
 Nodes (20): a(), e(), i(), n(), a(), c(), d(), f() (+12 more)
 
-### Community 106 - "ki"
-Cohesion: 0.17
-Nodes (8): aa(), afterDatasetsUpdate(), an(), generateLabels(), ki(), on, ra(), rn()
+### Community 106 - "s"
+Cohesion: 0.08
+Nodes (18): an(), Be(), bo, De(), H(), l(), _i(), ii() (+10 more)
 
 ### Community 107 - "fo"
 Cohesion: 0.17
@@ -777,6 +779,10 @@ Nodes (19): E(), Eb(), Fb(), G(), Hb(), ib(), J(), Ja() (+11 more)
 Cohesion: 0.20
 Nodes (12): a(), e(), i(), m(), S(), b(), f(), g() (+4 more)
 
+### Community 120 - "an"
+Cohesion: 0.12
+Nodes (9): an(), bc(), il(), nl(), nn(), on, rn(), sn (+1 more)
+
 ### Community 121 - ".calculate"
 Cohesion: 0.18
 Nodes (3): AttendanceHourCalculator, AttendanceHourCalculatorTest, ExampleTest
@@ -793,13 +799,13 @@ Nodes (14): checkTaskStatus(), drawList(), editTodoList(), fetchIdFromObj(), fin
 Cohesion: 0.23
 Nodes (16): $a(), ab(), Ca(), D(), db(), fn(), Gb(), ha() (+8 more)
 
-### Community 125 - "Illuminate\Database\Migrations\Migration"
+### Community 125 - "Illuminate\Support\Facades\Schema"
 Cohesion: 0.12
 Nodes (3): {closure#1}(), {closure#1}(), {closure#1}()
 
-### Community 126 - ".defs"
-Cohesion: 0.19
-Nodes (6): defs(), gradient(), marker(), pattern(), si, Ut
+### Community 126 - "attr"
+Cohesion: 0.08
+Nodes (17): attr(), defs(), gradient(), ki, Kt(), marker(), orient(), pattern() (+9 more)
 
 ### Community 129 - "localeData"
 Cohesion: 0.15
@@ -812,10 +818,6 @@ Nodes (15): configFromArray(), createUTCDate(), currentDateArray(), dayOfYearFro
 ### Community 131 - "select2.min.js"
 Cohesion: 0.22
 Nodes (10): A(), c(), D(), e(), l(), n(), r(), S() (+2 more)
-
-### Community 133 - "jl"
-Cohesion: 0.20
-Nodes (3): jl, Ul, yt()
 
 ### Community 134 - "isFunction"
 Cohesion: 0.15
@@ -840,10 +842,6 @@ Nodes (9): a(), e(), i(), l(), n(), o(), r(), s() (+1 more)
 ### Community 144 - "filepond.min.js"
 Cohesion: 0.20
 Nodes (5): ae(), o(), r(), le(), ue()
-
-### Community 145 - "qn"
-Cohesion: 0.14
-Nodes (7): fetch(), Ie(), Jn, qn, Ri, xi(), Zn()
 
 ### Community 146 - "isotope.pkgd.min.js"
 Cohesion: 0.42
@@ -937,10 +935,6 @@ Nodes (6): f(), h(), n(), r(), w(), x()
 Cohesion: 0.52
 Nodes (5): filterData(), jobDetailShow(), loadCompaniesListData(), paginationEvents(), selectedPage()
 
-### Community 183 - "w"
-Cohesion: 0.20
-Nodes (4): HCameraElement(), i(), _typeof$2(), w()
-
 ### Community 190 - "job-candidate-grid.init.js"
 Cohesion: 0.60
 Nodes (4): isStatus(), loadCandidateListData(), paginationEvents(), selectedPage()
@@ -957,13 +951,17 @@ Nodes (4): filterData(), loadJobListData(), paginationEvents(), selectedPage()
 Cohesion: 0.33
 Nodes (6): configFromObject(), Duration(), getPrioritizedUnits(), isDurationValid(), normalizeObjectUnits(), stringSet()
 
+### Community 204 - "rc"
+Cohesion: 0.18
+Nodes (6): bt(), cc(), ic(), mt(), pt(), rc
+
 ### Community 214 - "apps-nft-explore.init.js"
 Cohesion: 0.60
 Nodes (3): loadMoreBtn(), loadProductData(), _toConsumableArray()
 
-### Community 215 - "HSVtoRGB"
-Cohesion: 0.60
-Nodes (5): addBrightnessToRGB(), addHueToRGB(), addSaturationToRGB(), HSVtoRGB(), RGBtoHSV()
+### Community 215 - "en"
+Cohesion: 0.38
+Nodes (3): Jt(), en, tn()
 
 ### Community 219 - "tasks-kanban.init.js"
 Cohesion: 0.60
@@ -974,24 +972,24 @@ Cohesion: 0.83
 Nodes (3): a(), c(), d()
 
 ## Knowledge Gaps
-- **59 isolated node(s):** `backend.layouts.app`, `RFC-2822`, `backend.settings.partials.image-field`, `backend.layouts.app`, `backend.categories._form` (+54 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 1858 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **275 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **59 isolated node(s):** `backend.layouts.app`, `backend.layouts.app`, `RFC-2822`, `backend.settings.partials.image-field`, `backend.layouts.app` (+54 more)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 1862 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **278 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `tn()` connect `an` to `apexcharts.min.js`, `index.global.min.js`?**
-  _High betweenness centrality (0.040) - this node is a cross-community bridge._
+- **Why does `tn()` connect `en` to `index.global.min.js`?**
+  _High betweenness centrality (0.035) - this node is a cross-community bridge._
 - **Are the 2 inferred relationships involving `E()` (e.g. with `h()` and `l()`) actually correct?**
   _`E()` has 2 INFERRED edges - model-reasoned connections that need verification._
-- **What connects `backend.layouts.app`, `RFC-2822`, `backend.settings.partials.image-field` to the rest of the system?**
+- **What connects `backend.layouts.app`, `backend.layouts.app`, `RFC-2822` to the rest of the system?**
   _59 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `chart.umd.js` be split into smaller, more focused modules?**
-  _Cohesion score 0.02232408114761056 - nodes in this community are weakly interconnected._
-- **Why does `Jt()` connect `apexcharts.min.js` to `attr`, `an`?**
-  _High betweenness centrality (0.040) - this node is a cross-community bridge._
+  _Cohesion score 0.022922077922077923 - nodes in this community are weakly interconnected._
+- **Why does `Jt()` connect `en` to `apexcharts.min.js`, `attr`?**
+  _High betweenness centrality (0.035) - this node is a cross-community bridge._
 - **Are the 5 inferred relationships involving `p()` (e.g. with `N()` and `i()`) actually correct?**
   _`p()` has 5 INFERRED edges - model-reasoned connections that need verification._
 - **Should `lord-icon-2.1.0.js` be split into smaller, more focused modules?**
-  _Cohesion score 0.016959912933067294 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.01680672268907563 - nodes in this community are weakly interconnected._

@@ -112,6 +112,7 @@ class EmployeeController extends Controller
             'department_id' => 'nullable|integer|exists:departments,id',
             'position' => 'nullable|string',
             'evaluation_type' => 'nullable|string|in:manager,office,sale,collaborator',
+            'attendance_exempt' => 'nullable|boolean',
             'level' => 'nullable|string|max:100',
             'manager_id' => 'nullable|integer|exists:employees,id',
             'manager_l2_id' => 'nullable|integer|exists:employees,id',
@@ -124,6 +125,8 @@ class EmployeeController extends Controller
             'email.email' => 'Địa chỉ email không đúng định dạng.',
             'status.required' => 'Vui lòng chọn trạng thái làm việc.',
         ]);
+
+        $validated['attendance_exempt'] = $request->boolean('attendance_exempt');
 
         \App\Models\Employee::create($validated);
 
@@ -428,6 +431,7 @@ class EmployeeController extends Controller
             'department_id' => 'nullable|integer|exists:departments,id',
             'position' => 'nullable|string',
             'evaluation_type' => 'nullable|string|in:manager,office,sale,collaborator',
+            'attendance_exempt' => 'nullable|boolean',
             'level' => 'nullable|string|max:100',
             'manager_id' => 'nullable|integer|exists:employees,id',
             'manager_l2_id' => 'nullable|integer|exists:employees,id',
@@ -444,6 +448,8 @@ class EmployeeController extends Controller
         if ($request->manager_id == $id || $request->manager_l2_id == $id) {
             return back()->withInput()->withErrors(['manager_id' => 'Không thể chọn chính mình làm người duyệt.']);
         }
+
+        $validated['attendance_exempt'] = $request->boolean('attendance_exempt');
 
         $employee->update($validated);
 

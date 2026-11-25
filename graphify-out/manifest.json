@@ -54,9 +54,9 @@
     "semantic_hash": ""
   },
   "app/Http/Controllers/AttendanceCalendarController.php": {
-    "mtime": 1795171289.8892574,
-    "seen": 1795228706.221919,
-    "ast_hash": "dcbd8a41c75c0fd8afe9888b1e5726ad",
+    "mtime": 1795576784.539238,
+    "seen": 1795576791.4583857,
+    "ast_hash": "dae5784b1cc9b12c019ab85dfc152842",
     "semantic_hash": ""
   },
   "app/Http/Controllers/AttendanceImportController.php": {
@@ -120,9 +120,9 @@
     "semantic_hash": ""
   },
   "app/Http/Controllers/EmployeeController.php": {
-    "mtime": 1794991990.1494958,
-    "seen": 1795228706.2219307,
-    "ast_hash": "3cae839af773b31f7845437161360508",
+    "mtime": 1795576522.078316,
+    "seen": 1795576575.2769969,
+    "ast_hash": "9eb61f1bf0bf2fc96c9eb021fa6a7301",
     "semantic_hash": ""
   },
   "app/Http/Controllers/GoogleController.php": {
@@ -288,9 +288,9 @@
     "semantic_hash": ""
   },
   "app/Models/Employee.php": {
-    "mtime": 1795167412.9212074,
-    "seen": 1795228706.2219603,
-    "ast_hash": "6a99f229f5e914c0c28d42f0011eb65f",
+    "mtime": 1795576521.8097425,
+    "seen": 1795576575.2789686,
+    "ast_hash": "9be0bba87d910cf30a6a0411d0ac24f4",
     "semantic_hash": ""
   },
   "app/Models/Evaluation.php": {
@@ -2070,15 +2070,15 @@
     "semantic_hash": ""
   },
   "resources/views/backend/employees/create.blade.php": {
-    "mtime": 1793242564.2502327,
-    "seen": 1795228706.2222664,
-    "ast_hash": "e8f6a2d4f5c2ad5fe599ca6148cc27a5",
+    "mtime": 1795576665.085223,
+    "seen": 1795576791.48081,
+    "ast_hash": "e10d96c242da08aa72fee68a5538cf5e",
     "semantic_hash": ""
   },
   "resources/views/backend/employees/edit.blade.php": {
-    "mtime": 1793588200.506848,
-    "seen": 1795228706.2222674,
-    "ast_hash": "b4503cc556e3ebe3d7a87098c4b26d0b",
+    "mtime": 1795576665.3746793,
+    "seen": 1795576791.480812,
+    "ast_hash": "10b08d99b9d5e4d51e9534a58dbe02da",
     "semantic_hash": ""
   },
   "resources/views/backend/employees/index.blade.php": {
@@ -2328,9 +2328,9 @@
     "semantic_hash": ""
   },
   "tests/Feature/AttendanceCalendarTest.php": {
-    "mtime": 1795076249.0829504,
-    "seen": 1795228706.2223084,
-    "ast_hash": "9b4787616df2ccf82bd816a7212798d3",
+    "mtime": 1795420516.9785984,
+    "seen": 1795576575.3021762,
+    "ast_hash": "3c292fd9fee226776cb5910383559011",
     "semantic_hash": ""
   },
   "tests/Feature/AttendanceImportTest.php": {
@@ -5793,6 +5793,12 @@
     "mtime": 1774600645.0,
     "seen": 1795228706.2228913,
     "ast_hash": "0cf51482c0f5d55a461d3817948910ee",
+    "semantic_hash": ""
+  },
+  "database/migrations/2026_11_25_000001_add_attendance_exempt_to_employees_table.php": {
+    "mtime": 1795576521.5116231,
+    "seen": 1795576575.284962,
+    "ast_hash": "e1f21322c6046820b989fa0f768893a9",
     "semantic_hash": ""
   }
 }

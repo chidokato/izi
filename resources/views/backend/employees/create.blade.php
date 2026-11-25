@@ -166,6 +166,13 @@
                                             @enderror
                                         </div>
                                     </div>
+                                    <div class="col-12">
+                                        <div class="form-check form-switch d-flex align-items-center gap-2">
+                                            <input type="hidden" name="attendance_exempt" value="0">
+                                            <input class="form-check-input mt-0" type="checkbox" role="switch" id="attendance_exempt" name="attendance_exempt" value="1" @checked(old('attendance_exempt', false))>
+                                            <label class="form-check-label" for="attendance_exempt">Miễn chấm công, tính đủ công</label>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

@@ -303,6 +303,11 @@ class AttendanceCalendarController extends Controller
 
             if ($isNonWorkingDay) {
                 $cong = null;
+            } elseif ($inMonth && $dateStr <= $today && !empty($employee->attendance_exempt) && !($req && $isApprovedReq)) {
+                // Attendance-exempt employees receive the scheduled full-day credit without punch data.
+                $cong = $date->dayOfWeek == 6 ? 0.5 : 1.0;
+                $status = 'complete';
+                $label = $labels['complete'];
             }
 
             if ($inMonth) {
