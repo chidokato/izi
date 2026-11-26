@@ -223,19 +223,24 @@
             @foreach(['Thứ Hai','Thứ Ba','Thứ Tư','Thứ Năm','Thứ Sáu','Thứ Bảy','Chủ nhật'] as $weekday)<div class="weekday">{{ $weekday }}</div>@endforeach
             @foreach($days as $day)
                 @php
-                    $requestColor = '';
-                    if (isset($day['request'])) {
-                        switch ($day['request']->type) {
-                            case 'paid_leave': $requestColor = '#bae6fd'; break; // light blue
-                            case 'unpaid_leave': $requestColor = '#e5e7eb'; break; // light gray
-                            case 'business_trip': $requestColor = '#fed7aa'; break; // light orange
-                            case 'attendance_adjustment': $requestColor = '#fbcfe8'; break; // light pink
-                            default: $requestColor = '#e3e7ed'; // default gray
+                    $requestBorderStyle = '';
+                    if (isset($day['request']) && $day['request']) {
+                        if ($day['request']->status === 'pending') {
+                            $requestBorderStyle = 'border-bottom: 4px dashed #f59e0b;';
+                        } else {
+                            switch ($day['request']->type) {
+                                case 'paid_leave': $requestColor = '#bae6fd'; break; // light blue
+                                case 'unpaid_leave': $requestColor = '#e5e7eb'; break; // light gray
+                                case 'business_trip': $requestColor = '#fed7aa'; break; // light orange
+                                case 'attendance_adjustment': $requestColor = '#fbcfe8'; break; // light pink
+                                default: $requestColor = '#e3e7ed'; // default gray
+                            }
+                            $requestBorderStyle = 'border-bottom: 4px solid ' . $requestColor . ';';
                         }
                     }
                 @endphp
             <section class="attendance-day {{ $day['in_month'] ? $day['status'] : 'outside' }} {{ $day['today'] ? 'is-today' : '' }}" 
-                     style="{{ $requestColor ? 'border-bottom: 4px solid '.$requestColor : '' }}"
+                     style="{{ $requestBorderStyle }}"
                      aria-label="{{ $day['date']->format('d/m/Y') }}{{ $day['in_month'] ? ': '.$day['label'] : '' }}">
                 <div class="d-flex justify-content-between align-items-center">
                     <span class="day-number">{{ $day['date']->day == 1 ? $day['date']->format('d/m') : $day['date']->day }}</span>
@@ -284,9 +289,11 @@
                     <div class="day-status fw-medium {!! $displayLabel != $day['label'] ? 'text-danger' : '' !!}">
                         {{ $displayLabel }}
                         @if(isset($day['request']) && $day['request'])
-                            <span class="text-primary fw-normal ms-1" style="font-size: 11px;">
+                            <span class="fw-normal ms-1 {{ $day['request']->status === 'pending' ? 'text-warning' : 'text-primary' }}" style="font-size: 11px;">
                                 <i class="ri-file-list-3-line align-middle"></i> 
-                                @if(!empty($day['is_non_working_day']) || $day['date']->dayOfWeek == 0)
+                                @if($day['request']->status === 'pending')
+                                    (Đã làm phiếu · Chờ duyệt)
+                                @elseif(!empty($day['is_non_working_day']) || $day['date']->dayOfWeek == 0)
                                     (Nghỉ)
                                 @elseif($day['request']->type == 'attendance_adjustment')
                                     (XN: {{ $day['request']->start_session == 'morning' ? 'Vào' : ($day['request']->start_session == 'afternoon' ? 'Ra' : 'Vào/Ra') }})

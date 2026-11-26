@@ -51,11 +51,11 @@ class AttendanceCalendarController extends Controller
             
         $requests = $employee ? DB::table('attendance_requests')
             ->where('employee_id', $employee->id)
-            ->where('status', 'approved')
-            ->where(function($q) use ($periodStart, $periodEnd) {
-                $q->whereBetween('start_date', [$periodStart->toDateString(), $periodEnd->toDateString()])
-                  ->orWhereBetween('end_date', [$periodStart->toDateString(), $periodEnd->toDateString()]);
-            })->get() : collect();
+            ->whereIn('status', ['approved', 'pending'])
+            ->whereDate('start_date', '<=', $periodEnd->toDateString())
+            ->whereDate('end_date', '>=', $periodStart->toDateString())
+            ->orderByRaw("CASE WHEN status = 'approved' THEN 0 ELSE 1 END")
+            ->get() : collect();
 
         $schedules = DB::table('work_schedules')->get(['id', 'name', 'status', 'grace_period']);
         $activeSchedules = $schedules->where('status', 'active');

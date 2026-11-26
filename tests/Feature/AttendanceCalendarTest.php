@@ -351,4 +351,65 @@ class AttendanceCalendarTest extends TestCase
         $newDays = collect($newResponse->viewData('days'))->keyBy(fn ($d) => $d['date']->toDateString());
         $this->assertNull($newDays['2026-11-24']['cong']);
     }
+
+    public function test_pending_request_marks_bottom_border_without_calculating_cong(): void
+    {
+        $schedId = DB::table('work_schedules')->insertGetId([
+            'name' => 'Lịch chuẩn pending',
+            'code' => 'STD-PEND',
+            'status' => 'active',
+            'grace_period' => 10,
+        ]);
+
+        for ($dow = 1; $dow <= 6; $dow++) {
+            DB::table('work_schedule_rules')->insert([
+                'work_schedule_id' => $schedId,
+                'day_of_week' => $dow,
+                'is_working_day' => 1,
+                'start_time' => '08:30:00',
+                'end_time' => $dow == 6 ? '12:30:00' : '17:30:00',
+            ]);
+        }
+
+        DB::table('employee_schedules')->insert([
+            'employee_id' => $this->employee,
+            'work_schedule_id' => $schedId,
+            'effective_from' => '2026-01-01',
+        ]);
+
+        $batch = DB::table('attendance_imports')->insertGetId(['filename' => 'pending.xlsx', 'uploaded_by' => $this->admin->id]);
+        DB::table('attendance_entries')->insert([
+            'employee_id' => $this->employee,
+            'employee_name' => 'Nguyễn Văn An',
+            'department_name' => 'Văn phòng',
+            'work_date' => '2026-11-21',
+            'checkin' => '08:40:00',
+            'checkout' => null,
+            'attendance_import_id' => $batch,
+        ]);
+
+        DB::table('attendance_requests')->insert([
+            'code' => 'REQ-PEND-01',
+            'employee_id' => $this->employee,
+            'type' => 'attendance_adjustment',
+            'start_date' => '2026-11-21 08:30:00',
+            'end_date' => '2026-11-21 12:30:00',
+            'start_session' => 'afternoon',
+            'status' => 'pending',
+            'reason' => 'Quên chấm ra',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $response = $this->actingAs($this->admin)->get('/admin/attendance-calendar?employee_id='.$this->employee.'&month=2026-12');
+        $response->assertOk()
+            ->assertSee('border-bottom: 4px dashed #f59e0b;')
+            ->assertSee('(Đã làm phiếu · Chờ duyệt)');
+
+        $this->assertEquals(0.0, $response->viewData('totalCongTinhLuong'));
+        $days = collect($response->viewData('days'))->keyBy(fn ($d) => $d['date']->toDateString());
+        $this->assertEquals(0, $days['2026-11-21']['cong']);
+        $this->assertNotNull($days['2026-11-21']['request']);
+        $this->assertSame('pending', $days['2026-11-21']['request']->status);
+    }
 }
