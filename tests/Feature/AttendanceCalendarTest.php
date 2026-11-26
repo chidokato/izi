@@ -404,7 +404,7 @@ class AttendanceCalendarTest extends TestCase
         $response = $this->actingAs($this->admin)->get('/admin/attendance-calendar?employee_id='.$this->employee.'&month=2026-12');
         $response->assertOk()
             ->assertSee('border-bottom: 4px dashed #f59e0b;')
-            ->assertSee('(Đã làm phiếu · Chờ duyệt)');
+            ->assertSee('(Chờ duyệt)');
 
         $this->assertEquals(0.0, $response->viewData('totalCongTinhLuong'));
         $days = collect($response->viewData('days'))->keyBy(fn ($d) => $d['date']->toDateString());

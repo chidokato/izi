@@ -292,7 +292,7 @@
                             <span class="fw-normal ms-1 {{ $day['request']->status === 'pending' ? 'text-warning' : 'text-primary' }}" style="font-size: 11px;">
                                 <i class="ri-file-list-3-line align-middle"></i> 
                                 @if($day['request']->status === 'pending')
-                                    (Đã làm phiếu · Chờ duyệt)
+                                    (Chờ duyệt)
                                 @elseif(!empty($day['is_non_working_day']) || $day['date']->dayOfWeek == 0)
                                     (Nghỉ)
                                 @elseif($day['request']->type == 'attendance_adjustment')
