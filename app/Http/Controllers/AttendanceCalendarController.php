@@ -74,6 +74,7 @@ class AttendanceCalendarController extends Controller
         $totals = array_fill_keys(array_keys($labels), 0);
         $days = [];
         $today = CarbonImmutable::now('Asia/Ho_Chi_Minh')->toDateString();
+        $employeeJoinDate = ($employee && !empty($employee->join_date)) ? substr((string) $employee->join_date, 0, 10) : null;
         $totalCongThucTe = 0;
         $totalCongTinhLuong = 0;
         $totalCongChuan = 0;
@@ -313,7 +314,7 @@ class AttendanceCalendarController extends Controller
 
             if ($isNonWorkingDay) {
                 $cong = null;
-            } elseif ($inMonth && ($holiday = $holidays->get($dateStr)) && $holiday->type !== 'working_day') {
+            } elseif ($inMonth && ($holiday = $holidays->get($dateStr)) && $holiday->type !== 'working_day' && (!$employeeJoinDate || $dateStr >= $employeeJoinDate)) {
                 $cong = max($cong ?? 0, (float) $holiday->work_value);
                 $status = 'holiday';
                 $label = 'Nghỉ lễ: ' . $holiday->name;

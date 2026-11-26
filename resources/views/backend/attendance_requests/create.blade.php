@@ -553,7 +553,8 @@
                             limitInfo.style.display = 'block';
                             limitInfo.classList.remove('text-danger');
                             limitInfo.classList.add('text-info');
-                            limitInfo.innerHTML = `<i class="ri-information-line align-middle"></i> Số phiếu quên chấm còn lại trong tháng ${data.month}: <strong>${data.remaining}/${data.total}</strong>`;
+                            const cycleText = data.cycle_label ? `kỳ công (${data.cycle_label})` : `tháng ${data.month}`;
+                            limitInfo.innerHTML = `<i class="ri-information-line align-middle"></i> Số phiếu quên chấm còn lại trong ${cycleText}: <strong>${data.remaining}/${data.total}</strong>`;
                             
                             setSubmitButtonState(false);
                         }

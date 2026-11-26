@@ -332,5 +332,23 @@ class AttendanceCalendarTest extends TestCase
         $days = collect($response->viewData('days'))->keyBy(fn ($d) => $d['date']->toDateString());
         $this->assertEquals(1.0, $days['2026-11-24']['cong']);
         $this->assertSame('holiday', $days['2026-11-24']['status']);
+
+        // Employee who joined AFTER the holiday (2026-11-25) must NOT receive holiday cong
+        $newEmp = DB::table('employees')->insertGetId([
+            'employee_code' => '000998',
+            'name' => 'Nhân viên mới',
+            'status' => 'active',
+            'join_date' => '2026-11-25',
+        ]);
+        DB::table('employee_schedules')->insert([
+            'employee_id' => $newEmp,
+            'work_schedule_id' => $schedId,
+            'effective_from' => '2026-01-01',
+        ]);
+        $newResponse = $this->actingAs($this->admin)->get('/admin/attendance-calendar?employee_id='.$newEmp.'&month=2026-12');
+        $newResponse->assertOk();
+        $this->assertEquals(0.0, $newResponse->viewData('totalCongTinhLuong'));
+        $newDays = collect($newResponse->viewData('days'))->keyBy(fn ($d) => $d['date']->toDateString());
+        $this->assertNull($newDays['2026-11-24']['cong']);
     }
 }

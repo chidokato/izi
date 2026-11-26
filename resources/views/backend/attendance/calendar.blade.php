@@ -1011,13 +1011,14 @@ $(document).ready(function() {
             .then(data => {
                 if (type === 'attendance_adjustment') {
                     $('#quick-limit-info').show();
+                    const cycleText = data.cycle_label ? `kỳ công (${data.cycle_label})` : `tháng ${data.month}`;
                     if (data.remaining <= 0) {
                         $('#quick-limit-info').removeClass('text-info').addClass('text-danger');
-                        $('#quick-limit-text').html(`Nhân viên đã dùng hết 3 phiếu quên chấm trong tháng ${data.month}.`);
+                        $('#quick-limit-text').html(`Nhân viên đã dùng hết 3 phiếu quên chấm trong ${cycleText}.`);
                         $('#quick-btn-submit').prop('disabled', true);
                     } else {
                         $('#quick-limit-info').removeClass('text-danger').addClass('text-info');
-                        $('#quick-limit-text').html(`Số phiếu quên chấm còn lại trong tháng ${data.month}: <strong>${data.remaining}/${data.total}</strong>`);
+                        $('#quick-limit-text').html(`Số phiếu quên chấm còn lại trong ${cycleText}: <strong>${data.remaining}/${data.total}</strong>`);
                         $('#quick-btn-submit').prop('disabled', false);
                     }
                 } else if (type === 'paid_leave') {

@@ -300,8 +300,9 @@ class TimesheetExportController extends Controller
                 }
                 
                 $isNonWorkingDay = ($dayOfWeek == 0) || (!$rule || !$rule->is_working_day);
+                $empJoinDate = !empty($emp->join_date) ? substr((string) $emp->join_date, 0, 10) : null;
                 $holiday = $holidays->get($dateStr);
-                $isHoliday = $holiday && $holiday->type !== 'working_day';
+                $isHoliday = $holiday && $holiday->type !== 'working_day' && (!$empJoinDate || $dateStr >= $empJoinDate);
 
                 if (!$isNonWorkingDay && !$req && !$isHoliday && $entry && $entry->checkin !== null && $entry->checkout !== null && $entry->checkout >= $entry->checkin && $metrics !== null) {
                     $late = max(0, ($metrics['late_arrival'] ?? 0) - $gracePeriod);

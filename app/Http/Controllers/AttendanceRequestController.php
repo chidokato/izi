@@ -367,15 +367,16 @@ class AttendanceRequestController extends Controller
 
         if ($type === 'attendance_adjustment') {
             $startDate = \Carbon\Carbon::parse($request->start_date);
+            $cycle = $this->getPayrollCycleBounds($startDate);
             $count = AttendanceRequest::where('employee_id', $request->employee_id)
                 ->where('type', 'attendance_adjustment')
-                ->whereMonth('start_date', $startDate->month)
-                ->whereYear('start_date', $startDate->year)
-                ->where('status', '!=', 'cancelled')
+                ->whereDate('start_date', '>=', $cycle['start']->toDateString())
+                ->whereDate('start_date', '<=', $cycle['end']->toDateString())
+                ->whereIn('status', ['pending', 'approved'])
                 ->count();
             
             if ($count >= 3) {
-                $msg = 'Nhân viên này đã sử dụng hết 3 phiếu bổ sung công trong tháng ' . $startDate->month . '.';
+                $msg = 'Nhân viên này đã sử dụng hết 3 phiếu bổ sung công trong kỳ công ' . $cycle['label'] . '.';
                 if ($request->ajax() || $request->wantsJson()) {
                     return response()->json(['message' => $msg, 'errors' => ['type' => [$msg]]], 422);
                 }
@@ -737,16 +738,17 @@ class AttendanceRequestController extends Controller
     {
         $employeeId = $request->employee_id;
         $date = $request->date ? \Carbon\Carbon::parse($request->date) : now();
+        $cycle = $this->getPayrollCycleBounds($date);
         
         if (!$employeeId) {
-            return response()->json(['remaining' => 3, 'total' => 3]);
+            return response()->json(['remaining' => 3, 'total' => 3, 'month' => $cycle['month'], 'cycle_label' => $cycle['label']]);
         }
 
         $count = AttendanceRequest::where('employee_id', $employeeId)
             ->where('type', 'attendance_adjustment')
-            ->whereMonth('start_date', $date->month)
-            ->whereYear('start_date', $date->year)
-            ->where('status', '!=', 'cancelled')
+            ->whereDate('start_date', '>=', $cycle['start']->toDateString())
+            ->whereDate('start_date', '<=', $cycle['end']->toDateString())
+            ->whereIn('status', ['pending', 'approved'])
             ->count();
 
         $remaining = max(0, 3 - $count);
@@ -767,9 +769,27 @@ class AttendanceRequestController extends Controller
             'used' => $count,
             'remaining' => $remaining,
             'total' => 3,
-            'month' => $date->month,
+            'month' => $cycle['month'],
+            'cycle_label' => $cycle['label'],
             'leave_balance' => $remainingBalance
         ]);
+    }
+
+    private function getPayrollCycleBounds(\Carbon\CarbonInterface $date): array
+    {
+        $cycleMonth = $date->day >= 16
+            ? $date->copy()->startOfMonth()->addMonth()
+            : $date->copy()->startOfMonth();
+
+        $periodStart = $cycleMonth->copy()->subMonth()->day(16)->startOfDay();
+        $periodEnd = $cycleMonth->copy()->day(15)->endOfDay();
+
+        return [
+            'month' => $cycleMonth->month,
+            'label' => $periodStart->format('d/m') . ' - ' . $periodEnd->format('d/m/Y'),
+            'start' => $periodStart,
+            'end' => $periodEnd,
+        ];
     }
 
     private function calculateLeaveDays(AttendanceRequest $req)

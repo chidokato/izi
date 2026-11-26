@@ -66,4 +66,64 @@ class AttendanceRequestFilterTest extends TestCase
             ->assertSee('Đi công tác ngày 24/11')
             ->assertDontSee('Đi công tác ngày 19/11');
     }
+
+    public function test_attendance_adjustment_limit_is_counted_per_payroll_cycle(): void
+    {
+        // Create 2 approved, 1 pending, and 1 rejected adjustment request in cycle 11 (16/10 - 15/11)
+        foreach ([
+            ['2026-10-20', 'approved'],
+            ['2026-11-05', 'approved'],
+            ['2026-11-10', 'pending'],
+            ['2026-11-11', 'rejected'],
+        ] as $idx => [$date, $status]) {
+            DB::table('attendance_requests')->insert([
+                'code' => 'ADJ-C11-' . $idx,
+                'employee_id' => $this->employee,
+                'type' => 'attendance_adjustment',
+                'start_date' => $date . ' 08:30:00',
+                'end_date' => $date . ' 08:30:00',
+                'status' => $status,
+                'reason' => 'Quên chấm công',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        // Rejected request in cycle 12 (16/11 - 15/12) should not count either
+        DB::table('attendance_requests')->insert([
+            'code' => 'ADJ-C12-REJ',
+            'employee_id' => $this->employee,
+            'type' => 'attendance_adjustment',
+            'start_date' => '2026-11-18 08:30:00',
+            'end_date' => '2026-11-18 08:30:00',
+            'status' => 'rejected',
+            'reason' => 'Quên chấm công bị từ chối',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        // Checking date 2026-11-12 (still in cycle 16/10 - 15/11) -> 0 remaining
+        $this->actingAs($this->admin)
+            ->getJson('/admin/attendance-requests/check-limit?employee_id=' . $this->employee . '&date=2026-11-12')
+            ->assertOk()
+            ->assertJson([
+                'used' => 3,
+                'remaining' => 0,
+                'total' => 3,
+                'month' => 11,
+                'cycle_label' => '16/10 - 15/11/2026',
+            ]);
+
+        // Checking date 2026-11-20 (in cycle 16/11 - 15/12) -> full 3 remaining
+        $this->actingAs($this->admin)
+            ->getJson('/admin/attendance-requests/check-limit?employee_id=' . $this->employee . '&date=2026-11-20')
+            ->assertOk()
+            ->assertJson([
+                'used' => 0,
+                'remaining' => 3,
+                'total' => 3,
+                'month' => 12,
+                'cycle_label' => '16/11 - 15/12/2026',
+            ]);
+    }
 }

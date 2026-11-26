@@ -102,4 +102,63 @@ class TimesheetExportTest extends TestCase
             (string) $exportResponse->headers->get('Content-Disposition')
         );
     }
+
+    public function test_holiday_is_not_paid_if_employee_joined_after_holiday(): void
+    {
+        $schedId = DB::table('work_schedules')->insertGetId([
+            'name' => 'Lịch chuẩn NL',
+            'code' => 'STD-NL',
+            'status' => 'active',
+            'grace_period' => 10,
+        ]);
+        for ($dow = 1; $dow <= 5; $dow++) {
+            DB::table('work_schedule_rules')->insert([
+                'work_schedule_id' => $schedId,
+                'day_of_week' => $dow,
+                'is_working_day' => 1,
+                'start_time' => '08:30:00',
+                'end_time' => '17:30:00',
+                'break_start' => '12:00:00',
+                'break_end' => '13:00:00',
+            ]);
+        }
+
+        // Existing employee joined before 2026-11-24
+        DB::table('employees')->where('id', $this->employee)->update(['join_date' => '2026-11-01']);
+        DB::table('employee_schedules')->insert([
+            'employee_id' => $this->employee,
+            'work_schedule_id' => $schedId,
+            'effective_from' => '2026-01-01',
+        ]);
+
+        // New employee joined after 2026-11-24
+        $newEmp = DB::table('employees')->insertGetId([
+            'employee_code' => '000999',
+            'name' => 'Nhân viên mới',
+            'status' => 'active',
+            'join_date' => '2026-11-25',
+        ]);
+        DB::table('employee_schedules')->insert([
+            'employee_id' => $newEmp,
+            'work_schedule_id' => $schedId,
+            'effective_from' => '2026-01-01',
+        ]);
+
+        DB::table('holidays')->insert([
+            'holiday_date' => '2026-11-24',
+            'name' => 'Ngày lễ Văn hóa',
+            'type' => 'holiday',
+            'work_value' => 1,
+        ]);
+
+        $response = $this->actingAs($this->admin)->get('/admin/timesheet-export?from=2026-11-24&to=2026-11-25');
+        $response->assertOk();
+
+        $reportData = collect($response->viewData('reportData'))->keyBy('employee_code');
+        $this->assertSame('NL', $reportData['000456']['days']['2026-11-24']['value']);
+        $this->assertEquals(8, $reportData['000456']['total_hours']);
+
+        $this->assertNotSame('NL', $reportData['000999']['days']['2026-11-24']['value']);
+        $this->assertEquals(0, $reportData['000999']['total_hours']);
+    }
 }
