@@ -82,9 +82,9 @@ class TimesheetExportTest extends TestCase
 
         $response = $this->actingAs($this->admin)->get('/admin/timesheet-export?from=2026-11-16&to=2026-11-20');
         $response->assertOk()
-            ->assertSee('Số lần')
-            ->assertSee('Số phút')
-            ->assertSee('ĐTVS');
+            ->assertSee('S.lần')
+            ->assertSee('S.phút')
+            ->assertSee('v.phạm');
 
         $reportData = $response->viewData('reportData');
         $this->assertCount(1, $reportData);

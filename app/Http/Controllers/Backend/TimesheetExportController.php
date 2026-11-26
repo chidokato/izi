@@ -67,7 +67,7 @@ class TimesheetExportController extends Controller
             }
         }
 
-        $rightHeadings = ['Tổng công tính lương', "Số lần\nĐTVS", "Số phút\nĐTVS"];
+        $rightHeadings = ['Tổng công tính lương', "S.lần\nv.phạm", "S.phút\nv.phạm"];
         foreach ($rightHeadings as $offset => $heading) {
             $col = Coordinate::stringFromColumnIndex($totalColIndex + $offset);
             $sheet->setCellValue($col . '1', $heading);
@@ -247,6 +247,11 @@ class TimesheetExportController extends Controller
             
         $departments = DB::table('departments')->where('status', 'active')->orderBy('name')->pluck('name', 'id');
 
+        $holidays = DB::table('holidays')
+            ->whereBetween('holiday_date', [$from, $to])
+            ->get()
+            ->keyBy(fn ($h) => substr((string) $h->holiday_date, 0, 10));
+
         $reportData = [];
         
         foreach ($employees as $emp) {
@@ -295,8 +300,10 @@ class TimesheetExportController extends Controller
                 }
                 
                 $isNonWorkingDay = ($dayOfWeek == 0) || (!$rule || !$rule->is_working_day);
+                $holiday = $holidays->get($dateStr);
+                $isHoliday = $holiday && $holiday->type !== 'working_day';
 
-                if (!$isNonWorkingDay && !$req && $entry && $entry->checkin !== null && $entry->checkout !== null && $entry->checkout >= $entry->checkin && $metrics !== null) {
+                if (!$isNonWorkingDay && !$req && !$isHoliday && $entry && $entry->checkin !== null && $entry->checkout !== null && $entry->checkout >= $entry->checkin && $metrics !== null) {
                     $late = max(0, ($metrics['late_arrival'] ?? 0) - $gracePeriod);
                     $early = max(0, $metrics['early_departure'] ?? 0);
                     if ($late > 0) {
@@ -325,7 +332,13 @@ class TimesheetExportController extends Controller
                     }
                 }
                 
-                // For holidays we usually put NL, but let's assume we don't have a holidays table right now.
+                if ($isHoliday && !$isNonWorkingDay) {
+                    $holidayHours = (float) ($holiday->work_value ?? 1) * 8;
+                    $hours = max($hours, $holidayHours);
+                    if ($displayVal === '' || $displayVal === '0' || $displayVal === 0) {
+                        $displayVal = 'NL';
+                    }
+                }
                 
                 if (is_numeric($displayVal)) {
                     $displayVal = $displayVal == floor($displayVal) ? number_format($displayVal, 0) : rtrim(rtrim(number_format($displayVal, 2, '.', ''), '0'), '.');

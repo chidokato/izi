@@ -201,6 +201,10 @@ Route::post('admin/attendance-calendar/swap', [\App\Http\Controllers\AttendanceC
 Route::get('admin/monthly-settings', [\App\Http\Controllers\MonthlyWorkSettingController::class, 'index'])->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->name('backend.monthly-settings.index');
 Route::post('admin/monthly-settings', [\App\Http\Controllers\MonthlyWorkSettingController::class, 'store'])->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->name('backend.monthly-settings.store');
 
+Route::get('admin/holidays', [\App\Http\Controllers\HolidayController::class, 'index'])->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->name('backend.holidays.index');
+Route::post('admin/holidays', [\App\Http\Controllers\HolidayController::class, 'store'])->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->name('backend.holidays.store');
+Route::delete('admin/holidays/{holiday}', [\App\Http\Controllers\HolidayController::class, 'destroy'])->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->name('backend.holidays.destroy');
+
 Route::prefix('admin/work-schedules')->name('backend.schedules.')->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->group(function () {
     Route::get('/', [\App\Http\Controllers\WorkScheduleController::class, 'index'])->name('index');
     Route::get('/create', [\App\Http\Controllers\WorkScheduleController::class, 'create'])->name('create');

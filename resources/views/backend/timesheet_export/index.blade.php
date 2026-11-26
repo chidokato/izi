@@ -49,8 +49,8 @@
                         <th rowspan="2" class="text-center align-middle">Ngày hết thử<br>việc</th>
                         <th colspan="{{ count($dates) }}" class="text-center">THỨ/NGÀY</th>
                         <th rowspan="2" class="text-center align-middle text-wrap" style="min-width: 80px">Tổng công<br>tính lương</th>
-                        <th rowspan="2" class="text-center align-middle text-wrap" style="min-width: 75px" title="Số lần đi trễ về sớm">Số lần<br>ĐTVS</th>
-                        <th rowspan="2" class="text-center align-middle text-wrap" style="min-width: 75px" title="Số phút đi trễ về sớm">Số phút<br>ĐTVS</th>
+                        <th rowspan="2" class="text-center align-middle text-wrap" style="min-width: 75px" title="Số lần đi trễ về sớm">S.lần<br>v.phạm</th>
+                        <th rowspan="2" class="text-center align-middle text-wrap" style="min-width: 75px" title="Số phút đi trễ về sớm">S.phút<br>v.phạm</th>
                     </tr>
                     <tr>
                         @foreach($dates as $dateStr)

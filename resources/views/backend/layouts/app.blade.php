@@ -185,7 +185,7 @@
                                 // Group: QUẢN LÝ NHÂN SỰ & CẤU HÌNH
                                 $menuItems[] = ['is_title' => true, 'label' => 'NHÂN SỰ & CẤU HÌNH'];
                                 $menuItems[] = ['label' => 'Phòng ban', 'icon' => 'ri-building-line', 'route' => 'backend.departments.index', 'active' => 'backend.departments.*'];
-                                $menuItems[] = ['label' => 'Cấu hình tháng', 'icon' => 'ri-settings-4-line', 'route' => 'backend.monthly-settings.index', 'active' => 'backend.monthly-settings.*'];
+                                $menuItems[] = ['label' => 'Cấu hình nghỉ lễ', 'icon' => 'ri-calendar-event-line', 'route' => 'backend.holidays.index', 'active' => 'backend.holidays.*'];
                                 $menuItems[] = ['label' => 'Giờ làm việc', 'icon' => 'ri-time-line', 'route' => 'backend.schedules.index', 'active' => 'backend.schedules.*'];
                             }
                         @endphp

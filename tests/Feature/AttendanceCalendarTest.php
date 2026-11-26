@@ -47,7 +47,7 @@ class AttendanceCalendarTest extends TestCase
         $this->entries();
         $response = $this->actingAs($this->admin)->get('/admin/attendance-calendar?employee_id='.$this->employee.'&month=2026-09');
         $response->assertOk()->assertSee('Nguyễn Văn An')->assertSee('17:00')->assertSee('Thiếu ra')->assertSee('00:00');
-        $response->assertViewHas('totals', ['complete' => 2, 'missing' => 1, 'blank' => 1, 'overnight' => 1, 'no_data' => 26, 'leave' => 0, 'adjustment' => 0, 'business' => 0]);
+        $response->assertViewHas('totals', ['complete' => 2, 'missing' => 1, 'blank' => 1, 'overnight' => 1, 'no_data' => 26, 'leave' => 0, 'adjustment' => 0, 'business' => 0, 'holiday' => 0]);
         $days = $response->viewData('days');
         $this->assertSame('2026-08-10', $days[0]['date']->toDateString());
         $this->assertCount(42, $days);
@@ -287,5 +287,50 @@ class AttendanceCalendarTest extends TestCase
             ->assertViewHas('lateEarlyMinutes', 50)
             ->assertSee('4 lỗi / 50p')
             ->assertSee('Đi trễ / Về sớm');
+    }
+
+    public function test_configured_holiday_counts_as_one_cong_without_punch(): void
+    {
+        $schedId = DB::table('work_schedules')->insertGetId([
+            'name' => 'Lịch chuẩn lễ',
+            'code' => 'STD-HOL',
+            'status' => 'active',
+            'grace_period' => 10,
+        ]);
+
+        for ($dow = 1; $dow <= 5; $dow++) {
+            DB::table('work_schedule_rules')->insert([
+                'work_schedule_id' => $schedId,
+                'day_of_week' => $dow,
+                'is_working_day' => 1,
+                'start_time' => '08:30:00',
+                'end_time' => '17:30:00',
+                'break_start' => '12:00:00',
+                'break_end' => '13:00:00',
+            ]);
+        }
+
+        DB::table('employee_schedules')->insert([
+            'employee_id' => $this->employee,
+            'work_schedule_id' => $schedId,
+            'effective_from' => '2026-01-01',
+        ]);
+
+        DB::table('holidays')->insert([
+            'holiday_date' => '2026-11-24',
+            'name' => 'Ngày lễ Văn hóa',
+            'type' => 'holiday',
+            'work_value' => 1,
+        ]);
+
+        $response = $this->actingAs($this->admin)->get('/admin/attendance-calendar?employee_id='.$this->employee.'&month=2026-12');
+        $response->assertOk()
+            ->assertSee('Ngày lễ Văn hóa')
+            ->assertSee('1 công');
+
+        $this->assertEquals(1.0, $response->viewData('totalCongTinhLuong'));
+        $days = collect($response->viewData('days'))->keyBy(fn ($d) => $d['date']->toDateString());
+        $this->assertEquals(1.0, $days['2026-11-24']['cong']);
+        $this->assertSame('holiday', $days['2026-11-24']['status']);
     }
 }

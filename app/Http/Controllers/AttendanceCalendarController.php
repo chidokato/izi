@@ -43,6 +43,11 @@ class AttendanceCalendarController extends Controller
         
         $entries = $employee ? DB::table('attendance_entries')->where('employee_id', $employee->id)
             ->whereBetween('work_date', [$periodStart->toDateString(), $periodEnd->toDateString()])->get()->keyBy('work_date') : collect();
+
+        $holidays = DB::table('holidays')
+            ->whereBetween('holiday_date', [$periodStart->toDateString(), $periodEnd->toDateString()])
+            ->get()
+            ->keyBy(fn ($h) => substr((string) $h->holiday_date, 0, 10));
             
         $requests = $employee ? DB::table('attendance_requests')
             ->where('employee_id', $employee->id)
@@ -63,7 +68,8 @@ class AttendanceCalendarController extends Controller
         $labels = [
             'complete' => 'Hợp lệ', 'missing' => 'Thiếu một giờ chấm',
             'blank' => 'Vắng', 'overnight' => 'Kiểm tra ca qua đêm', 'no_data' => '',
-            'leave' => 'Phép năm/thường', 'adjustment' => 'B.sung công', 'business' => 'c.tác'
+            'leave' => 'Phép năm/thường', 'adjustment' => 'B.sung công', 'business' => 'c.tác',
+            'holiday' => 'Nghỉ lễ',
         ];
         $totals = array_fill_keys(array_keys($labels), 0);
         $days = [];
@@ -307,6 +313,10 @@ class AttendanceCalendarController extends Controller
 
             if ($isNonWorkingDay) {
                 $cong = null;
+            } elseif ($inMonth && ($holiday = $holidays->get($dateStr)) && $holiday->type !== 'working_day') {
+                $cong = max($cong ?? 0, (float) $holiday->work_value);
+                $status = 'holiday';
+                $label = 'Nghỉ lễ: ' . $holiday->name;
             } elseif ($inMonth && $dateStr <= $today && !empty($employee->attendance_exempt) && !($req && $isApprovedReq)) {
                 // Attendance-exempt employees receive the scheduled full-day credit without punch data.
                 $cong = $date->dayOfWeek == 6 ? 0.5 : 1.0;

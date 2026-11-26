@@ -20,6 +20,7 @@
 .attendance-day.leave { background: #e0f2fe; border-color: #bae6fd; }
 .attendance-day.adjustment { background: #fce7f3; border-color: #fbcfe8; }
 .attendance-day.business { background: #ffedd5; border-color: #fed7aa; }
+.attendance-day.holiday { background: #fef2f2; border-color: #fecaca; }
 .attendance-day.outside { background: #fafafa; border-style: dashed; color: #a1a7b0; }
 .attendance-day.is-today { outline: 2px solid #405189; outline-offset: -2px; }
 .attendance-day .day-number { font-size: 16px; font-weight: 700; }
