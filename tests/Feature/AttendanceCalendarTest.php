@@ -224,4 +224,68 @@ class AttendanceCalendarTest extends TestCase
         $this->assertEquals(0, $days['2026-10-21']['request']->business_hours);
         $this->assertNull($days['2026-10-21']['cong']);
     }
+
+    public function test_late_and_early_violation_counts_and_total_minutes(): void
+    {
+        $schedId = DB::table('work_schedules')->insertGetId([
+            'name' => 'Lịch chuẩn trễ sớm',
+            'code' => 'STD-LE',
+            'status' => 'active',
+            'grace_period' => 10,
+        ]);
+
+        for ($dow = 1; $dow <= 5; $dow++) {
+            DB::table('work_schedule_rules')->insert([
+                'work_schedule_id' => $schedId,
+                'day_of_week' => $dow,
+                'is_working_day' => 1,
+                'start_time' => '08:30:00',
+                'end_time' => '17:30:00',
+                'break_start' => '12:00:00',
+                'break_end' => '13:00:00',
+            ]);
+        }
+
+        DB::table('employee_schedules')->insert([
+            'employee_id' => $this->employee,
+            'work_schedule_id' => $schedId,
+            'effective_from' => '2026-01-01',
+        ]);
+
+        $batch = DB::table('attendance_imports')->insertGetId(['filename' => 'late_early.xlsx', 'uploaded_by' => $this->admin->id]);
+        // 2026-11-17 (Tue): 08:35 - 17:30 -> within 10m grace period -> 0 late, 0 early
+        // 2026-11-18 (Wed): 08:50 - 17:30 -> late 20 - 10 = 10m -> 1 late (10m)
+        // 2026-11-19 (Thu): 08:25 - 17:15 -> early 15m -> 1 early (15m)
+        // 2026-11-20 (Fri): 08:55 - 17:20 -> late 25 - 10 = 15m, early 10m -> 1 late + 1 early (25m)
+        // 2026-11-23 (Mon): missing checkout -> not counted
+        $rows = [
+            ['2026-11-17', '08:35:00', '17:30:00'],
+            ['2026-11-18', '08:50:00', '17:30:00'],
+            ['2026-11-19', '08:25:00', '17:15:00'],
+            ['2026-11-20', '08:55:00', '17:20:00'],
+            ['2026-11-23', '09:00:00', null],
+        ];
+        foreach ($rows as [$date, $in, $out]) {
+            DB::table('attendance_entries')->insert([
+                'employee_id' => $this->employee,
+                'employee_name' => 'Nguyễn Văn An',
+                'department_name' => 'Văn phòng',
+                'work_date' => $date,
+                'checkin' => $in,
+                'checkout' => $out,
+                'attendance_import_id' => $batch,
+            ]);
+        }
+
+        $response = $this->actingAs($this->admin)->get('/admin/attendance-calendar?employee_id='.$this->employee.'&month=2026-12');
+        $response->assertOk()
+            ->assertViewHas('lateCount', 2)
+            ->assertViewHas('earlyCount', 2)
+            ->assertViewHas('lateMinutes', 25)
+            ->assertViewHas('earlyMinutes', 25)
+            ->assertViewHas('lateEarlyCount', 4)
+            ->assertViewHas('lateEarlyMinutes', 50)
+            ->assertSee('4 lỗi / 50p')
+            ->assertSee('Đi trễ / Về sớm');
+    }
 }

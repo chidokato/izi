@@ -19,14 +19,17 @@
                     @endforeach
                 </select>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <label for="attendance-date-range" class="form-label">Thời gian</label>
                 <input id="attendance-date-range" class="form-control" type="text" value="" placeholder="Chọn khoảng thời gian" autocomplete="off">
             </div>
             <input type="hidden" name="from" id="attendance-from" value="{{ $from }}">
             <input type="hidden" name="to" id="attendance-to" value="{{ $to }}">
-            <div class="col-md-2 d-flex gap-2">
-                <button class="btn btn-secondary w-100">Lọc dữ liệu</button>
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-secondary w-100">Lọc dữ liệu</button>
+                <button type="submit" formaction="{{ route('backend.timesheet-export.export') }}" class="btn btn-success w-100 text-nowrap">
+                    <i class="ri-file-excel-2-line align-bottom me-1"></i> Xuất Excel
+                </button>
             </div>
         </form>
     </div>
@@ -46,6 +49,8 @@
                         <th rowspan="2" class="text-center align-middle">Ngày hết thử<br>việc</th>
                         <th colspan="{{ count($dates) }}" class="text-center">THỨ/NGÀY</th>
                         <th rowspan="2" class="text-center align-middle text-wrap" style="min-width: 80px">Tổng công<br>tính lương</th>
+                        <th rowspan="2" class="text-center align-middle text-wrap" style="min-width: 75px" title="Số lần đi trễ về sớm">Số lần<br>ĐTVS</th>
+                        <th rowspan="2" class="text-center align-middle text-wrap" style="min-width: 75px" title="Số phút đi trễ về sớm">Số phút<br>ĐTVS</th>
                     </tr>
                     <tr>
                         @foreach($dates as $dateStr)
@@ -93,10 +98,12 @@
                             @endforeach
                             
                             <td class="text-center fw-bold">{{ number_format($emp['total_hours'] / 8, 2, '.', '') }}</td>
+                            <td class="text-center {{ $emp['late_early_count'] > 0 ? 'text-danger fw-semibold' : '' }}">{{ $emp['late_early_count'] }}</td>
+                            <td class="text-center {{ $emp['late_early_minutes'] > 0 ? 'text-danger fw-semibold' : '' }}">{{ $emp['late_early_minutes'] }}</td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="{{ 7 + count($dates) }}" class="text-center text-muted py-4">Chưa có dữ liệu.</td>
+                            <td colspan="{{ 9 + count($dates) }}" class="text-center text-muted py-4">Chưa có dữ liệu.</td>
                         </tr>
                     @endforelse
                 </tbody>

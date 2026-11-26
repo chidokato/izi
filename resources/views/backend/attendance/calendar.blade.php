@@ -181,7 +181,7 @@
     </div>
 </div>
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-    <div class="d-flex align-items-center gap-2">
+    <div class="d-flex flex-wrap align-items-center gap-2">
         @php
             $formatCong = function($val) {
                 if ($val === null) return '0';
@@ -199,6 +199,12 @@
             <div class="card-body p-2 px-3 text-center">
                 <h4 class="mb-0 fw-bold text-white">{{ floatval($employee->annual_leave_balance ?? 0) }}</h4>
                 <div class="text-white-50" style="font-size: 11px; font-weight: 500;">Tồn phép năm</div>
+            </div>
+        </div>
+        <div class="card shadow-sm border-0 bg-danger text-white mb-0" style="min-width: 145px;" title="Đi trễ: {{ $lateCount ?? 0 }} lần ({{ $lateMinutes ?? 0 }}p) · Về sớm: {{ $earlyCount ?? 0 }} lần ({{ $earlyMinutes ?? 0 }}p)">
+            <div class="card-body p-2 px-3 text-center">
+                <h4 class="mb-0 fw-bold text-white">{{ $lateEarlyCount ?? 0 }} lỗi / {{ $lateEarlyMinutes ?? 0 }}p</h4>
+                <div class="text-white-50" style="font-size: 11px; font-weight: 500;">Đi trễ / Về sớm</div>
             </div>
         </div>
     </div>

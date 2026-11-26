@@ -147,6 +147,8 @@ Route::prefix('admin/attendance')->name('backend.attendance.')->middleware(['aut
 });
 Route::get('admin/timesheet-export', [\App\Http\Controllers\Backend\TimesheetExportController::class, 'index'])
     ->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->name('backend.timesheet-export.index');
+Route::get('admin/timesheet-export/export', [\App\Http\Controllers\Backend\TimesheetExportController::class, 'export'])
+    ->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->name('backend.timesheet-export.export');
 Route::get('admin/employees', [\App\Http\Controllers\EmployeeController::class, 'index'])
     ->middleware(['auth', \App\Http\Middleware\EnsureAdmin::class])->name('backend.employees.index');
 Route::post('admin/employees/import-leave', [\App\Http\Controllers\EmployeeController::class, 'importLeave'])

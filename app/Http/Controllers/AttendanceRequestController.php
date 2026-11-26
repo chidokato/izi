@@ -49,39 +49,24 @@ class AttendanceRequestController extends Controller
 
         if ($request->filled('date')) {
             $dateInput = trim($request->date);
-            if (str_contains($dateInput, ' to ')) {
-                $parts = explode(' to ', $dateInput);
-                $startRaw = trim($parts[0]);
-                $endRaw = trim($parts[1] ?? $parts[0]);
-                
-                try {
-                    $startDate = \Carbon\Carbon::parse($startRaw)->toDateString();
-                    $endDate = \Carbon\Carbon::parse($endRaw)->toDateString();
-                } catch (\Exception $e) {
-                    $startDate = $startRaw;
-                    $endDate = $endRaw;
+            $parts = preg_split('/\s+(?:to|đến)\s+/u', $dateInput);
+            $parseFilterDate = function (string $raw): string {
+                $raw = trim($raw);
+                if (preg_match('/^\d{2}\/\d{2}\/\d{4}$/', $raw)) {
+                    return \Carbon\Carbon::createFromFormat('d/m/Y', $raw)->toDateString();
                 }
-                
-                $baseQuery->where(function($q) use ($startDate, $endDate) {
-                    $q->where(function($sub) use ($startDate, $endDate) {
-                        $sub->where('start_date', '<=', $endDate)
-                            ->where('end_date', '>=', $startDate);
-                    })->orWhereBetween(\Illuminate\Support\Facades\DB::raw('DATE(created_at)'), [$startDate, $endDate]);
-                });
-            } else {
                 try {
-                    $searchDate = \Carbon\Carbon::parse($dateInput)->toDateString();
+                    return \Carbon\Carbon::parse($raw)->toDateString();
                 } catch (\Exception $e) {
-                    $searchDate = $dateInput;
+                    return $raw;
                 }
-                
-                $baseQuery->where(function($q) use ($searchDate) {
-                    $q->where(function($sub) use ($searchDate) {
-                        $sub->where('start_date', '<=', $searchDate)
-                            ->where('end_date', '>=', $searchDate);
-                    })->orWhereDate('created_at', $searchDate);
-                });
-            }
+            };
+
+            $startDate = $parseFilterDate($parts[0]);
+            $endDate = isset($parts[1]) ? $parseFilterDate($parts[1]) : $startDate;
+
+            $baseQuery->whereDate('start_date', '<=', $endDate)
+                      ->whereDate('end_date', '>=', $startDate);
         }
 
         $isHR = optional($user->employee)->level === 'HR' || $user->isAdmin();

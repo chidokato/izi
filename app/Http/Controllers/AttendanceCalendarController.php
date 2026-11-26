@@ -71,6 +71,10 @@ class AttendanceCalendarController extends Controller
         $totalCongThucTe = 0;
         $totalCongTinhLuong = 0;
         $totalCongChuan = 0;
+        $lateCount = 0;
+        $earlyCount = 0;
+        $lateMinutes = 0;
+        $earlyMinutes = 0;
 
         for ($date = $periodStart->copy()->startOfWeek(); $date->lte($periodEnd->copy()->endOfWeek()); $date = $date->addDay()) {
             $inMonth = $date->between($periodStart, $periodEnd);
@@ -319,6 +323,19 @@ class AttendanceCalendarController extends Controller
                     }
                 }
 
+                if (!$isNonWorkingDay && $status === 'complete' && $metrics !== null) {
+                    $late = max(0, ($metrics['late_arrival'] ?? 0) - $gracePeriod);
+                    $early = max(0, $metrics['early_departure'] ?? 0);
+                    if ($late > 0) {
+                        $lateCount++;
+                        $lateMinutes += $late;
+                    }
+                    if ($early > 0) {
+                        $earlyCount++;
+                        $earlyMinutes += $early;
+                    }
+                }
+
                 if (!isset($totals[$status])) $totals[$status] = 0;
                 $totals[$status]++;
                 
@@ -351,7 +368,10 @@ class AttendanceCalendarController extends Controller
             $currentUserEmployee = \App\Models\Employee::with(['manager', 'managerL2'])->find(auth()->user()->employee_id);
         }
 
-        return view('backend.attendance.calendar', compact('employees', 'departments', 'departmentId', 'employee', 'currentUserEmployee', 'month', 'periodStart', 'periodEnd', 'days', 'totals', 'labels', 'latest', 'totalCongThucTe', 'totalCongTinhLuong', 'totalCongChuan'));
+        $lateEarlyCount = $lateCount + $earlyCount;
+        $lateEarlyMinutes = $lateMinutes + $earlyMinutes;
+
+        return view('backend.attendance.calendar', compact('employees', 'departments', 'departmentId', 'employee', 'currentUserEmployee', 'month', 'periodStart', 'periodEnd', 'days', 'totals', 'labels', 'latest', 'totalCongThucTe', 'totalCongTinhLuong', 'totalCongChuan', 'lateCount', 'earlyCount', 'lateMinutes', 'earlyMinutes', 'lateEarlyCount', 'lateEarlyMinutes'));
     }
 
     public function swapPunch(Request $request)
